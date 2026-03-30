@@ -1,0 +1,74 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { PublicRouter, UserRouter, AdminRouter } from '~/routes';
+
+import DefaultLayout from '~/layouts/DefaultLayout';
+import ProtectedRoute from '~/routes/ProtectedRoute';
+import { Fragment } from 'react';
+import PublicLayout from './layouts/PublicLayout';
+import AdminLayout from './layouts/AdminLayout';
+
+function App() {
+    const router = createBrowserRouter([
+        //  public router
+        ...PublicRouter.map((item) => {
+            let Layout = item.layout === null ? Fragment : item.layout || PublicLayout;
+
+            const Page = item.component;
+            const layoutProps = item.layoutProps || {};
+            return {
+                path: item.path,
+                element: (
+                    <Layout {...layoutProps} >
+                        <Page />
+                    </Layout>
+                ),
+            };
+        }),
+        // user router
+        ...UserRouter.map((item) => {
+            let Layout = item.layout || DefaultLayout;
+            if (item.layout) {
+                Layout = item.layout;
+            }
+            const Page = item.component;
+            return {
+                path: item.path,
+                element: (
+                    <ProtectedRoute role="User">
+                        <Layout>
+                            <Page />
+                        </Layout>
+                    </ProtectedRoute>
+                ),
+            };
+        }),
+        // Admin router
+        ...AdminRouter.map((item) => {
+            let Layout = item.layout || AdminLayout;
+            if (item.layout) {
+                Layout = item.layout;
+            }
+            const Page = item.component;
+            return {
+                path: item.path,
+                element: (
+                    <ProtectedRoute role="Admin">
+                        <Layout>
+                            <Page />
+                        </Layout>
+                    </ProtectedRoute>
+                ),
+            };
+        }),
+    ]);
+    return (
+        <RouterProvider
+            router={router}
+            future={{
+                v7_startTransition: true,
+            }}
+        />
+    );
+}
+
+export default App;
