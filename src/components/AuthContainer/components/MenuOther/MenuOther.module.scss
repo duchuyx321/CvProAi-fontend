@@ -1,0 +1,76 @@
+.wrapper {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+}
+.divider {
+    position: relative;
+    margin: 10px 0 10px;
+    text-align: center;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e5e7eb;
+        transform: translateY(-50%);
+    }
+
+    span {
+        position: relative;
+        z-index: 1;
+        display: inline-block;
+        padding: 0 14px;
+        background: #ffffff;
+        font-size: 13px;
+        color: #94a3b8;
+    }
+}
+
+.social {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.social-btn {
+    height: 35px;
+    padding: 0 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+        border-color: #cbd5e1;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+}
+
+.fb-icon {
+    font-size: 18px;
+    color: #1877f2;
+}
+
+@media (max-width: 576px) {
+    .social {
+        grid-template-columns: 1fr;
+    }
+}
