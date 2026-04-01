@@ -7,15 +7,16 @@
     overflow-y: auto;
 }
 
-.inner {
-    width: 100%;
-    // max-width: 447px;
-}
+// .inner {
+//     // width: 100%;
+//     // max-width: 447px;
+// }
 
 .logo {
     padding: 0;
     flex-shrink: 0;
     margin-bottom: 12px;
+    width: 40%;
 }
 
 .logo-link {

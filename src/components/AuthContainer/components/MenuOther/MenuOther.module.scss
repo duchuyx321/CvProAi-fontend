@@ -2,12 +2,14 @@
     width: 100%;
     display: grid;
     gap: 8px;
+    margin: 12px 0 12px;
 }
 .divider {
     position: relative;
-    margin: 10px 0 10px;
-    text-align: center;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
     &::before {
         content: '';
         position: absolute;
@@ -15,8 +17,9 @@
         left: 0;
         right: 0;
         height: 1px;
-        background: #e5e7eb;
+        background: #e2e8f0;
         transform: translateY(-50%);
+        border-radius: 999px;
     }
 
     span {
@@ -24,9 +27,9 @@
         z-index: 1;
         display: inline-block;
         padding: 0 14px;
-        background: #ffffff;
-        font-size: 13px;
-        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
     }
 }
 
@@ -37,7 +40,7 @@
 }
 
 .social-btn {
-    height: 35px;
+    height: 40px;
     padding: 0 16px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;

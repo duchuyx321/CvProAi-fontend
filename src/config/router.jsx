@@ -1,5 +1,10 @@
 export const router = {
   // Public
   home: "/",
-  login: '/login'
+  login: '/login',
+  forgotPassword: '/forgot-password',
+  // User
+  dashboard: '/dashboard'
+
+  // Admin
 };

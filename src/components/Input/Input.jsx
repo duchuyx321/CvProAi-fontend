@@ -6,10 +6,10 @@ const cx = classNames.bind(styles);
 
 const Input = forwardRef(function Input(
   {
+    id,
+    type = 'text',
     label,
     error,
-    success = false,
-
     disabled = false,
     leftIcon,
     rightIcon,
@@ -22,12 +22,10 @@ const Input = forwardRef(function Input(
 ) {
   const classes = cx('wrapper', className, {
     fullWidth,
-    disabled,
   });
 
   const fieldClasses = cx('fieldWrapper', {
     hasError: !!error,
-    success,
     disabled,
     hasLeftIcon: !!leftIcon,
     hasRightIcon: !!rightIcon,
@@ -36,9 +34,8 @@ const Input = forwardRef(function Input(
   return (
     <div className={classes}>
       {label && (
-        <label className={cx('label')}>
+        <label className={cx('label')} htmlFor={id}>
           {label}
-        
         </label>
       )}
 
@@ -46,7 +43,9 @@ const Input = forwardRef(function Input(
         {leftIcon && <span className={cx('icon', 'leftIcon')}>{leftIcon}</span>}
 
         <input
+          id={id}
           ref={ref}
+          type={type}
           className={cx('input', inputClassName)}
           disabled={disabled}
           aria-invalid={!!error}
@@ -56,7 +55,7 @@ const Input = forwardRef(function Input(
         {rightIcon && <span className={cx('icon', 'rightIcon')}>{rightIcon}</span>}
       </div>
 
-
+      {error && <p className={cx('message', 'error')}>{error}</p>}
     </div>
   );
 });
