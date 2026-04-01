@@ -1,4 +1,4 @@
-import logo from './vite.svg'
+import logo from './logo.png'
 import BannerLogin from './BannerLogin.png'
 
 export const images = {
