@@ -4,6 +4,8 @@ export const router = {
   login: '/login',
   register: '/register',
   forgotPassword: '/forgot-password',
+  pricing : '/pricing',
+  features : '/features',
   // User
   dashboard: '/dashboard'
 
