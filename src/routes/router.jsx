@@ -1,7 +1,7 @@
 import { config } from '~/config';
 import PublicLayout from '~/layouts/PublicLayout';
-import Login from '~/pages/Auth/Login';
-import Register from '~/pages/Auth/Register';
+import Login from '~/pages/Login';
+import Register from '~/pages/Register';
 import Home from '~/pages/Home';
 
 //  public router

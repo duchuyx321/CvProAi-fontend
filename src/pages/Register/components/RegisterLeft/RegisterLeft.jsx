@@ -72,10 +72,9 @@ function RegisterLeft() {
       setSubmitting(true);
 
       const registerPromise = register({
-        fullName,
+        full_name:fullName,
         email,
         password,
-        confirmPassword,
       }).then((result) => {
         if (!result?.success) {
           throw new Error(result?.message || 'Đăng ký thất bại');
