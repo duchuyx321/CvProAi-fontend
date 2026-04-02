@@ -20,19 +20,20 @@ httpsRequests.interceptors.request.use(
 );
 
 //  config method api
-export const GET = async ({ path, config }) => {
-    const result = await httpsRequests.get(path, config);
-    return result;
+export const GET = async (path, option = {}) => {
+    const response = await httpsRequests.get(path, option);
+    return response.data;
 };
-export const POST = async ({ path, config }) => {
-    const result = await httpsRequests.post(path, config);
-    return result;
+
+export const POST = async (path, option = {}) => {
+    const response = await httpsRequests.post(path, option);
+    return response.data;
 };
-export const PUT = async ({ path, config }) => {
-    const result = await httpsRequests.put(path, config);
-    return result;
-};
-export const DELETE = async ({ path, config }) => {
-    const result = await httpsRequests.delete(path, config);
-    return result;
+export const PATCH = async (path, option = {}) => {
+    const response = await httpsRequests.patch(path, option);
+    return response.data;
+}
+export const DELETE = async (path, option = {}) => {
+    const response = await httpsRequests.delete(path, option);
+    return response.data;
 };

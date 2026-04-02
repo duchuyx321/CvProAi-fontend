@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { MdOutlineEmail, MdOutlineLock } from 'react-icons/md';
 import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
-import { RiLoader2Fill } from 'react-icons/ri';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+
 
 import { config } from '~/config';
 import Button from '~/components/Button';
@@ -17,22 +15,21 @@ import styles from './LoginLeft.module.scss';
 const cx = classNames.bind(styles);
 
 function LoginLeft() {
-    const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
     const [isEye, setIsEye] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const isDisabled = useMemo(() => {
-        return loading || !email.trim() || !password.trim();
-    }, [email, password, loading]);
+        return submitting || !email.trim() || !password.trim();
+    }, [email, password, submitting]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (loading) return;
+        if (submitting) return;
 
         const errorMessage = validateLoginForm({ email, password });
 
@@ -42,14 +39,29 @@ function LoginLeft() {
         }
 
         try {
-            setLoading(true);
+            setSubmitting(true);
 
-            const result = await login(email, password);
+            const loginPromise = login(email, password).then((result) => {
+                if (!result?.success) {
+                    throw new Error(result?.message || 'Đăng nhập thất bại');
+                }
 
-            if (!result?.success) {
-                toast.error(result?.message || 'Đăng nhập thất bại');
-                return;
-            }
+                return result;
+            });
+
+            const result = await toast.promise(loginPromise, {
+                pending: 'Đang đăng nhập...',
+                success: {
+                    render({ data }) {
+                        return data?.message || 'Đăng nhập thành công';
+                    },
+                },
+                error: {
+                    render({ data }) {
+                        return data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau';
+                    },
+                },
+            });
 
             const accessToken =
                 result?.data?.meta?.newAccessToken ||
@@ -66,21 +78,15 @@ function LoginLeft() {
                 localStorage.removeItem('auth.rememberedIdentifier');
             }
 
-            toast.success(result?.message || 'Đăng nhập thành công');
-
             setIsEye(false);
 
             setTimeout(() => {
-                navigate(config.router.dashboard);
+                window.location.replace(config.router.home);
             }, 800);
         } catch (error) {
-            toast.error(
-                error?.response?.data?.message ||
-                error?.message ||
-                'Có lỗi xảy ra, vui lòng thử lại sau',
-            );
+            console.log('Login error:', error);
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -96,7 +102,7 @@ function LoginLeft() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 leftIcon={<MdOutlineEmail />}
-                disabled={loading}
+                disabled={submitting}
             />
 
             <Input
@@ -113,13 +119,13 @@ function LoginLeft() {
                     <button
                         type="button"
                         className={cx('btnEye')}
-                        onClick={() => setIsEye(!isEye)}
+                        onClick={() => setIsEye((prev) => !prev)}
                         aria-label={isEye ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     >
                         {isEye ? <FaRegEye /> : <FaRegEyeSlash />}
                     </button>
                 }
-                disabled={loading}
+                disabled={submitting}
             />
 
             <div className={cx('options')}>
@@ -131,6 +137,7 @@ function LoginLeft() {
                         checked={remember}
                         onChange={(e) => setRemember(e.target.checked)}
                         className={cx('checkboxInput')}
+                        disabled={submitting}
                     />
                     <span className={cx('checkboxText')}>Ghi nhớ đăng nhập</span>
                 </label>
@@ -150,14 +157,7 @@ function LoginLeft() {
                 disabled={isDisabled}
                 type="submit"
             >
-                {loading ? (
-                    <>
-                        <RiLoader2Fill className={cx('spinner')} />
-                        Đang đăng nhập...
-                    </>
-                ) : (
-                    'Đăng nhập'
-                )}
+                Đăng nhập
             </Button>
         </form>
     );

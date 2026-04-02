@@ -28,18 +28,4 @@ $card-border: rgba(255, 255, 255, 0.12);
         $primary-2 52%,
         $primary-3 100%
     );
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.04) 0%,
-            rgba(255, 255, 255, 0) 30%,
-            rgba(0, 0, 0, 0.06) 100%
-        );
-        z-index: 0;
-        pointer-events: none;
-    }
 }

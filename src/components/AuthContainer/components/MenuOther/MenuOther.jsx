@@ -2,6 +2,7 @@ import classNames from 'classnames/bind';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
 
+import Button from '~/components/Button';
 import styles from './MenuOther.module.scss';
 
 const cx = classNames.bind(styles);
@@ -30,14 +31,16 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
 
             <div className={cx('social')}>
                 {MENU_OTHER.map((item) => (
-                    <a
+                    <Button
                         key={item.key}
-                        href={`${SERVER_URL}/api/auth/${item.key}`}
                         className={cx('social-btn')}
+                        to={`${SERVER_URL}/api/auth/${item.key}`}
                     >
-                        {item.icon}
-                        {item.content}
-                    </a>
+                        <span className={cx('inner')}>
+                            <span className={cx('icon')}>{item.icon}</span>
+                            <span className={cx('text')}>{item.content}</span>
+                        </span>
+                    </Button>
                 ))}
             </div>
         </div>
