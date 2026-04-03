@@ -5,7 +5,15 @@ export const router = {
   register: '/register',
   forgotPassword: '/forgot-password',
   // User
-  dashboard: '/dashboard'
+  // userDashboard: '/user',
+  userDashboard: '/user/dashboard', 
+  cvTemplates: '/user/templates',
+  myCvs: '/user/my-cvs',
+  aiAnalysis: '/user/ai-analysis',
+  upgradePremium: '/user/upgrade-premium',
+
 
   // Admin
+  adminDashboard: '/admin/dashboard',
+  
 };
