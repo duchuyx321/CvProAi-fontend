@@ -1,0 +1,136 @@
+.wrapper {
+    background: #ffffff;
+    border-top: 1px solid #eeebff;
+}
+
+.inner {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 64;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 64px;
+    padding-bottom: 32px;
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.logo-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.brand-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.75;
+}
+
+.link-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.group-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.08em;
+    margin: 0;
+}
+
+.group-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.group-link {
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #64748b !important;
+    padding: 4px 0 !important;
+    justify-content: flex-start !important;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #5b4fff !important;
+        background: transparent !important;
+    }
+}
+
+.social-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.social-list {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.social-link {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    border: 1px solid #f1f5f9 !important;
+    color: #475569 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition:
+        color 0.2s,
+        border-color 0.2s,
+        background 0.2s !important;
+
+    &:hover {
+        color: #5b4fff !important;
+        border-color: #5b4fff !important;
+        background: #f0effe !important;
+    }
+}
+
+.social-email {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.bottom {
+    border-top: 1px solid #f1f5f9;
+}
+
+.copyright {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 32px;
+    font-size: 13px;
+    color: #94a3b8;
+}

@@ -6,8 +6,9 @@ export const router = {
     forgotPassword: '/forgot-password',
     otp_verify: '/otp/verify',
     reset_pass: '/otp/reset',
+    pricing: '/pricing',
+    features: '/features',
+
     // User
     dashboard: '/dashboard',
-
-    // Admin
 };
