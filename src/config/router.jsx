@@ -1,11 +1,13 @@
 export const router = {
-  // Public
-  home: "/",
-  login: '/login',
-  register: '/register',
-  forgotPassword: '/forgot-password',
-  // User
-  dashboard: '/dashboard'
+    // Public
+    home: '/',
+    login: '/login',
+    register: '/register',
+    forgotPassword: '/forgot-password',
+    otp_verify: '/otp/verify',
+    reset_pass: '/otp/reset',
+    // User
+    dashboard: '/dashboard',
 
-  // Admin
+    // Admin
 };

@@ -1,13 +1,16 @@
+/* eslint-disable no-unused-vars */
 import classNames from 'classnames/bind';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';
+import { useMemo } from 'react';
+import { toast } from 'react-toastify';
 
 import Button from '~/components/Button';
 import styles from './MenuOther.module.scss';
 
 const cx = classNames.bind(styles);
 
-const SERVER_URL = import.meta.env.VITE_URL_SERVER || '';
+const SERVER_URL = import.meta.env.VITE_HTTPS_BACKEND || '';
 
 const MENU_OTHER = [
     {
@@ -23,6 +26,111 @@ const MENU_OTHER = [
 ];
 
 function MenuOther({ text = 'Hoặc tiếp tục với' }) {
+
+    const BACKEND_ORIGIN = useMemo(() => {
+        try {
+            return new URL(SERVER_URL).origin;
+        } catch {
+            return '';
+        }
+    }, []);
+
+    const openPopupLogin = (provider) => {
+        return new Promise((resolve, reject) => {
+            const width = 500;
+            const height = 650;
+            const left = window.screenX + (window.outerWidth - width) / 2;
+            const top = window.screenY + (window.outerHeight - height) / 2;
+
+            const popupUrl = new URL(`auth/${provider}`, SERVER_URL).toString();
+
+            const popup = window.open(
+                popupUrl,
+                `${provider}-login`,
+                `popup=yes,width=${width},height=${height},left=${left},top=${top}`,
+            );
+
+            if (!popup) {
+                reject(
+                    new Error(
+                        'Trình duyệt đang chặn popup. Hãy cho phép popup và thử lại.',
+                    ),
+                );
+                return;
+            }
+
+            const timer = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(timer);
+                    window.removeEventListener('message', handleMessage);
+                    reject(new Error('Bạn đã đóng cửa sổ đăng nhập.'));
+                }
+            }, 500);
+
+            const handleMessage = (event) => {
+                if (event.origin !== BACKEND_ORIGIN) return;
+
+                if (event.data?.type === 'GOOGLE_LOGIN_SUCCESS') {
+                    clearInterval(timer);
+                    window.removeEventListener('message', handleMessage);
+
+                    const accessToken = event.data?.data?.accessToken;
+
+                    if (accessToken) {
+                        localStorage.setItem('accessToken', accessToken);
+                    }
+
+                    popup.close();
+                    resolve(event.data?.data || { message: 'Đăng nhập thành công' });
+                    return;
+                }
+
+                if (event.data?.type === 'GOOGLE_LOGIN_ERROR') {
+                    clearInterval(timer);
+                    window.removeEventListener('message', handleMessage);
+                    popup.close();
+                    reject(
+                        new Error(
+                            event.data?.message || 'Đăng nhập Google thất bại',
+                        ),
+                    );
+                }
+            };
+
+            window.addEventListener('message', handleMessage);
+        });
+    };
+
+    const handleSocialLogin = async (key) => {
+        if (key !== 'google') return;
+
+        try {
+            const loginPromise = openPopupLogin('google');
+
+            const result = await toast.promise(loginPromise, {
+                pending: 'Đang đăng nhập với Google...',
+                success: {
+                    render({ data }) {
+                        return data?.message || 'Đăng nhập thành công';
+                    },
+                },
+                error: {
+                    render({ data }) {
+                        return (
+                            data?.message ||
+                            data?.error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau'
+                        );
+                    },
+                },
+            });
+
+            window.location.replace('/');
+        } catch (error) {
+            console.error('Google login error:', error);
+        }
+    };
+
     return (
         <div className={cx('wrapper')}>
             <div className={cx('divider')}>
@@ -34,7 +142,7 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
                     <Button
                         key={item.key}
                         className={cx('social-btn')}
-                        to={`${SERVER_URL}/api/auth/${item.key}`}
+                        onClick={() => handleSocialLogin(item.key)}
                     >
                         <span className={cx('inner')}>
                             <span className={cx('icon')}>{item.icon}</span>
