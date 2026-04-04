@@ -15,5 +15,6 @@ export const router = {
 
   // Admin
   adminDashboard: '/admin/dashboard',
-  
+  manageUsers: '/admin/manage-users',
+  manageTemplates: '/admin/templates',
 };

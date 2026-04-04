@@ -4,13 +4,11 @@ import { NavLink } from 'react-router-dom';
 import styles from './SidebarDefault.module.scss';
 
 import { CgProfile } from "react-icons/cg";
-import { TbTargetArrow } from "react-icons/tb";
 import { FiAward } from "react-icons/fi";
-import { FaLaptopCode } from "react-icons/fa"; 
 import { IoDocumentTextOutline } from "react-icons/io5";
 import images from '~/assets';
 import { GoHome } from 'react-icons/go';
-import { RiFolderUserLine } from 'react-icons/ri';
+import { RiAiGenerate2, RiFolderUserLine } from 'react-icons/ri';
 
 const cx = classNames.bind(styles);
 
@@ -47,7 +45,7 @@ function SidebarDefault() {
                     </NavLink>
 
                     <NavLink to="/user/ai-analysis" className={({ isActive }) => cx('nav-item', { active: isActive })}>
-                        <TbTargetArrow className={cx('icon')} />
+                        <RiAiGenerate2 className={cx('icon')} />
                         <span className={cx('label')}>Phân tích CV bằng AI</span>
                     </NavLink>
                 </nav>

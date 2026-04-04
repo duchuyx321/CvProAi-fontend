@@ -11,6 +11,8 @@ import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
 import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
+import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
+import ManageTemplates from '~/pages/Admin/ManageTemplates';
 
 //  public router
 const PublicRouter = [
@@ -32,14 +34,28 @@ const PublicRouter = [
         layoutProps: { hideHeader: true, hideFooter: true }
     },
 
+
+
+//
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
         layout: AdminLayout,
     },
-
+    {
+        path: config.router.manageUsers,
+        component: ManageUsers,
+        layout: AdminLayout,
+    },
+    {
+        path: config.router.manageTemplates,
+        component: ManageTemplates,
+        layout: AdminLayout,
+    },
 
     
+
+//
     {
         path: config.router.userDashboard,
         component: UserDashboard,

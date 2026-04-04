@@ -72,7 +72,7 @@ function SidebarAdmin() {
                         <span className={cx('label')}>Trang tổng quan</span>
                     </NavLink>
 
-                    <NavLink to="/admin/users" className={({ isActive }) => cx('nav-item', { active: isActive })}>
+                    <NavLink to="/admin/manage-users" className={({ isActive }) => cx('nav-item', { active: isActive })}>
                         <FiUsers className={cx('icon')} />
                         <span className={cx('label')}>Quản lý tài khoản</span>
                     </NavLink>
