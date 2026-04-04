@@ -37,49 +37,47 @@ function ForgotPasswordLeft() {
         try {
             setSubmitting(true);
 
-            const forgotPasswordPromise = resendOTP(emailValue).then((result) => {
-                if (!result?.success) {
-                    throw new Error(result?.message || 'Gửi mã OTP thất bại');
-                }
+            const resultFetchAPi = fetchAPI(email);
 
-                return result;
-            });
-
-            const result = await toast.promise(forgotPasswordPromise, {
+            await toast.promise(resultFetchAPi, {
                 pending: 'Đang gửi mã OTP...',
                 success: {
+                    // eslint-disable-next-line no-unused-vars
                     render({ data }) {
-                        return data?.message || 'Đã gửi mã OTP thành công';
+                        return 'Đã gửi mã OTP cập nhật mật khẩu thành công';
                     },
                 },
                 error: {
                     render({ data }) {
-                        return data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau';
+                        return (
+                            data?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau'
+                        );
                     },
                 },
             });
 
-            if (result?.success) {
-                localStorage.setItem('reset.email', emailValue);
-                localStorage.setItem('reset.purpose', 'forgot_password');
-
-                setTimeout(() => {
-                    navigate(config.router.otp_verify, {
-                        state: {
-                            email: emailValue,
-                            autoStartCountdown: true,
-                            from: 'FORGOT_PASSWORD',
-                        },
-                    });
-                }, 800);
-            }
+            setTimeout(() => {
+                navigate(config.router.otp_verify, {
+                    state: {
+                        email: emailValue,
+                        autoStartCountdown: true,
+                        from: 'RESET_PASSWORD',
+                    },
+                });
+            }, 800);
         } catch (error) {
             console.error('Forgot password error:', error);
         } finally {
             setSubmitting(false);
         }
     };
-
+    const fetchAPI = async (email) => {
+        const result = await resendOTP(email);
+        if (!result.success) {
+            throw new Error(result.message);
+        }
+    };
     return (
         <form className={cx('form')} onSubmit={handleSubmit}>
             <Input

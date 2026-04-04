@@ -7,7 +7,17 @@ import VerifyOTP from '~/pages/VerifyOTP';
 import ForgotPassword from '~/pages/ForgotPassword';
 import VerifySuccess from '~/pages/VerifySuccess';
 
-//  public router
+import AdminDashboard from '~/pages/Admin/AdminDashboard';
+import AdminLayout from '~/layouts/AdminLayout';
+
+import UserDashboard from '~/pages/User/UserDashboard';
+import DefaultLayout from '~/layouts/DefaultLayout';
+import CvTemplates from '~/pages/User/CvTemplates';
+import MyCvs from '~/pages/User/MyCvs';
+import UpgradePremium from '~/pages/User/UpgradePremium';
+import AiAnalysis from '~/pages/User/AiAnalysis';
+
+// public router
 const PublicRouter = [
     {
         path: config.router.home,
@@ -53,9 +63,41 @@ const PublicRouter = [
 ];
 
 // user router
-const UserRouter = [];
+const UserRouter = [
+    {
+        path: config.router.userDashboard,
+        component: UserDashboard,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.cvTemplates,
+        component: CvTemplates,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.myCvs,
+        component: MyCvs,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.aiAnalysis,
+        component: AiAnalysis,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.upgradePremium,
+        component: UpgradePremium,
+        layout: DefaultLayout,
+    },
+];
 
 // admin router
-const AdminRouter = [];
+const AdminRouter = [
+    {
+        path: config.router.adminDashboard,
+        component: AdminDashboard,
+        layout: AdminLayout,
+    },
+];
 
 export { PublicRouter, UserRouter, AdminRouter };

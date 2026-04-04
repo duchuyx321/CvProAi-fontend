@@ -9,11 +9,11 @@ import styles from './VerifySuccess.module.scss';
 const cx = classNames.bind(styles);
 
 const MENU_CONTENT = {
-    verify: {
+    VERIFY_EMAIL: {
         title: 'Xác minh email thành công',
         desc: 'Địa chỉ email của bạn đã được xác minh an toàn. Bây giờ bạn có thể đăng nhập và bắt đầu tạo CV chuyên nghiệp.',
     },
-    reset: {
+    RESET_PASSWORD: {
         title: 'Cấp mật khẩu thành công',
         desc: 'Hệ thống đã tạo mật khẩu mới và gửi đến email của bạn. Vui lòng kiểm tra hộp thư để lấy mật khẩu và tiến hành đăng nhập.',
     },
@@ -23,8 +23,8 @@ function VerifySuccessLeft() {
     const navigate = useNavigate();
     const { state } = useLocation();
 
-    const formType = state?.form;
-    const content = MENU_CONTENT[formType] || MENU_CONTENT.verify;
+    const formType = state?.from;
+    const content = MENU_CONTENT[formType] || MENU_CONTENT.VERIFY_EMAIL;
 
     const handleClick = () => {
         navigate(config.router.login);

@@ -7,9 +7,13 @@ import VerifySuccessLeft from './VerifySuccessLeft';
 function VerifySuccess() {
     const { state } = useLocation();
 
-    const formType = state?.form;
+    const formType = state?.from;
     const rightContent =
-        formType === 'reset' ? <ForgotPasswordRight /> : <RegisterRight />;
+        formType === 'RESET_PASSWORD' ? (
+            <ForgotPasswordRight />
+        ) : (
+            <RegisterRight />
+        );
 
     return (
         <AuthContainer
