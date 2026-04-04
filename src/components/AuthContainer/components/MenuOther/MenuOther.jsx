@@ -7,6 +7,9 @@ import { toast } from 'react-toastify';
 
 import Button from '~/components/Button';
 import styles from './MenuOther.module.scss';
+import { config } from '~/config';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '~/context/AuthContext';
 
 const cx = classNames.bind(styles);
 
@@ -26,7 +29,8 @@ const MENU_OTHER = [
 ];
 
 function MenuOther({ text = 'Hoặc tiếp tục với' }) {
-
+    const { initializeAuth } = useAuth();
+    const navigate = useNavigate();
     const BACKEND_ORIGIN = useMemo(() => {
         try {
             return new URL(SERVER_URL).origin;
@@ -77,11 +81,16 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
                     const accessToken = event.data?.data?.accessToken;
 
                     if (accessToken) {
-                        localStorage.setItem('accessToken', accessToken);
+                        localStorage.setItem(
+                            'accessToken',
+                            `Bearer ${accessToken}`,
+                        );
                     }
 
                     popup.close();
-                    resolve(event.data?.data || { message: 'Đăng nhập thành công' });
+                    resolve(
+                        event.data?.data || { message: 'Đăng nhập thành công' },
+                    );
                     return;
                 }
 
@@ -107,7 +116,7 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
         try {
             const loginPromise = openPopupLogin('google');
 
-            const result = await toast.promise(loginPromise, {
+            await toast.promise(loginPromise, {
                 pending: 'Đang đăng nhập với Google...',
                 success: {
                     render({ data }) {
@@ -124,8 +133,9 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
                     },
                 },
             });
-
-            window.location.replace('/');
+            await initializeAuth();
+            // window.location.replace(config.router.dashboard);
+            navigate(config.router.home);
         } catch (error) {
             console.error('Google login error:', error);
         }

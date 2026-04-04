@@ -1,69 +1,108 @@
+/* eslint-disable no-unused-vars */
 import classNames from 'classnames/bind';
 import styles from './VerifyOTP.module.scss';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '~/components/Button';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { validateOtpForm } from '~/utils/auth.validator';
 import { toast } from 'react-toastify';
 import { config } from '~/config';
-import { verifyOTP } from '~/services/auth.service';
+import { resendOTP, verifyOTP } from '~/services/auth.service';
+import { useAuth } from '~/context/AuthContext';
 
 const cx = classNames.bind(styles);
 
 const MENU_CONTENT = {
-    verify: {
+    VERIFY_EMAIL: {
         title: 'Xác Thực email của bạn',
         text1: 'Chúng tôi đã gửi mã xác nhận gồm 6 chữ số đến',
         text2: 'Vui lòng nhập mã vào bên dưới để hoàn tất đăng ký.',
     },
-    reset: {
+    RESET_PASSWORD: {
         title: 'Xác thực tài khoản',
         text1: 'Chúng tôi đã gửi mã gồm 6 chữ số đến',
         text2: 'Vui lòng nhập mã đó vào bên dưới để đặt lại mật khẩu.',
     },
 };
 
-const OTP_LENGTH = 6;
-const DEFAULT_COUNTDOWN = 60;
-
 function VerifyOTPLeft() {
     const { state } = useLocation();
+    const OTP_LENGTH = Math.max(
+        1,
+        Number.parseInt(import.meta.env.VITE_OTP_LENGTH, 10) || 6,
+    );
+    const DEFAULT_COUNTDOWN = Math.max(
+        1,
+        Number.parseInt(import.meta.env.VITE_DEFAULT_COUNTDOWN, 10) || 60,
+    );
 
-    const formType = state?.form;
+    const formType = state?.from;
     const email = state?.email || 'nguyenvana@gmail.com';
-    const content = MENU_CONTENT[formType] || MENU_CONTENT.verify;
-
     const storageKey = `otp-countdown-started-${formType}-${email}`;
-
+    const content = MENU_CONTENT[formType] || MENU_CONTENT.VERIFY_EMAIL;
+    const { initializeAuth } = useAuth();
     const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
     const [countdown, setCountdown] = useState(0);
     const [loadingResend, setLoadingResend] = useState(false);
+
     const inputRefs = useRef([]);
+    const navigate = useNavigate();
 
     const isOtpComplete = otp.every((item) => item !== '');
-
+    const startCountdown = useCallback(() => {
+        const expiresAt = Date.now() + DEFAULT_COUNTDOWN * 1000;
+        sessionStorage.setItem(storageKey, String(expiresAt));
+        setCountdown(DEFAULT_COUNTDOWN);
+    }, [storageKey]);
     useEffect(() => {
-        const started = sessionStorage.getItem(storageKey);
+        const expiresAt = Number(sessionStorage.getItem(storageKey));
 
-        if (state?.autoStartCountdown && !started) {
-            setCountdown(DEFAULT_COUNTDOWN);
-            sessionStorage.setItem(storageKey, 'true');
+        if (expiresAt) {
+            const remain = Math.ceil((expiresAt - Date.now()) / 1000);
+
+            if (remain > 0) {
+                setCountdown(remain);
+                return;
+            }
+
+            sessionStorage.removeItem(storageKey);
+            setCountdown(0);
+            return;
         }
-    }, [state?.autoStartCountdown, storageKey]);
+
+        if (state?.autoStartCountdown) {
+            startCountdown();
+        }
+    }, [startCountdown, state?.autoStartCountdown, storageKey]);
 
     useEffect(() => {
         if (countdown <= 0) return;
 
         const timer = setInterval(() => {
-            setCountdown((prev) => prev - 1);
+            const expiresAt = Number(sessionStorage.getItem(storageKey));
+
+            if (!expiresAt) {
+                setCountdown(0);
+                clearInterval(timer);
+                return;
+            }
+
+            const remain = Math.ceil((expiresAt - Date.now()) / 1000);
+
+            if (remain <= 0) {
+                sessionStorage.removeItem(storageKey);
+                setCountdown(0);
+                clearInterval(timer);
+                return;
+            }
+
+            setCountdown(remain);
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [countdown]);
+    }, [countdown, storageKey]);
 
     const handleChange = (value, index) => {
-        if (!/^\d?$/.test(value)) return;
-
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
@@ -103,10 +142,7 @@ function VerifyOTPLeft() {
     const handlePaste = (e) => {
         e.preventDefault();
 
-        const pastedData = e.clipboardData
-            .getData('text')
-            .replace(/\D/g, '')
-            .slice(0, OTP_LENGTH);
+        const pastedData = e.clipboardData.getData('text').slice(0, OTP_LENGTH);
 
         if (!pastedData) return;
 
@@ -131,11 +167,11 @@ function VerifyOTPLeft() {
         try {
             setLoadingResend(true);
 
-            // call api resend here
-            // await resendOtp({ email, form: formType });
+            await resendOTP(email);
 
             toast.success('Gửi lại mã thành công');
-            setCountdown(DEFAULT_COUNTDOWN);
+            startCountdown();
+            // eslint-disable-next-line no-unused-vars
         } catch (error) {
             toast.error('Gửi lại mã thất bại');
         } finally {
@@ -151,9 +187,56 @@ function VerifyOTPLeft() {
             toast.warning(validate);
             return;
         }
-
         // call api verify here
-        const verifyOTP = await verifyOTP(email, formType, otpCode);
+        console.log(formType);
+        const verifyPromise = fetchAPISubmid(email, formType, otpCode);
+        await toast.promise(verifyPromise, {
+            pending: 'Đang xác thực OTP...',
+            success: {
+                render() {
+                    return formType === 'VERIFY_EMAIL'
+                        ? 'Xác thực Email thành công.'
+                        : formType === 'RESET_PASSWORD'
+                          ? 'Cấp lại mật khẩu thành công.'
+                          : 'Xác thực OTP thành công';
+                },
+            },
+            error: {
+                render({ data }) {
+                    return 'Mã OTP không hợp lệ hoặc đã hết hạn.';
+                },
+            },
+        });
+        if (formType === 'VERIFY_EMAIL') {
+            await initializeAuth();
+            setTimeout(() => {
+                // window.location.replace(config.router.home);
+                navigate(config.router.home);
+            }, 800);
+        } else if (formType === 'RESET_PASSWORD') {
+            setTimeout(() => {
+                // window.location.replace(config.router.home);
+                // navigate(config.router.dashboard);
+            }, 800);
+        }
+    };
+    const fetchAPISubmid = async (email, purpose, otp) => {
+        const result = await verifyOTP({
+            email,
+            purpose,
+            otp,
+        });
+        if (!result.success && result.status !== 200) {
+            throw new Error(result.message);
+        }
+        const accessToken =
+            result?.data?.meta?.accessToken ||
+            result?.data?.accessToken ||
+            null;
+
+        if (accessToken) {
+            localStorage.setItem('accessToken', `Bearer ${accessToken}`);
+        }
     };
 
     return (
@@ -213,12 +296,13 @@ function VerifyOTPLeft() {
                 </div>
 
                 {formType === 'reset' && (
-                    <Link
+                    <Button
+                        small
                         to={config.router.forgotPassword}
                         className={cx('btn_setEmail')}
                     >
                         Sai email? Thay đổi
-                    </Link>
+                    </Button>
                 )}
             </div>
         </div>
