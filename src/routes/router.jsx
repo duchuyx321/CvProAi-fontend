@@ -4,6 +4,8 @@ import Login from '~/pages/Login';
 import Register from '~/pages/Register';
 import Home from '~/pages/Home';
 import VerifyOTP from '~/pages/VerifyOTP';
+import ForgotPassword from '~/pages/ForgotPassword';
+import VerifySuccess from '~/pages/VerifySuccess';
 
 //  public router
 const PublicRouter = [
@@ -33,6 +35,18 @@ const PublicRouter = [
     {
         path: config.router.reset_pass,
         component: VerifyOTP,
+        layout: PublicLayout,
+        layoutProps: { hideHeader: true, hideFooter: true },
+    },
+    {
+        path: config.router.verify_success,
+        component: VerifySuccess,
+        layout: PublicLayout,
+        layoutProps: { hideHeader: true, hideFooter: true },
+    },
+    {
+        path: config.router.forgot_password,
+        component: ForgotPassword,
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },

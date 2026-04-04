@@ -6,6 +6,8 @@ export const router = {
     forgotPassword: '/forgot-password',
     otp_verify: '/otp/verify',
     reset_pass: '/otp/reset',
+    verify_success: '/verify/success',
+    forgot_password: '/forgot-password',
     // User
     dashboard: '/dashboard',
 
