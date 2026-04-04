@@ -52,13 +52,19 @@
 
 .action {
     width: 100%;
-    margin-top: 34px;
+    margin: 34px 0;
+    & > p {
+        margin-top: 12px;
+        color: #64748b;
+        font-size: 12px;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
 }
 
 .submit {
     height: 45px;
     border-radius: 10px;
-    margin-bottom: 50px;
     &:hover {
         transform: translateY(-1px);
     }

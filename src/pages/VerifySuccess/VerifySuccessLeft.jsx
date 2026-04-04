@@ -5,6 +5,7 @@ import { FaCheck } from 'react-icons/fa6';
 import { config } from '~/config';
 import Button from '~/components/Button';
 import styles from './VerifySuccess.module.scss';
+import { useEffect, useState } from 'react';
 
 const cx = classNames.bind(styles);
 
@@ -22,9 +23,21 @@ const MENU_CONTENT = {
 function VerifySuccessLeft() {
     const navigate = useNavigate();
     const { state } = useLocation();
-
+    const [countdown, setCountdown] = useState(5);
     const formType = state?.from;
     const content = MENU_CONTENT[formType] || MENU_CONTENT.VERIFY_EMAIL;
+    useEffect(() => {
+        if (countdown === 0) {
+            navigate(config.router.login);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            setCountdown((prev) => prev - 1);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [countdown, navigate]);
 
     const handleClick = () => {
         navigate(config.router.login);
@@ -53,6 +66,10 @@ function VerifySuccessLeft() {
                 >
                     Đi tới Đăng nhập
                 </Button>
+                <p>
+                    {`Hệ thống tự động chuyển tiếp đến trang đăng nhập sau 
+                    ${countdown}s`}
+                </p>
             </div>
         </div>
     );
