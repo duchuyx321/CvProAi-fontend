@@ -16,6 +16,18 @@ export const validateRegex = {
         regex: /^[A-HJ-NP-Za-km-z2-9]{6}$/,
         message: 'Mã OTP không hợp lệ',
     },
+    phone: {
+        regex: /^(0|\+84)\d{9,10}$/,
+        message: 'Số điện thoại không hợp lệ',
+    },
+    username: {
+        regex: /^[a-zA-Z0-9._-]{4,30}$/,
+        message: 'Tên người dùng không hợp lệ',
+    },
+    bio: {
+        regex: /^.{0,300}$/,
+        message: 'Giới thiệu không được vượt quá 300 ký tự',
+    },
 };
 
 const getValue = (value = '') => value.trim();

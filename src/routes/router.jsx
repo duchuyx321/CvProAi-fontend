@@ -14,6 +14,11 @@ import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
 import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
+import Profile from '~/pages/User/Profile';
+import Security from '~/pages/User/Security';
+import DetailLayout from '~/layouts/DetailLayout';
+import Package from '~/pages/User/Package';
+import History from '~/pages/User/History';
 
 //  public router
 const PublicRouter = [
@@ -78,6 +83,27 @@ const PublicRouter = [
         component: UpgradePremium,
         layout: DefaultLayout,
     },
+    {
+        path: config.router.profile,
+        component: Profile,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.security,
+        component: Security,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.package,
+        component: Package,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.history,
+        component: History,
+        layout: DetailLayout,
+    },
+
 ];
 
 // user router
