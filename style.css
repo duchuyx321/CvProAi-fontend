@@ -1,0 +1,39 @@
+.cv-grid {
+    display: grid;
+    grid-template-columns: 4fr 8fr;
+    min-height: 100vh;
+}
+
+.cv-sidebar {
+    background: #f5f5f5;
+    padding: 20px;
+}
+
+.cv-main {
+    padding: 20px;
+}
+
+.avatar-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+}
+
+.cv-block {
+    margin-bottom: 20px;
+}
+
+.skill-bar {
+    display: flex;
+    gap: 4px;
+}
+
+.skill-bar div {
+    width: 20px;
+    height: 6px;
+    background: #ddd;
+}
+
+.skill-bar .active {
+    background: #4caf50;
+}

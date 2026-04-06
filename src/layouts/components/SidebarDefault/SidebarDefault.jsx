@@ -2,15 +2,49 @@ import React from 'react';
 import classNames from 'classnames/bind';
 import { NavLink } from 'react-router-dom';
 import styles from './SidebarDefault.module.scss';
+import images from '~/assets';
 
 import { CgProfile } from 'react-icons/cg';
 import { FiAward } from 'react-icons/fi';
 import { IoDocumentTextOutline } from 'react-icons/io5';
-import images from '~/assets';
 import { GoHome } from 'react-icons/go';
 import { RiAiGenerate2, RiFolderUserLine } from 'react-icons/ri';
+import { config } from '~/config';
 
 const cx = classNames.bind(styles);
+
+const MAIN_MENU = [
+    { title: 'Trang chủ', to: config.router.userDashboard, Icon: GoHome },
+    {
+        title: 'Mẫu CV',
+        to: config.router.cvTemplates,
+        Icon: IoDocumentTextOutline,
+    },
+    {
+        title: 'CV của tôi',
+        to: config.router.myCvs,
+        Icon: RiFolderUserLine,
+    },
+    {
+        title: 'Phân tích CV bằng AI',
+        to: config.router.aiAnalysis,
+        Icon: RiAiGenerate2,
+    },
+];
+
+const ACCOUNT_MENU = [
+    {
+        title: 'Nâng cấp Premium',
+        to: config.router.upgradePremium,
+        Icon: FiAward,
+        isGold: true,
+    },
+    { 
+        title: 'Hồ sơ cá nhân', 
+        to: config.router.userProfile, 
+        Icon: CgProfile 
+    },
+];
 
 function SidebarDefault() {
     return (
@@ -33,73 +67,50 @@ function SidebarDefault() {
 
             <div className={cx('menu-section')}>
                 <nav className={cx('nav-menu')}>
-                    <NavLink
-                        to="/user/dashboard"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <GoHome className={cx('icon')} />
-                        <span className={cx('label')}>Trang chủ</span>
-                    </NavLink>
-
-                    <NavLink
-                        to="/user/templates"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <IoDocumentTextOutline className={cx('icon')} />
-                        <span className={cx('label')}>Mẫu CV</span>
-                    </NavLink>
-
-                    <NavLink
-                        to="/user/my-cvs"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <RiFolderUserLine className={cx('icon')} />
-                        <span className={cx('label')}>CV của tôi</span>
-                    </NavLink>
-
-                    <NavLink
-                        to="/user/ai-analysis"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <RiAiGenerate2 className={cx('icon')} />
-                        <span className={cx('label')}>
-                            Phân tích CV bằng AI
-                        </span>
-                    </NavLink>
+                    {MAIN_MENU.map((item, index) => {
+                        const Icon = item.Icon;
+                        return (
+                            <NavLink
+                                key={index}
+                                to={item.to}
+                                className={({ isActive }) =>
+                                    cx('nav-item', { active: isActive })
+                                }
+                            >
+                                <Icon className={cx('icon')} />
+                                <span className={cx('label')}>
+                                    {item.title}
+                                </span>
+                            </NavLink>
+                        );
+                    })}
                 </nav>
 
                 <div className={cx('dividerTitle')}></div>
-
                 <div className={cx('group-title')}>TÀI KHOẢN</div>
 
                 <nav className={cx('nav-menu')}>
-                    <NavLink
-                        to="/user/upgrade-premium"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <FiAward className={cx('icon', 'icon-gold')} />
-                        <span className={cx('label')}>Nâng cấp Premium</span>
-                    </NavLink>
-
-                    <NavLink
-                        to="/profile"
-                        className={({ isActive }) =>
-                            cx('nav-item', { active: isActive })
-                        }
-                    >
-                        <CgProfile className={cx('icon')} />
-                        <span className={cx('label')}>Hồ sơ cá nhân</span>
-                    </NavLink>
+                    {ACCOUNT_MENU.map((item, index) => {
+                        const Icon = item.Icon;
+                        return (
+                            <NavLink
+                                key={index}
+                                to={item.to}
+                                className={({ isActive }) =>
+                                    cx('nav-item', { active: isActive })
+                                }
+                            >
+                                <Icon
+                                    className={cx('icon', {
+                                        'icon-gold': item.isGold,
+                                    })}
+                                />
+                                <span className={cx('label')}>
+                                    {item.title}
+                                </span>
+                            </NavLink>
+                        );
+                    })}
                 </nav>
             </div>
 
