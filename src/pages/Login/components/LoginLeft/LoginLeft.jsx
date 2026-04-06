@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { MdOutlineEmail, MdOutlineLock } from 'react-icons/md';
 import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-
 
 import { config } from '~/config';
 import Button from '~/components/Button';
@@ -11,16 +10,33 @@ import Input from '~/components/Input';
 import { login } from '~/services/auth.service';
 import { validateLoginForm } from '~/utils/auth.validator';
 import styles from './LoginLeft.module.scss';
+import { helper } from '~/utils/helper';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '~/context/AuthContext';
 
 const cx = classNames.bind(styles);
-
+const connective = import.meta.env.VITE_CONNECTIVE;
 function LoginLeft() {
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [remember, setRemember] = useState(false);
     const [isEye, setIsEye] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const { initializeAuth } = useAuth();
+    useEffect(() => {
+        const rememberLocal = localStorage.getItem('remember');
+        if (rememberLocal) {
+            const textRemember = helper.decryptValidate(rememberLocal);
+            const [emailRemember, passwordRemember] =
+                textRemember.split(connective);
+            setEmail(emailRemember);
+            setPassword(passwordRemember);
+            setRemember(true);
+            return;
+        }
+        setRemember(false);
+    }, []);
 
     const isDisabled = useMemo(() => {
         return submitting || !email.trim() || !password.trim();
@@ -41,15 +57,8 @@ function LoginLeft() {
         try {
             setSubmitting(true);
 
-            const loginPromise = login(email, password).then((result) => {
-                if (!result?.success) {
-                    throw new Error(result?.message || 'Đăng nhập thất bại');
-                }
-
-                return result;
-            });
-
-            const result = await toast.promise(loginPromise, {
+            const loginPromise = fetchAPI(email, password);
+            await toast.promise(loginPromise, {
                 pending: 'Đang đăng nhập...',
                 success: {
                     render({ data }) {
@@ -58,30 +67,19 @@ function LoginLeft() {
                 },
                 error: {
                     render({ data }) {
-                        return data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau';
+                        return (
+                            data?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau'
+                        );
                     },
                 },
             });
 
-            const accessToken =
-                result?.data?.meta?.newAccessToken ||
-                result?.data?.accessToken ||
-                null;
-
-            if (accessToken) {
-                localStorage.setItem('accessToken', accessToken);
-            }
-
-            if (remember) {
-                localStorage.setItem('auth.rememberedIdentifier', email.trim());
-            } else {
-                localStorage.removeItem('auth.rememberedIdentifier');
-            }
-
             setIsEye(false);
-
+            await initializeAuth();
             setTimeout(() => {
-                window.location.replace(config.router.home);
+                // window.location.replace(config.router.home);
+                navigate(config.router.home); //dashboard
             }, 800);
         } catch (error) {
             console.log('Login error:', error);
@@ -89,7 +87,51 @@ function LoginLeft() {
             setSubmitting(false);
         }
     };
+    const fetchAPI = async (email, password) => {
+        const result = await login(email, password);
+        if (!result?.success) {
+            if (result?.status === 403) {
+                setTimeout(
+                    () =>
+                        navigate(config.router.otp_verify, {
+                            state: {
+                                email,
+                                autoStartCountdown: false,
+                                from: 'VERIFY_EMAIL',
+                            },
+                        }),
+                    2000,
+                );
+                throw new Error(result?.message);
+            }
+            throw new Error(result?.message || 'Đăng nhập thất bại');
+        }
+        const accessToken =
+            result?.data?.meta?.accessToken ||
+            result?.data?.accessToken ||
+            null;
 
+        if (accessToken) {
+            localStorage.setItem('accessToken', `Bearer ${accessToken}`);
+        }
+
+        if (remember) {
+            const text = `${email}${connective}${password}`;
+            const hash_remember = helper.hashValidate(text);
+            localStorage.setItem('remember', hash_remember);
+        }
+        if (!remember && localStorage.getItem('remember')) {
+            localStorage.removeItem('remember');
+        }
+    };
+    const navigateForgotPassword = (e) => {
+        e.preventDefault();
+        navigate(config.router.forgotPassword, {
+            email,
+            autoStartCountdown: true,
+            from: 'RESET_PASSWORD',
+        });
+    };
     return (
         <form className={cx('form')} onSubmit={handleSubmit}>
             <Input
@@ -139,12 +181,14 @@ function LoginLeft() {
                         className={cx('checkboxInput')}
                         disabled={submitting}
                     />
-                    <span className={cx('checkboxText')}>Ghi nhớ đăng nhập</span>
+                    <span className={cx('checkboxText')}>
+                        Ghi nhớ đăng nhập
+                    </span>
                 </label>
 
                 <Button
                     text
-                    to={config.router.forgotPassword}
+                    onClick={(e) => navigateForgotPassword(e)}
                     className={cx('forgot')}
                 >
                     Quên mật khẩu?

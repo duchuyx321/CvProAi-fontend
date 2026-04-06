@@ -1,9 +1,10 @@
-import classNames from "classnames/bind";
-import Footer from "../components/Footer";
-import styles from "./PublicLayout.module.scss";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import HeaderPublic from "../components/HeaderPublic/HeaderPublic";
+
+import classNames from 'classnames/bind';
+import HeaderDefault from '../components/HeaderDefault';
+import styles from './PublicLayout.module.scss';
+import { ToastContainer, } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import FooterDefault from '../components/FooterDefault';
 const cx = classNames.bind(styles);
 
 function PublicLayout({ children, hideHeader = false, hideFooter = false }) {
@@ -14,7 +15,7 @@ function PublicLayout({ children, hideHeader = false, hideFooter = false }) {
       <main className={cx("content", { "content--full": hideHeader })}>
         {children}
       </main>
-      {!hideFooter && <Footer />}
+      {!hideFooter && <FooterDefault />}
     </div>
   );
 }

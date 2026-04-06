@@ -5,8 +5,9 @@ export const login = async (email, password) => {
         const res = await Response.POST('auth/login', { email, password });
         return res;
     } catch (error) {
+        const status = error?.status || error?.response?.status;
         const data = error?.response?.data;
-        return data;
+        return { ...data, status };
     }
 };
 
@@ -16,22 +17,12 @@ export const register = async ({ full_name, email, password }) => {
             email,
             password,
             full_name,
-           
         });
         return res;
     } catch (error) {
+        const status = error?.status || error?.response?.status;
         const data = error?.response?.data;
-        return data;
-    }
-};
-
-export const refresh = async () => {
-    try {
-        const res = await Response.POST('auth/refresh');
-        return res;
-    } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        return { ...data, status };
     }
 };
 
@@ -40,7 +31,34 @@ export const logout = async () => {
         const res = await Response.POST('auth/logout');
         return res;
     } catch (error) {
+        const status = error?.status || error?.response?.status;
         const data = error?.response?.data;
-        return data;
+        return { ...data, status };
+    }
+};
+export const resendOTP = async (email) => {
+    try {
+        const res = await Response.POST('auth/otp/resend', {
+            email,
+        });
+        return res;
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};
+export const verifyOTP = async ({ email, purpose = 'VERIFY_EMAIL', otp }) => {
+    try {
+        const res = await Response.POST('auth/otp/verify', {
+            email,
+            purpose,
+            otp,
+        });
+        return res;
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
     }
 };

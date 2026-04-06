@@ -1,5 +1,4 @@
-
-const validateRegex = {
+export const validateRegex = {
     fullName: {
         regex: /^[\p{L} ]{2,50}$/u,
         message: 'Họ tên không hợp lệ',
@@ -10,20 +9,18 @@ const validateRegex = {
     },
     password: {
         regex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$/,
-        message: 'Mật khẩu phải có 8-20 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
+        message:
+            'Mật khẩu phải có 8-20 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
     },
     otp: {
-        regex: /^\d{6}$/,
+        regex: /^[A-HJ-NP-Za-km-z2-9]{6}$/,
         message: 'Mã OTP không hợp lệ',
     },
 };
 
 const getValue = (value = '') => value.trim();
 
-export function validateLoginForm({
-    email = '',
-    password = '',
-}) {
+export function validateLoginForm({ email = '', password = '' }) {
     const payload = { email, password };
 
     for (const key in payload) {
@@ -93,5 +90,3 @@ export function validateResetPasswordForm({
 
     return '';
 }
-
-export { validateRegex };
