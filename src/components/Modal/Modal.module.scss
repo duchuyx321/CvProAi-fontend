@@ -1,0 +1,128 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(15, 23, 42, 0.55);
+}
+
+.modal {
+    width: 100%;
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
+    animation: modalFadeIn 0.2s ease;
+}
+
+.size-sm {
+    max-width: 420px;
+}
+
+.size-md {
+    max-width: 560px;
+}
+
+.size-lg {
+    max-width: 760px;
+}
+
+.size-xl {
+    max-width: 960px;
+}
+
+.size-full {
+    max-width: calc(100vw - 48px);
+    height: calc(100vh - 48px);
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.headerContent {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.description {
+    margin: 0;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    color: #6b7280;
+}
+
+.title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #111827;
+}
+
+.closeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background-color: #f3f4f6;
+    color: #111827;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #e5e7eb;
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-size: 1.4rem;
+    color: #374151;
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    // border-top: 1px solid #e5e7eb;
+    background-color: #fff;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -16,7 +16,10 @@ export const router = {
     myCvs: '/user/my-cvs',
     aiAnalysis: '/user/ai-analysis',
     upgradePremium: '/user/upgrade-premium',
-
+    profile: '/user/profile',
+    security: '/user/security',
+    package: '/user/package',
+    history: '/user/history',
     // Admin
     adminDashboard: '/admin/dashboard',
 };
