@@ -1,77 +1,43 @@
-import { Link, NavLink } from 'react-router-dom';
+import { useMemo } from 'react';
 import classNames from 'classnames/bind';
+
 import { useAuth } from '~/context/AuthContext';
-import images from '~/assets';
-import { config } from '~/config';
+import UserActions from '../UserActions';
 import styles from './HeaderDefault.module.scss';
-import Button from '~/components/Button';
-import UserActions from './components/UserActions';
 
 const cx = classNames.bind(styles);
 
-const LIST_NAVBAR = [
-    { title: 'Trang chủ', to: config.router.home },
-    { title: 'Tính năng', to: config.router.features },
-    { title: 'Bảng giá', to: config.router.pricing },
-];
-
 function HeaderDefault() {
-    const { isAuthenticated, user, isInitialized } = useAuth();
+    const { user } = useAuth();
+
+    const displayName =
+        user?.full_name ||
+        user?.fullName ||
+        user?.name ||
+        '';
+
+    const dateString = useMemo(() => {
+        const today = new Date();
+
+        return new Intl.DateTimeFormat('vi-VN', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        }).format(today);
+    }, []);
 
     return (
-        <header className={cx('wrapper')}>
-            <div className={cx('inner')}>
-                <h1 className={cx('logo')}>
-                    <Link to={config.router.home} className={cx('logo-link')}>
-                        <img
-                            src={images.logo}
-                            alt="CvProAI Logo"
-                            className={cx('logo-img')}
-                        />
-                        <div className={cx('logo-texts')}>
-                            <span className={cx('logo-name')}>CvProAI</span>
-                            <span className={cx('logo-sub')}>
-                                Hệ thống tạo CV bằng AI
-                            </span>
-                        </div>
-                    </Link>
-                </h1>
+        <header className={cx('header')}>
+            <div className={cx('greetingWrapper')}>
+                <h2 className={cx('greetingTitle')}>
+                    Xin chào, {displayName} 👋
+                </h2>
+                <p className={cx('greetingDate')}>{dateString}</p>
+            </div>
 
-                <nav className={cx('nav')}>
-                    {LIST_NAVBAR.map((link, index) => (
-                        <NavLink
-                            key={index}
-                            to={link.to}
-                            end
-                            className={({ isActive }) =>
-                                cx('nav-link', { active: isActive })
-                            }
-                        >
-                            {link.title}
-                        </NavLink>
-                    ))}
-                </nav>
-
-                <div className={cx('right')}>
-                    {!isInitialized ? null : isAuthenticated ? (
-                        <div className={cx('user-area')}>
-                            <UserActions user={user} />
-                        </div>
-                    ) : (
-                        <div className={cx('actions')}>
-                            <div className={cx('btnLogin')}>
-                                <Button outline to={config.router.login}>
-                                    Đăng nhập
-                                </Button>
-                            </div>
-                            <div className={cx('btnRegister')}>
-                                <Button primary to={config.router.register}>
-                                    Đăng ký
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+            <div className={cx('actions')}>
+                <UserActions user={user} />
             </div>
         </header>
     );

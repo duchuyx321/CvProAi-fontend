@@ -3,6 +3,7 @@ import styles from './BannerSection.module.scss';
 import images from '~/assets';
 import Button from '~/components/Button';
 import { BsStars } from "react-icons/bs";
+import { config } from '~/config';
 const cx = classNames.bind(styles);
 
 function BannerSection() {
@@ -29,7 +30,7 @@ function BannerSection() {
                     <div className={cx('cta-group')}>
                         <Button
                             primary
-                            to="/tao-cv"
+                            to={config.router.cvSample}
                             className={cx('btnPrimary')}
                         >
                             Tạo CV ngay
@@ -37,7 +38,7 @@ function BannerSection() {
 
                         <Button
                             outline
-                            to="/phan-tich"
+                            to={config.router.aiAnalysis}
                             className={cx('btnSecondary')}
                         >
                             Phân tích CV bằng AI

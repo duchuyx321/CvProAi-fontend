@@ -1,10 +1,9 @@
 import React from 'react';
 import classNames from 'classnames/bind';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import styles from './SidebarDefault.module.scss';
 import images from '~/assets';
 
-import { CgProfile } from 'react-icons/cg';
 import { FiAward } from 'react-icons/fi';
 import { IoDocumentTextOutline } from 'react-icons/io5';
 import { GoHome } from 'react-icons/go';
@@ -14,7 +13,7 @@ import { config } from '~/config';
 const cx = classNames.bind(styles);
 
 const MAIN_MENU = [
-    { title: 'Trang chủ', to: config.router.userDashboard, Icon: GoHome },
+    { title: 'Trang chủ', to: config.router.dashboard, Icon: GoHome },
     {
         title: 'Mẫu CV',
         to: config.router.cvTemplates,
@@ -39,17 +38,13 @@ const ACCOUNT_MENU = [
         Icon: FiAward,
         isGold: true,
     },
-    { 
-        title: 'Hồ sơ cá nhân', 
-        to: config.router.userProfile, 
-        Icon: CgProfile 
-    },
 ];
 
 function SidebarDefault() {
     return (
         <aside className={cx('sidebar')}>
             <div className={cx('logo-section')}>
+                <Link to={config.router.home} className={cx('logo-link')}> 
                 <div className={cx('logo-icon')}>
                     <img
                         src={images.logo}
@@ -63,6 +58,7 @@ function SidebarDefault() {
                         Hệ thống tạo CV bằng AI
                     </span>
                 </div>
+                </Link>
             </div>
 
             <div className={cx('menu-section')}>

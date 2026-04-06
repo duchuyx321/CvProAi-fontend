@@ -10,7 +10,7 @@ import VerifySuccess from '~/pages/VerifySuccess';
 import AdminDashboard from '~/pages/Admin/AdminDashboard';
 import AdminLayout from '~/layouts/AdminLayout';
 
-import UserDashboard from '~/pages/User/UserDashboard';
+import Dashboard from '~/pages/User/Dashboard';
 import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
@@ -26,12 +26,23 @@ import Security from '~/pages/User/Security';
 import DetailLayout from '~/layouts/DetailLayout';
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
+import Pricing from '~/pages/Pricing';
 
 // public router
 const PublicRouter = [
     {
         path: config.router.home,
         component: Home,
+        layout: PublicLayout,
+    },
+    {
+        path: config.router.cvSample,
+        component: CvTemplates,
+        layout: PublicLayout,
+    },
+     {
+        path: config.router.pricing,
+        component: Pricing,
         layout: PublicLayout,
     },
     {
@@ -70,13 +81,10 @@ const PublicRouter = [
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },
-];
 
-// user router
-const UserRouter = [
-    {
-        path: config.router.userDashboard,
-        component: UserDashboard,
+     {
+        path: config.router.dashboard,
+        component: Dashboard,
         layout: DefaultLayout,
     },
     {
@@ -119,6 +127,12 @@ const UserRouter = [
         component: History,
         layout: DetailLayout,
     },
+];
+
+// user router
+const UserRouter = [
+   
+
 ];
 
 // admin router

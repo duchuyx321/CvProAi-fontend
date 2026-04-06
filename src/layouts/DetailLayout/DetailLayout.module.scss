@@ -25,15 +25,23 @@
 }
 
 .btn-back {
+    width: 42px;
+    height: 42px;
     display: inline-flex;
     align-items: center;
-    padding: 6px 0px;
+    justify-content: center;
     border: none;
     outline: none;
     background: transparent;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    color: #334155;
+    flex-shrink: 0;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        color 0.2s ease;
 
     &:hover {
         background-color: rgba(0, 0, 0, 0.05);

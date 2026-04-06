@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import classNames from 'classnames/bind';
-import styles from './UserDashboard.module.scss';
+import styles from './Dashboard.module.scss';
 import { FiFileText, FiDownload, FiMoreHorizontal, FiCheckCircle, FiEdit2, FiPlusCircle, FiArrowRight, FiAward } from 'react-icons/fi';
 import { LuBrainCircuit } from 'react-icons/lu';
 import { GrGenai } from 'react-icons/gr';
 
 const cx = classNames.bind(styles);
 
-function UserDashboard() {
+function Dashboard() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState({
@@ -20,13 +20,13 @@ function UserDashboard() {
         const fetchDashboardData = async () => {
             try {
                 setIsLoading(true);
-                
+
                 // const response = await axios.get('/api/v1/user/dashboard');
                 // setDashboardData(response.data);
 
                 // Giả lập API delay 0.5s 
                 await new Promise(resolve => setTimeout(resolve, 100));
-                
+
                 setDashboardData({
                     stats: {
                         totalCv: 24,
@@ -111,7 +111,7 @@ function UserDashboard() {
 
 
             <div className={cx('main-grid')}>
-                
+
                 <div className={cx('left-column')}>
 
                     <div className={cx('box-card', 'cv-table-box')}>
@@ -166,7 +166,7 @@ function UserDashboard() {
                     </div>
                 </div>
 
-  {/* Phải */}
+                {/* Phải */}
                 <div className={cx('right-column')}>
                     <div className={cx('box-card', 'activity-box')}>
                         <div className={cx('box-header')}>
@@ -198,4 +198,4 @@ function UserDashboard() {
     );
 }
 
-export default UserDashboard;
+export default Dashboard;
