@@ -7,7 +7,7 @@ export const router = {
     otp_verify: '/otp/verify',
     reset_pass: '/otp/reset',
     verify_success: '/verify/success',
-    forgot_password: '/forgot-password',
+    // forgot_password: '/forgot-password',
     features: '/features',
     // User
     dashboard: '/dashboard',
@@ -16,6 +16,10 @@ export const router = {
     myCvs: '/user/my-cvs',
     aiAnalysis: '/user/ai-analysis',
     upgradePremium: '/user/upgrade-premium',
+    profile: '/user/profile',
+    security: '/user/security',
+    package: '/user/package',
+    history: '/user/history',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',

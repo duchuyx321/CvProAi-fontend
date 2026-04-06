@@ -21,6 +21,11 @@ import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
 import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
+import Profile from '~/pages/User/Profile';
+import Security from '~/pages/User/Security';
+import DetailLayout from '~/layouts/DetailLayout';
+import Package from '~/pages/User/Package';
+import History from '~/pages/User/History';
 
 // public router
 const PublicRouter = [
@@ -65,6 +70,10 @@ const PublicRouter = [
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },
+];
+
+// user router
+const UserRouter = [
     {
         path: config.router.userDashboard,
         component: UserDashboard,
@@ -90,7 +99,30 @@ const PublicRouter = [
         component: UpgradePremium,
         layout: DefaultLayout,
     },
+    {
+        path: config.router.profile,
+        component: Profile,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.security,
+        component: Security,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.package,
+        component: Package,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.history,
+        component: History,
+        layout: DetailLayout,
+    },
+];
 
+// admin router
+const AdminRouter = [
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
@@ -121,54 +153,6 @@ const PublicRouter = [
         component: AdminSettings,
         layout: AdminLayout,
     },
-];
-
-// user router
-const UserRouter = [
-    // {
-    //     path: config.router.userDashboard,
-    //     component: UserDashboard,
-    //     layout: DefaultLayout,
-    // },
-    // {
-    //     path: config.router.cvTemplates,
-    //     component: CvTemplates,
-    //     layout: DefaultLayout,
-    // },
-    // {
-    //     path: config.router.myCvs,
-    //     component: MyCvs,
-    //     layout: DefaultLayout,
-    // },
-    // {
-    //     path: config.router.aiAnalysis,
-    //     component: AiAnalysis,
-    //     layout: DefaultLayout,
-    // },
-    // {
-    //     path: config.router.upgradePremium,
-    //     component: UpgradePremium,
-    //     layout: DefaultLayout,
-    // },
-];
-
-// admin router
-const AdminRouter = [
-    // {
-    //     path: config.router.adminDashboard,
-    //     component: AdminDashboard,
-    //     layout: AdminLayout,
-    // },
-    // {
-    //     path: config.router.manageUsers,
-    //     component: ManageUsers,
-    //     layout: AdminLayout,
-    // },
-    // {
-    //     path: config.router.manageTemplates,
-    //     component: ManageTemplates,
-    //     layout: AdminLayout,
-    // },
 ];
 
 export { PublicRouter, UserRouter, AdminRouter };
