@@ -1,0 +1,59 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+}
+
+.item {
+    padding: 16px;
+    border-radius: 16px;
+}
+
+.head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.main {
+    min-width: 0;
+}
+
+.company {
+    margin: 0 0 4px;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.position {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.time {
+    min-height: 32px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid;
+    border-radius: 999px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.desc {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    font-size: 1.5rem;
+    line-height: 1.8;
+}

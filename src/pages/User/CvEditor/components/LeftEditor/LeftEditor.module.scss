@@ -1,0 +1,13 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    border-right: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+}

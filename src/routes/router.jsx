@@ -27,6 +27,8 @@ import DetailLayout from '~/layouts/DetailLayout';
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
+import CvTemplateDetail from '~/pages/User/CvTemplateDetail';
+import CvEditor from '~/pages/User/CvEditor';
 
 // public router
 const PublicRouter = [
@@ -91,6 +93,21 @@ const PublicRouter = [
         path: config.router.cvTemplates,
         component: CvTemplates,
         layout: DefaultLayout,
+    },
+     {
+        path: config.router.CvTemplateDetail,
+        component: CvTemplateDetail,
+        layout: PublicLayout,
+    },
+    {
+        path: config.router.CvTemplateDetail,
+        component: CvTemplateDetail,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.cvEditor,
+        component: CvEditor,
+        layout: DetailLayout,
     },
     {
         path: config.router.myCvs,

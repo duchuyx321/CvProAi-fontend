@@ -1,0 +1,33 @@
+.wrapper {
+    width: 100%;
+    min-height: 100vh;
+    background: #f8fafc;
+}
+
+.inner {
+    display: grid;
+    grid-template-columns: 540px minmax(0, 1fr);
+    min-height: calc(100vh - 74px);
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+@media (max-width: 1199.98px) {
+    .inner {
+        grid-template-columns: 460px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .inner {
+        grid-template-columns: 1fr;
+    }
+}

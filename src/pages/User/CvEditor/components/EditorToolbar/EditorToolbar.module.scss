@@ -1,0 +1,43 @@
+.wrapper {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    border-top: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.btn {
+    min-height: 48px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btnLight {
+    background: #f8fafc;
+    color: #334155;
+}
+
+.btnGray {
+    background: #e5e7eb;
+    color: #334155;
+}
+
+.btnPrimary {
+    background: #2563eb;
+    color: #fff;
+}
+
+@media (max-width: 767.98px) {
+    .wrapper {
+        grid-template-columns: 1fr;
+    }
+}

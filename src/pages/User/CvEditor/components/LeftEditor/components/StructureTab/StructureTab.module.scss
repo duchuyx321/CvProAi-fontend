@@ -1,0 +1,27 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid #dbe4f0;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.number {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0f172a;
+}
