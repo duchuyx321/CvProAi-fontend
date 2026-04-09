@@ -1,0 +1,235 @@
+.exportPage {
+    min-height: 100vh;
+    // background: #f7f6fb;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    color: #1f2438;
+  }
+  
+  .container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 40px 32px 48px;
+  }
+  
+  .headerBlock {
+    margin-bottom: 22px;
+  
+    h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #1a2238;
+      letter-spacing: -0.02em;
+    }
+  
+    p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.45;
+      color: #6d7488;
+    }
+  }
+  
+  .tableCard {
+    background: #ffffff;
+    border: 1px solid #eff1f7;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(24, 31, 56, 0.04);
+  }
+  
+  .tableHead {
+    min-height: 58px;
+    padding: 0 28px;
+    display: grid;
+    grid-template-columns: 1.55fr 0.85fr;
+    align-items: center;
+    background: #f7f7ff;
+    color: #8b91a6;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  
+  .tableBody {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .tableRow {
+    min-height: 80px;
+    padding: 0 28px;
+    display: grid;
+    grid-template-columns: 1.55fr 0.85fr;
+    align-items: center;
+    border-top: 1px solid #f1f2f8;
+    transition: background 0.2s ease;
+  
+    &:hover {
+      background: #fcfcff;
+    }
+  }
+  
+  .fileCol {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+  
+  .fileIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #fff4f3;
+    color: #e44747;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  
+    svg {
+      font-size: 20px;
+    }
+  }
+  
+  .fileInfo {
+    min-width: 0;
+  }
+  
+  .fileName {
+    margin-bottom: 2px;
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 750;
+    color: #1d2438;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .fileMeta {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #697085;
+  }
+  
+  .timeCol {
+    font-size: 15px;
+    font-weight: 500;
+    color: #4a5268;
+  }
+  
+  .emptyState {
+    padding: 28px;
+    text-align: center;
+    font-size: 14px;
+    color: #7d8498;
+    border-top: 1px solid #f1f2f8;
+  }
+  
+  .tableFooter {
+    min-height: 70px;
+    padding: 0 24px;
+    border-top: 1px solid #f1f2f8;
+    background: #fcfbff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .footerInfo {
+    font-size: 14px;
+    color: #5c6479;
+  
+    strong {
+      font-weight: 800;
+      color: #23293c;
+    }
+  }
+  
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .pageBtn,
+  .pageNav {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    color: #4d556b;
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+  
+    &:hover:not(:disabled) {
+      background: #f2f3fb;
+    }
+  
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+  
+  .activePage {
+    background: #4f55e7;
+    color: #ffffff;
+  
+    &:hover {
+      background: #4f55e7 !important;
+    }
+  }
+  
+  .pageDots {
+    color: #80879b;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 0 2px;
+  }
+  
+  @media (max-width: 900px) {
+    .container {
+      padding: 24px 16px 32px;
+    }
+  
+    .tableHead,
+    .tableRow {
+      grid-template-columns: 1.2fr 0.9fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .tableHead {
+      display: none;
+    }
+  
+    .tableRow {
+      grid-template-columns: 1fr;
+      min-height: auto;
+      gap: 8px;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+  
+    .timeCol {
+      padding-left: 56px;
+    }
+  
+    .tableFooter {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px 20px;
+    }
+  }

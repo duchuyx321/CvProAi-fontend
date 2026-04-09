@@ -27,6 +27,8 @@ import DetailLayout from '~/layouts/DetailLayout';
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
+import ExportPage from '~/export/export';
+
 
 // public router
 const PublicRouter = [
@@ -125,6 +127,11 @@ const PublicRouter = [
     {
         path: config.router.history,
         component: History,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.export,
+        component: ExportPage,
         layout: DetailLayout,
     },
 ];
