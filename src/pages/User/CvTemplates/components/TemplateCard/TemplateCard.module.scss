@@ -26,8 +26,14 @@
 .thumb {
     width: 100%;
     height: 380px;
-    display: block;
-    object-fit: cover;
+    overflow: hidden;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    & > img {
+        width: 100%;
+        object-fit: contain;
+    }
 }
 
 .badge {

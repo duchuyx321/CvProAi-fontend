@@ -2,68 +2,68 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-  
-  .title {
+}
+
+.title {
     margin: 0;
     padding-bottom: 8px;
     font-size: 18px;
     font-weight: 700;
     color: var(--cv-primary);
     border-bottom: 2px solid var(--cv-accent);
-  }
-  
-  .bars {
+}
+
+.bars {
     display: flex;
     flex-direction: column;
     gap: 12px;
-  }
-  
-  .barItem {
+}
+
+.barItem {
     display: flex;
     flex-direction: column;
     gap: 6px;
-  }
-  
-  .barTop {
+}
+
+.barTop {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     font-size: 14px;
     font-weight: 600;
-  }
-  
-  .bar {
+}
+
+.bar {
     width: 100%;
     height: 8px;
     overflow: hidden;
     border-radius: 999px;
     background: #e2e8f0;
-  }
-  
-  .barFill {
+}
+
+.barFill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--cv-primary), var(--cv-accent));
-  }
-  
-  .tags {
+    background: var(--cv-primary);
+}
+
+.tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-  }
-  
-  .tag {
+}
+
+.tag {
     padding: 7px 12px;
     border-radius: 999px;
     background: rgba(79, 209, 197, 0.12);
     color: var(--cv-primary);
     font-size: 13px;
     font-weight: 700;
-  }
-  
-  .empty {
+}
+
+.empty {
     font-size: 14px;
     color: #94a3b8;
     font-style: italic;
-  }
+}

@@ -19,9 +19,41 @@ const ICON_MAP = {
     certificates: <PiCertificate />,
 };
 
+function buildSkillsText(sectionData) {
+    if (!Array.isArray(sectionData)) return '';
+
+    return sectionData
+        .map((item) => {
+            if (typeof item === 'string') return item;
+            return item?.name || '';
+        })
+        .filter(Boolean)
+        .join(', ');
+}
+
+function parseSkillsText(text, currentSkills = []) {
+    const currentMap = new Map(
+        (Array.isArray(currentSkills) ? currentSkills : [])
+            .filter((item) => item && typeof item === 'object' && item.name)
+            .map((item) => [item.name.toLowerCase(), item]),
+    );
+
+    return text
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((name) => {
+            const existed = currentMap.get(name.toLowerCase());
+            return {
+                name,
+                level: existed?.level ?? 80,
+            };
+        });
+}
+
 function renderSectionFields({
     type,
-    resumeData,
+    sectionData,
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
@@ -35,7 +67,7 @@ function renderSectionFields({
                             <label className={cx('label')}>Họ và tên</label>
                             <input
                                 className={cx('input')}
-                                value={resumeData?.full_name || ''}
+                                value={sectionData?.full_name || ''}
                                 onChange={(e) =>
                                     onChangeField('full_name', e.target.value)
                                 }
@@ -48,7 +80,7 @@ function renderSectionFields({
                             </label>
                             <input
                                 className={cx('input')}
-                                value={resumeData?.headline || ''}
+                                value={sectionData?.headline || ''}
                                 onChange={(e) =>
                                     onChangeField('headline', e.target.value)
                                 }
@@ -59,7 +91,7 @@ function renderSectionFields({
                             <label className={cx('label')}>Email</label>
                             <input
                                 className={cx('input')}
-                                value={resumeData?.email || ''}
+                                value={sectionData?.email || ''}
                                 onChange={(e) =>
                                     onChangeField('email', e.target.value)
                                 }
@@ -67,13 +99,12 @@ function renderSectionFields({
                         </div>
 
                         <div className={cx('field')}>
-                            <label className={cx('label')}>
-                                Số điện thoại
-                            </label>
+                            <label className={cx('label')}>Số điện thoại</label>
                             <input
                                 className={cx('input')}
-                                value={resumeData?.phone || ''}
-                                onChange={(e) => onChangeField('phone', e.target.value)
+                                value={sectionData?.phone || ''}
+                                onChange={(e) =>
+                                    onChangeField('phone', e.target.value)
                                 }
                             />
                         </div>
@@ -83,9 +114,20 @@ function renderSectionFields({
                         <label className={cx('label')}>Địa chỉ</label>
                         <input
                             className={cx('input')}
-                            value={resumeData?.address || ''}
+                            value={sectionData?.address || ''}
                             onChange={(e) =>
                                 onChangeField('address', e.target.value)
+                            }
+                        />
+                    </div>
+
+                    <div className={cx('field')}>
+                        <label className={cx('label')}>Website</label>
+                        <input
+                            className={cx('input')}
+                            value={sectionData?.website || ''}
+                            onChange={(e) =>
+                                onChangeField('website', e.target.value)
                             }
                         />
                     </div>
@@ -99,7 +141,7 @@ function renderSectionFields({
                         <textarea
                             className={cx('textarea')}
                             rows={6}
-                            value={resumeData?.summary || ''}
+                            value={sectionData?.summary || ''}
                             onChange={(e) =>
                                 onChangeField('summary', e.target.value)
                             }
@@ -115,15 +157,16 @@ function renderSectionFields({
                         <textarea
                             className={cx('textarea')}
                             rows={4}
-                            value={
-                                Array.isArray(resumeData?.skills)
-                                    ? resumeData.skills.join(', ')
-                                    : ''
-                            }
+                            value={buildSkillsText(sectionData)}
                             onChange={(e) =>
-                                onChangeArrayField('skills', e.target.value)
+                                onChangeArrayField(
+                                    parseSkillsText(
+                                        e.target.value,
+                                        sectionData,
+                                    ),
+                                )
                             }
-                            placeholder="ReactJS, Tailwind CSS, TypeScript"
+                            placeholder="Node.js, ExpressJS, NestJS"
                         />
                     </div>
                 </div>
@@ -132,67 +175,128 @@ function renderSectionFields({
         case 'experience':
             return (
                 <div className={cx('content')}>
-                    {(resumeData?.experience || []).map((item, index) => (
-                        <div key={index} className={cx('field-group')}>
-                            <div className={cx('field')}>
-                                <label className={cx('label')}>Công ty</label>
-                                <input
-                                    className={cx('input')}
-                                    value={item.company || ''}
-                                    placeholder="Tên công ty"
-                                    onChange={(e) =>
-                                        onChangeObjectInArray('experience', index, 'company', e.target.value)
-                                    }
-                                />
-                            </div>
+                    {(Array.isArray(sectionData) ? sectionData : []).map(
+                        (item, index) => (
+                            <div key={index} className={cx('field-group')}>
+                                <div className={cx('field')}>
+                                    <label className={cx('label')}>
+                                        Công ty
+                                    </label>
+                                    <input
+                                        className={cx('input')}
+                                        value={item.company || ''}
+                                        placeholder="Tên công ty"
+                                        onChange={(e) =>
+                                            onChangeObjectInArray(
+                                                index,
+                                                'company',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
 
-                            <div className={cx('field')}>
-                                <label className={cx('label')}>Vị trí</label>
-                                <input
-                                    className={cx('input')}
-                                    value={item.position || ''}
-                                    placeholder="Vị trí công việc"
-                                    onChange={(e) =>
-                                        onChangeObjectInArray('experience', index, 'position', e.target.value)
-                                    }
-                                />
-                            </div>
+                                <div className={cx('field')}>
+                                    <label className={cx('label')}>
+                                        Vị trí
+                                    </label>
+                                    <input
+                                        className={cx('input')}
+                                        value={item.role || ''}
+                                        placeholder="Vị trí công việc"
+                                        onChange={(e) =>
+                                            onChangeObjectInArray(
+                                                index,
+                                                'role',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
 
-                            <div className={cx('field')}>
-                                <label className={cx('label')}>Thời gian</label>
-                                <input
-                                    className={cx('input')}
-                                    value={item.time || ''}
-                                    placeholder="01/2023 - 12/2023"
-                                    onChange={(e) =>
-                                        onChangeObjectInArray('experience', index, 'time', e.target.value)
-                                    }
-                                />
-                            </div>
+                                <div className={cx('gridTwo')}>
+                                    <div className={cx('field')}>
+                                        <label className={cx('label')}>
+                                            Bắt đầu
+                                        </label>
+                                        <input
+                                            className={cx('input')}
+                                            value={item.start_date || ''}
+                                            placeholder="01/2025"
+                                            onChange={(e) =>
+                                                onChangeObjectInArray(
+                                                    index,
+                                                    'start_date',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
 
-                            <div className={cx('field')}>
-                                <label className={cx('label')}>Mô tả</label>
-                                <textarea
-                                    className={cx('textarea')}
-                                    rows={3}
-                                    value={
-                                        Array.isArray(item.description)
-                                            ? item.description.join('\n')
-                                            : ''
-                                    }
-                                    placeholder="Mỗi dòng là một mô tả..."
-                                    onChange={(e) =>
-                                        onChangeObjectInArray(
-                                            'experience',
-                                            index,
-                                            'description',
-                                            e.target.value.split('\n')
-                                        )
-                                    }
-                                />
+                                    <div className={cx('field')}>
+                                        <label className={cx('label')}>
+                                            Kết thúc
+                                        </label>
+                                        <input
+                                            className={cx('input')}
+                                            value={item.end_date || ''}
+                                            placeholder="Hiện tại"
+                                            onChange={(e) =>
+                                                onChangeObjectInArray(
+                                                    index,
+                                                    'end_date',
+                                                    e.target.value,
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className={cx('field')}>
+                                    <label className={cx('label')}>Mô tả</label>
+                                    <textarea
+                                        className={cx('textarea')}
+                                        rows={3}
+                                        value={item.description || ''}
+                                        placeholder="Mô tả công việc"
+                                        onChange={(e) =>
+                                            onChangeObjectInArray(
+                                                index,
+                                                'description',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className={cx('field')}>
+                                    <label className={cx('label')}>
+                                        Thành tựu
+                                    </label>
+                                    <textarea
+                                        className={cx('textarea')}
+                                        rows={4}
+                                        value={
+                                            Array.isArray(item.achievements)
+                                                ? item.achievements.join('\n')
+                                                : ''
+                                        }
+                                        placeholder="Mỗi dòng là một thành tựu"
+                                        onChange={(e) =>
+                                            onChangeObjectInArray(
+                                                index,
+                                                'achievements',
+                                                e.target.value
+                                                    .split('\n')
+                                                    .map((line) => line.trim())
+                                                    .filter(Boolean),
+                                            )
+                                        }
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ),
+                    )}
                 </div>
             );
 
@@ -211,7 +315,7 @@ function SectionEditor({
     section,
     isOpen = false,
     onToggle,
-    resumeData = {},
+    sectionData = {},
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
@@ -225,7 +329,8 @@ function SectionEditor({
                     </span>
 
                     <span className={cx('title')}>
-                        {section?.number}. {section?.title}</span>
+                        {section?.number}. {section?.title}
+                    </span>
                 </div>
 
                 <span className={cx('arrow')}>
@@ -235,12 +340,12 @@ function SectionEditor({
 
             {isOpen
                 ? renderSectionFields({
-                    type: section?.type,
-                    resumeData,
-                    onChangeField,
-                    onChangeArrayField,
-                    onChangeObjectInArray,
-                })
+                      type: section?.type,
+                      sectionData,
+                      onChangeField,
+                      onChangeArrayField,
+                      onChangeObjectInArray,
+                  })
                 : null}
         </div>
     );

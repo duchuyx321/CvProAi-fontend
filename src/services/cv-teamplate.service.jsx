@@ -1,24 +1,20 @@
-import {
-    CV_TEMPLATE_LIST_MOCK,
-    CV_TEMPLATE_DETAIL_MOCK,
-} from '~/data/cv-teamplate.mock';
+import * as Response from '~/utils/HttpsRequest';
 
-const fakeDelay = (time = 400) =>
-    new Promise((resolve) => setTimeout(resolve, time));
-
-export const getCvTemplates = async () => {
-    await fakeDelay();
-    return CV_TEMPLATE_LIST_MOCK;
+export const getCvTemplates = async (limit = 8, page = 1) => {
+    try {
+        const result = await Response.GET(
+            `cv-templates?limit=${limit}&page=${page}`,
+        );
+        return result;
+    } catch (error) {
+        console.log(error);
+    }
 };
 
-export const getCvTemplateDetail = async (templateId) => {
-    await fakeDelay();
+export const getCvTemplateDetail = async (code) => {
+    const result = await Response.GET(`cv-templates/code/${code}`);
 
-    const template = CV_TEMPLATE_DETAIL_MOCK.data.find(
-        (item) => item.id === templateId,
-    );
-
-    if (!template) {
+    if (!result.success) {
         return {
             success: false,
             message: 'Không tìm thấy mẫu CV',
@@ -26,9 +22,5 @@ export const getCvTemplateDetail = async (templateId) => {
         };
     }
 
-    return {
-        success: true,
-        message: 'Lấy chi tiết mẫu CV thành công',
-        data: template,
-    };
+    return result;
 };

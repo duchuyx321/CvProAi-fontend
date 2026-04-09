@@ -10,29 +10,26 @@ function TemplateCard({ template = {} }) {
     const navigate = useNavigate();
 
     const {
-        id,
+        code = '',
         name = 'Mẫu CV',
         category = 'Chưa phân loại',
         layout_key = '',
-        thumbnail = '',
+        preview_url = '',
         is_new = false,
         description = '',
     } = template;
 
     const handleViewDetail = () => {
-        navigate(config.router.CvTemplateDetail.replace(':templateId', id));
+        navigate(config.router.CvTemplateDetail.replace(':code', code));
     };
 
     return (
         <article className={cx('wrapper')}>
             <div className={cx('thumbWrap')}>
                 {is_new ? <span className={cx('badge')}>Mới</span> : null}
-
-                <img
-                    src={thumbnail}
-                    alt={name}
-                    className={cx('thumb')}
-                />
+                <div className={cx('thumb')}>
+                    <img src={preview_url} alt={name} />
+                </div>
 
                 <div className={cx('overlay')}>
                     <button
