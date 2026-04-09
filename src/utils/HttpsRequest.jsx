@@ -65,20 +65,12 @@ httpsRequests.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        if (originalRequest._retry) {
-            localStorage.removeItem('accessToken');
-            return Promise.reject(error);
-        }
-
-        originalRequest._retry = true;
-
         try {
             const accessToken = await refreshToken();
             originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return httpsRequests(originalRequest);
         } catch (refreshError) {
-            localStorage.removeItem('accessToken');
             emitAuthExpired();
             return Promise.reject(refreshError);
         }

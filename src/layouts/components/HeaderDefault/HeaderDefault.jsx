@@ -10,11 +10,7 @@ const cx = classNames.bind(styles);
 function HeaderDefault() {
     const { user } = useAuth();
 
-    const displayName =
-        user?.full_name ||
-        user?.fullName ||
-        user?.name ||
-        '';
+    const displayName = user?.full_name || user?.fullName || user?.name || '';
 
     const dateString = useMemo(() => {
         const today = new Date();

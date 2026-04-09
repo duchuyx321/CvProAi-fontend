@@ -6,7 +6,7 @@ import React, {
     useMemo,
     useState,
 } from 'react';
-import { getMe } from '~/services/user.service';
+import { getProfile } from '~/services/profile.service';
 
 const AuthContext = createContext(null);
 
@@ -32,20 +32,18 @@ export const AuthProvider = ({ children }) => {
 
     const initializeAuth = useCallback(async () => {
         try {
-            // const meRes = await getMe();
-            // const me = meRes?.data ?? meRes ?? null;
+            const meRes = await getProfile();
+            const me = meRes?.data ?? meRes ?? null;
+            if (!meRes.success) {
+                clearAuthState();
+                return null;
+            }
+            console.log(me);
 
-            // if (!me) {
-            //     clearAuthState();
-            //     return null;
-            // }
-
-            // setUser(me);
-            // return me;
-            setIsInitialized(!!localStorage.getItem('accessToken'));
-            // eslint-disable-next-line no-unused-vars
+            setUser(me);
+            return me;
         } catch (error) {
-            clearAuthState();
+            console.log(error);
             return null;
         } finally {
             setIsInitialized(true);
@@ -61,7 +59,7 @@ export const AuthProvider = ({ children }) => {
             user,
             setUser,
             clearAuthState,
-            isAuthenticated: !!localStorage.getItem('accessToken'), //!!user,
+            isAuthenticated: !!user,
             isInitialized,
             initializeAuth,
         }),

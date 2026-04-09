@@ -2,7 +2,7 @@ import * as Response from '~/utils/HttpsRequest';
 
 export const getProfile = async () => {
     try {
-        const res = await Response.GET('profile/me');
+        const res = await Response.GET('profile');
         return res;
     } catch (error) {
         const data = error?.response?.data;
@@ -37,7 +37,7 @@ export const updateProfile = async (payload = {
 
 export const updateAvatar = async (avatar) => {
     try {
-        const res = await Response.PATCH('profile/avatar', {
+        const res = await Response.PATCH('profile/update', {
             avatar,
         });
         return res;

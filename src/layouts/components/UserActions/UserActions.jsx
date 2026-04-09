@@ -8,6 +8,7 @@ import { logout } from '~/services/auth.service';
 import { config } from '~/config';
 import styles from './UserActions.module.scss';
 import { MdOutlineHome } from 'react-icons/md';
+import { useAuth } from '~/context/AuthContext';
 
 const cx = classNames.bind(styles);
 
@@ -28,18 +29,16 @@ function getInitial(name = '') {
 function UserActions({ user = {} }) {
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
+    const { clearAuthState } = useAuth();
 
     const [isOpen, setIsOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const displayName =
-        user?.full_name ||
-        user?.fullName ||
-        user?.name ||
-        'Nguyễn Văn A';
+        user?.full_name || user?.fullName || user?.name || 'Nguyễn Văn A';
 
-    const membership = user?.membership || user?.role || 'Thành viên Pro';
-    const avatar = user?.avatar || '';
+    const membership = user?.membership || user?.role || 'Thành viên';
+    const avatar = user?.profile?.avatar_url || '';
     const hasAvatar = Boolean(avatar);
 
     useEffect(() => {
@@ -78,6 +77,7 @@ function UserActions({ user = {} }) {
 
         try {
             setSubmitting(true);
+            clearAuthState();
             await logout();
         } finally {
             setIsOpen(false);
@@ -106,9 +106,10 @@ function UserActions({ user = {} }) {
                             alt={displayName}
                             className={cx('avatarImg')}
                         />
-                    ) : (<span className={cx('avatarText')}>
-                        {getInitial(displayName)}
-                    </span>
+                    ) : (
+                        <span className={cx('avatarText')}>
+                            {getInitial(displayName)}
+                        </span>
                     )}
                 </div>
             </button>
@@ -134,7 +135,6 @@ function UserActions({ user = {} }) {
                         <CgProfile className={cx('dropdownIcon')} />
                         Hồ sơ cá nhân
                     </button>
-
 
                     <span className={cx('dropdownLine')}></span>
 
