@@ -107,7 +107,7 @@ const PublicRouter = [
     {
         path: config.router.cvEditor,
         component: CvEditor,
-        layout: DetailLayout,
+        layout: null,
     },
     {
         path: config.router.myCvs,

@@ -1,24 +1,35 @@
 import classNames from 'classnames/bind';
-import { MdAdd, MdOutlineSave, MdOutlineFileDownload } from 'react-icons/md';
+import { MdAdd, MdOutlineSave, MdOutlineFileDownload, MdRefresh } from 'react-icons/md';
 import styles from './EditorToolbar.module.scss';
 
 const cx = classNames.bind(styles);
 
 function EditorToolbar({
-    onAddSection,
+    //onAddSection,
+    onResetData,
     onSaveCv,
     onDownloadPdf,
     submitting = false,
 }) {
     return (
         <div className={cx('wrapper')}>
-            <button
+            {/* <button
                 type="button"
                 className={cx('btn', 'btnLight')}
                 onClick={onAddSection}
             >
                 <MdAdd />
                 Thêm mục
+            </button> */}
+
+
+            <button
+                type="button"
+                className={cx('btn', 'btnDanger')}
+                onClick={onResetData}
+            >
+                <MdRefresh />
+                Làm mới
             </button>
 
             <button

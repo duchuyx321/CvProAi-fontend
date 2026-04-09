@@ -1,49 +1,88 @@
+$bg-workspace: #e2e8f0; /* Nền xám nhạt bao quanh tờ giấy */
+$border: #cbd5e1;
+
 .wrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    background: #f8fafc;
-    overflow: auto;
+  flex: 1; /* Quan trọng: Chiếm toàn bộ không gian còn lại bên phải LeftEditor */
+  height: 100vh;
+  background-color: $bg-workspace;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.preview {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    min-width: 0;
+/* VÙNG CUỘN (Chứa tờ CV) */
+.scroll-area {
+  flex: 1;
+  overflow: auto;
+  padding: 40px 20px; /* Tạo khoảng cách an toàn xung quanh tờ CV */
+  display: flex;
+  justify-content: center; /* Căn tờ CV ra chính giữa màn hình */
+  align-items: flex-start; /* Giữ CV luôn bắt đầu từ trên xuống, giúp Zoom không bị lỗi */
+
+  /* Thanh cuộn đẹp */
+  &::-webkit-scrollbar { width: 8px; height: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
 }
 
-.zoom {
-    position: sticky;
-    right: 0;
-    bottom: 20px;
-    align-self: flex-end;
-    min-height: 52px;
-    padding: 0 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    border-radius: 999px;
-    background: #fff;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+/* TỜ GIẤY A4 */
+.preview-document {
+  /* Nếu Component <Preview/> của bạn đã có kích thước A4 thì chỉ cần bọc bóng đổ là xong */
+  width: 794px; /* Rộng chuẩn A4 */
+  min-height: 1123px; /* Cao chuẩn A4 */
+  background: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  
+  /* Thu phóng mượt mà từ trên đỉnh giữa xuống */
+  transform-origin: top center;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.zoomBtn {
+/* KHUNG NÚT ZOOM (Nổi ở góc dưới cùng bên phải) */
+.zoom-controls {
+  position: absolute;
+  bottom: 30px;
+  right: 40px;
+  background: #ffffff;
+  border-radius: 30px; /* Bo tròn hình viên thuốc giống thiết kế mẫu */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid $border;
+  z-index: 100;
+
+  .zoomBtn {
+    background: transparent;
+    border: none;
     width: 32px;
     height: 32px;
-    border: none;
-    border-radius: 999px;
-    background: #f1f5f9;
-    font-size: 2rem;
-    color: #0f172a;
+    border-radius: 50%;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-}
+    color: #475569;
+    transition: 0.2s;
 
-.zoomText {
-    min-width: 48px;
-    text-align: center;
-    font-size: 1.4rem;
+    &:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    
+    &:active {
+      transform: scale(0.9);
+    }
+  }
+
+  .zoomText {
+    font-size: 14px;
     font-weight: 700;
-    color: #334155;
+    color: #1e293b;
+    min-width: 50px;
+    text-align: center;
+    user-select: none; /* Không cho bôi đen chữ này */
+  }
 }

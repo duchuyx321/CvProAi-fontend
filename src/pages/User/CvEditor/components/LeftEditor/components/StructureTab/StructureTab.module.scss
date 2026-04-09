@@ -1,27 +1,160 @@
+$text-main: #0f172a;
+$text-muted: #64748b;
+$border-color: #cbd5e1;
+$bg-soft: #f1f5f9;
+$primary: #3b82f6;
+
 .wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
 }
 
-.row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 16px;
-    border: 1px solid #dbe4f0;
-    border-radius: 14px;
-    background: #fff;
+.description {
+  font-size: 13px;
+  color: $text-muted;
+  text-align: center;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
 }
 
-.number {
-    font-size: 1.4rem;
+/* ====================================
+   VÙNG LAYOUT ĐANG SỬ DỤNG
+   ==================================== */
+.active-area {
+  background-color: $bg-soft;
+  padding: 12px;
+  border-radius: 8px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Kiểu chia cột Split */
+.split-container {
+  display: flex;
+  flex: 1;
+  gap: 0;
+}
+
+/* Kiểu Banner Split (Header + 2 Cột) */
+.banner-split-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+
+  .header-zone {
+    padding-bottom: 12px;
+    border-bottom: 2px dashed #cbd5e1;
+  }
+}
+
+/* Khu vực nhét các cục Drag */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  min-height: 120px;
+
+  &.col-full { width: 100%; }
+}
+
+/* Thanh kéo thả đổi kích thước (Resizer) */
+.divider {
+  width: 14px;
+  margin: 0 2px;
+  position: relative;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .handle {
+    width: 4px;
+    height: 30px;
+    background-color: #94a3b8;
+    border-radius: 4px;
+    transition: 0.2s;
+  }
+
+  &:hover .handle, &:active .handle {
+    background-color: $primary;
+    transform: scaleX(1.5);
+  }
+}
+
+/* ====================================
+   CỤC MỤC (DRAG ITEMS)
+   ==================================== */
+.drag-item {
+  background-color: #ffffff;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  padding: 12px 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-main;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $primary;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    color: $primary;
+  }
+
+  &:active { cursor: grabbing; }
+  &.dragging { opacity: 0.5; border: 1px dashed $primary; }
+}
+
+.empty-placeholder {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 20px 0;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+/* ====================================
+   VÙNG CHƯA SỬ DỤNG
+   ==================================== */
+.unused-area {
+  margin-top: 24px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 24px 16px;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 150px;
+
+  .unused-title {
+    margin: 0 0 16px 0;
+    font-size: 13px;
     font-weight: 700;
-    color: #2563eb;
-}
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-.name {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #0f172a;
+  .unused-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+    
+    .drag-item { flex: 1 1 calc(50% - 12px); min-width: 120px; }
+  }
 }

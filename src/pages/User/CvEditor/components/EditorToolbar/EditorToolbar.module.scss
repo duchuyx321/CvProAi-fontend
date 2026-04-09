@@ -1,43 +1,69 @@
+$border: #e2e8f0;
+
 .wrapper {
-    padding: 16px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
     gap: 12px;
-    border-top: 1px solid #e5e7eb;
-    background: #fff;
+    align-items: center;
+    padding: 16px;
+    border-top: 1px solid $border;
+    background: #ffffff;
 }
 
 .btn {
-    min-height: 48px;
-    padding: 0 12px;
-    display: inline-flex;
+    flex: 1; /* Chia đều không gian cho 3 nút */
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
+    padding: 12px 8px; /* Tăng chiều cao lên một chút cho dễ bấm */
     border: none;
-    border-radius: 14px;
-    font-size: 1.5rem;
-    font-weight: 700;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+        font-size: 18px; /* Icon to và rõ ràng hơn */
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    /* Hiệu ứng lún xuống khi click chuột */
+    &:active:not(:disabled) {
+        transform: scale(0.96); 
+    }
 }
 
-.btnLight {
-    background: #f8fafc;
-    color: #334155;
+/* Nút Làm mới (Màu đỏ nhạt) */
+.btnDanger {
+    background: #fee2e2;
+    color: #ef4444;
+    &:hover:not(:disabled) { 
+        background: #fca5a5; 
+        color: #b91c1c;
+    }
 }
 
+/* Nút Lưu CV (Màu xám) */
 .btnGray {
-    background: #e5e7eb;
-    color: #334155;
+    background: #f1f5f9;
+    color: #0f172a;
+    &:hover:not(:disabled) { 
+        background: #e2e8f0; 
+    }
 }
 
+/* Nút Tải PDF (Xanh chủ đạo) */
 .btnPrimary {
-    background: #2563eb;
-    color: #fff;
-}
-
-@media (max-width: 767.98px) {
-    .wrapper {
-        grid-template-columns: 1fr;
+    background: #1d4ed8;
+    color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(29, 78, 216, 0.2);
+    &:hover:not(:disabled) { 
+        background: #1e3a8a; 
+        box-shadow: 0 6px 10px -1px rgba(29, 78, 216, 0.3);
     }
 }
