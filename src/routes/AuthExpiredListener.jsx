@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { config } from '~/config';
 import { useAuth } from '~/context/AuthContext';
 
 export default function AuthExpiredListener() {
@@ -16,7 +17,10 @@ export default function AuthExpiredListener() {
             localStorage.removeItem('accessToken');
             clearAuthState();
             toast.error(message);
-            navigate('/', { replace: true });
+            setTimeout(() => {
+                // window.location.replace(config.router.home);
+                navigate(config.router.home); //dashboard
+            }, 800);
         };
 
         window.addEventListener('auth:expired', handleAuthExpired);

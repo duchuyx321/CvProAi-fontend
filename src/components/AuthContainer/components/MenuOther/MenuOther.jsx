@@ -134,8 +134,10 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
                 },
             });
             await initializeAuth();
-            // window.location.replace(config.router.dashboard);
-            navigate(config.router.home);
+            setTimeout(() => {
+                // window.location.replace(config.router.home);
+                navigate(config.router.home); //dashboard
+            }, 800);
         } catch (error) {
             console.error('Google login error:', error);
         }
