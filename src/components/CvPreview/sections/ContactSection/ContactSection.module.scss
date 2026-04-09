@@ -1,0 +1,45 @@
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .title {
+    margin: 0;
+    padding-bottom: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cv-primary);
+    border-bottom: 2px solid var(--cv-accent);
+  }
+  
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+  }
+  
+  .value {
+    font-size: 14px;
+    color: #1e293b;
+    word-break: break-word;
+  }
+  
+  .empty {
+    font-size: 14px;
+    color: #94a3b8;
+    font-style: italic;
+  }

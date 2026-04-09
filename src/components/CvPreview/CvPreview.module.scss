@@ -1,0 +1,17 @@
+.previewShell {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    box-sizing: border-box;
+  }
