@@ -13,7 +13,6 @@ export default function AuthExpiredListener() {
             const message =
                 event?.detail?.message ||
                 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-
             localStorage.removeItem('accessToken');
             clearAuthState();
             toast.error(message);
