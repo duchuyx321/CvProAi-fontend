@@ -1,17 +1,470 @@
 .previewShell {
+    min-height: 100vh;
+    background: #e9eef4;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    width: 100%;
-    padding: 24px;
     box-sizing: border-box;
-  }
-  
-  .page {
+}
+
+.page {
     width: 210mm;
     min-height: 297mm;
-    background: #ffffff;
-    color: #1e293b;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    color: #1f2937;
+    overflow: hidden;
     box-sizing: border-box;
-  }
+}
+
+.layoutStack,
+.layoutBanner {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.layoutSplit {
+    display: grid;
+    gap: 28px;
+    align-items: start;
+}
+
+.zone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cv-section-gap);
+    min-width: 0;
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cv-item-gap);
+    min-width: 0;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+}
+
+.sectionTitleText {
+    margin: 0;
+    color: var(--cv-primary);
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.fieldStack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cv-item-gap);
+}
+
+.fieldSplit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+}
+
+.fieldValue {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+.profileBanner {
+    background: linear-gradient(135deg, var(--cv-primary), #9c7f73);
+    color: #fff;
+    border-radius: 22px;
+    padding: 32px 36px;
+}
+
+.profileBannerContent {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 24px;
+    align-items: center;
+}
+
+.profileBannerInfo,
+.profileTopInfo {
+    min-width: 0;
+}
+
+.profileBannerAvatar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.profileTop {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 24px;
+    align-items: center;
+}
+
+.profileSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.avatarCircle {
+    width: 150px;
+    height: 150px;
+    border-radius: 999px;
+    object-fit: cover;
+    background: #f3f4f6;
+    border: 4px solid rgba(255, 255, 255, 0.82);
+    box-sizing: border-box;
+}
+
+.avatarRect {
+    width: 100%;
+    max-width: 180px;
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    object-fit: cover;
+    background: #f3f4f6;
+    display: block;
+}
+
+.fullName {
+    color: var(--cv-primary);
+    font-size: 38px;
+    line-height: 1.08;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.fullNameUpper {
+    font-size: 34px;
+    text-transform: uppercase;
+}
+
+.fullNameLight {
+    color: #fff;
+}
+
+.headline {
+    font-size: 20px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.headlineLight {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.headlineUnderline {
+    display: inline-block;
+    margin-top: 6px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #d9dee5;
+    color: #374151;
+}
+
+.headlinePill {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cv-accent) 72%, #fff 28%);
+    color: var(--cv-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.contactList,
+.skillsList,
+.cardList,
+.objectBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contactItem {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.contactDot {
+    width: 12px;
+    height: 12px;
+    margin-top: 6px;
+    border-radius: 4px;
+    background: var(--cv-primary);
+    flex-shrink: 0;
+}
+
+.contactText {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.65;
+    word-break: break-word;
+}
+
+.skillTextItem {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--cv-primary);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.skillProgressItem {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skillName {
+    color: #374151;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.skillBar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.skillBarFill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--cv-primary);
+}
+
+.cardItem {
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    background: #fff;
+}
+
+.cardFlat {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    border-radius: 0;
+}
+
+.cardTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+}
+
+.cardSplit {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cv-item-gap);
+    min-width: 0;
+}
+
+.dateBadge {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--cv-accent) 74%, #fff 26%);
+    color: var(--cv-primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.dateLeft {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+.richText {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.75;
+    word-break: break-word;
+
+    p {
+        margin: 0 0 10px;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+
+    ul,
+    ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 6px;
+    }
+}
+
+.plainText {
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+@media print {
+    .previewShell {
+        padding: 0;
+        background: #fff;
+    }
+
+    .page {
+        width: auto;
+        min-height: auto;
+        box-shadow: none;
+    }
+}
+.eduHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+}
+
+.eduMain {
+    min-width: 0;
+}
+
+.eduDegree {
+    color: var(--cv-primary);
+    font-size: 18px;
+    line-height: 1.5;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.eduSchool {
+    margin-top: var(--cv-item-gap);
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.eduDesc {
+    margin-top: var(--cv-item-gap);
+}
+.expHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+}
+
+.expMain {
+    min-width: 0;
+}
+
+.expRole {
+    color: var(--cv-primary);
+    font-size: 18px;
+    line-height: 1.5;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.expCompany {
+    margin-top: var(--cv-item-gap);
+    color: var(--cv-primary);
+    font-size: 15px;
+    line-height: 1.6;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.expDesc {
+    margin-top: var(--cv-item-gap);
+}
+
+.expList {
+    margin: 10px 0 0;
+    padding-left: 20px;
+    color: #374151;
+
+    li {
+        margin-bottom: 6px;
+        font-size: 15px;
+        line-height: 1.65;
+        word-break: break-word;
+    }
+}
+.skillsTextOnly {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.skillTextChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: var(--cv-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.skillDotItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+}
+
+.skillDots {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.skillDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #d1d5db;
+}
+
+.skillDotActive {
+    background: var(--cv-primary);
+}
