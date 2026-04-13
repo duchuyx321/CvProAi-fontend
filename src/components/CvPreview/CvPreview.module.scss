@@ -16,6 +16,10 @@
     overflow: hidden;
     box-sizing: border-box;
 }
+.page,
+.page * {
+    box-sizing: border-box;
+}
 
 .layoutStack,
 .layoutBanner {
@@ -28,6 +32,8 @@
     display: grid;
     gap: 28px;
     align-items: start;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .zone {
@@ -130,8 +136,7 @@
     max-width: 180px;
     aspect-ratio: 1 / 1;
     border-radius: 18px;
-    object-fit: cover;
-    background: #f3f4f6;
+    object-fit: contain;
     display: block;
 }
 
@@ -252,10 +257,10 @@
 }
 
 .cardItem {
-    padding: 18px;
+    padding: 12px;
     border: 1px solid #e5e7eb;
-    border-radius: 18px;
-    background: #fff;
+    border-radius: 8px;
+    background: var(--bg-session);
 }
 
 .cardFlat {
@@ -430,6 +435,7 @@
 .skillsTextOnly {
     display: flex;
     flex-wrap: wrap;
+    flex-direction: unset;
     gap: 10px;
 }
 
