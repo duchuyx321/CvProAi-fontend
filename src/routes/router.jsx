@@ -40,7 +40,7 @@ const PublicRouter = [
         component: CvTemplates,
         layout: PublicLayout,
     },
-     {
+    {
         path: config.router.pricing,
         component: Pricing,
         layout: PublicLayout,
@@ -81,8 +81,7 @@ const PublicRouter = [
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },
-
-     {
+    {
         path: config.router.dashboard,
         component: Dashboard,
         layout: DefaultLayout,
@@ -130,10 +129,7 @@ const PublicRouter = [
 ];
 
 // user router
-const UserRouter = [
-   
-
-];
+const UserRouter = [];
 
 // admin router
 const AdminRouter = [

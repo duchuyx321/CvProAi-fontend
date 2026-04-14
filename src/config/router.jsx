@@ -10,7 +10,7 @@ export const router = {
     forgot_password: '/forgot-password',
     cvSample: '/templates',
     pricing: '/pricing',
-    // createCV: '/create-cv',
+
     // User
     dashboard: '/dashboard',
     cvTemplates: '/templates',
@@ -21,6 +21,7 @@ export const router = {
     security: '/security',
     package: '/package',
     history: '/history',
+
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',

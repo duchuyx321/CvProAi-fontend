@@ -1,0 +1,346 @@
+.card {
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #e4e8f1;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.titleIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #2848f4;
+}
+
+.title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #20293a;
+}
+
+.modeTabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.modeButton {
+    min-width: 118px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid #dbe2f0;
+    border-radius: 999px;
+    background: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5f6c84;
+    cursor: pointer;
+    transition: all 0.22s ease;
+
+    &:hover {
+        border-color: #b8c1d6;
+        background: #f8faff;
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.modeButton.active {
+    border-color: #2848f4;
+    background: #eef2ff;
+    color: #2848f4;
+    box-shadow: 0 8px 18px rgba(40, 72, 244, 0.08);
+}
+
+.modeButtonIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.modeButtonText {
+    line-height: 1;
+}
+
+.modeHint {
+    margin: 0 0 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #8a94a8;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 14px 16px;
+    background: #f7f8fc;
+    border: 1px solid #f0f3f9;
+    border-radius: 10px;
+    resize: none;
+    outline: none;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #4e5b73;
+    transition: background 0.2s ease, border-color 0.2s ease;
+
+    &::placeholder {
+        color: #b9c0cf;
+    }
+
+    &:focus {
+        background: #ffffff;
+        border-color: #2848f4;
+    }
+}
+
+.filePanel {
+    min-height: 224px;
+    padding: 20px 16px;
+    border: 1px dashed #dbe2f0;
+    border-radius: 12px;
+    background: #fafbff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    transition: border-color 0.2s ease, background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.filePanel.dragging {
+    border-color: #2848f4;
+    background: #f2f6ff;
+    box-shadow: 0 0 0 4px rgba(40, 72, 244, 0.08);
+}
+
+.filePanel.hasFile {
+    align-items: stretch;
+    justify-content: center;
+}
+
+.dropzoneButton {
+    width: 100%;
+    max-width: 360px;
+    min-height: 124px;
+    padding: 20px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: rgba(40, 72, 244, 0.03);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.dropzoneIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    color: #2848f4;
+}
+
+.dropzoneText {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #20293a;
+    text-align: center;
+}
+
+.dropzoneSubText {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #8a94a8;
+    text-align: center;
+}
+
+.uploadHint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #8a94a8;
+    text-align: center;
+}
+
+.selectedFile {
+    width: 100%;
+    max-width: 480px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e8edf6;
+    background: #f8faff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 auto;
+}
+
+.selectedFileMain {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.selectedFileIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #2848f4;
+    flex-shrink: 0;
+}
+
+.selectedFileInfo {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.selectedFileName {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #20293a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selectedFileMeta {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #8a94a8;
+}
+
+.removeFileButton {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #7a869c;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+
+    &:hover {
+        background: #eef3fb;
+        color: #20293a;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.hiddenInput {
+    display: none;
+}
+
+.actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.submitButton {
+    min-width: 198px;
+    height: 44px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #2440f5;
+    box-shadow: 0 10px 24px rgba(36, 64, 245, 0.2);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+@media (max-width: 768px) {
+    .modeTabs {
+        flex-wrap: wrap;
+    }
+
+    .modeButton {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .filePanel {
+        min-height: 200px;
+    }
+
+    .dropzoneButton,
+    .selectedFile,
+    .submitButton {
+        width: 100%;
+        max-width: none;
+    }
+}

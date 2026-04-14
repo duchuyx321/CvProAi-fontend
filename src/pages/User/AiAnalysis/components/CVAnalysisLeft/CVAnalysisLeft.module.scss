@@ -1,0 +1,27 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tipCard {
+    padding: 18px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #5d58f5 0%, #4a39e8 100%);
+    box-shadow: 0 14px 28px rgba(76, 61, 236, 0.18);
+}
+
+.title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #ffffff;
+}
+
+.description {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.84);
+}
