@@ -31,23 +31,23 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const initializeAuth = useCallback(async () => {
-        try {
-            const meRes = await getProfile();
-            const me = meRes?.data ?? meRes ?? null;
-            if (!meRes.success) {
-                clearAuthState();
-                return null;
-            }
-            console.log(me);
+        // try {
+        //     const meRes = await getProfile();
+        //     const me = meRes?.data ?? meRes ?? null;
+        //     if (!meRes.success) {
+        //         clearAuthState();
+        //         return null;
+        //     }
+        //     console.log(me);
 
-            setUser(me);
-            return me;
-        } catch (error) {
-            console.log(error);
-            return null;
-        } finally {
-            setIsInitialized(true);
-        }
+        //     setUser(me);
+        //     return me;
+        // } catch (error) {
+        //     console.log(error);
+        //     return null;
+        // } finally {
+        //     setIsInitialized(true);
+        // }
     }, [clearAuthState]);
 
     useEffect(() => {

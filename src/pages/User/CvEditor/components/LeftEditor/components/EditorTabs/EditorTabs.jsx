@@ -3,32 +3,23 @@ import styles from './EditorTabs.module.scss';
 
 const cx = classNames.bind(styles);
 
-function EditorTabs({ activeTab, setActiveTab }) {
+function EditorTabs({ tabs = [], activeTab, onChangeTab }) {
     return (
         <div className={cx('wrapper')}>
-            <button
-                type="button"
-                className={cx('item', { active: activeTab === 'content' })}
-                onClick={() => setActiveTab('content')}
-            >
-                Nội dung
-            </button>
+            {tabs.map((tab) => {
+                const isActive = activeTab === tab.key;
 
-            <button
-                type="button"
-                className={cx('item', { active: activeTab === 'design' })}
-                onClick={() => setActiveTab('design')}
-            >
-                Thiết kế
-            </button>
-
-            <button
-                type="button"
-                className={cx('item', { active: activeTab === 'structure' })}
-                onClick={() => setActiveTab('structure')}
-            >
-                Cấu trúc CV
-            </button>
+                return (
+                    <button
+                        key={tab.key}
+                        type="button"
+                        className={cx('item', { active: isActive })}
+                        onClick={() => onChangeTab?.(tab.key)}
+                    >
+                        {tab.label}
+                    </button>
+                );
+            })}
         </div>
     );
 }

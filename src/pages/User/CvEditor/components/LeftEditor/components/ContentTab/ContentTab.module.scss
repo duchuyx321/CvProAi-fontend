@@ -1,5 +1,13 @@
-.wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+.emptyState {
+    padding: 20px 16px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+
+    p {
+        margin: 0;
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.5;
+    }
 }
