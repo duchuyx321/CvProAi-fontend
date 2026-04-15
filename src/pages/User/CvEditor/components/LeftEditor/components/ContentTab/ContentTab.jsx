@@ -12,26 +12,28 @@ function ContentTab({
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
+    errors = {},
 }) {
     return (
         <div className={cx('wrapper')}>
             {sectionList.map((section) => (
                 <SectionEditor
-                    key={section.key}
-                    section={section}
-                    isOpen={openSections?.[section.key]}
-                    onToggle={() => onToggleSection(section.key)}
-                    sectionData={resumeData?.[section.key]}
-                    onChangeField={(field, value) =>
-                        onChangeField(section.key, field, value)
-                    }
-                    onChangeArrayField={(value) =>
-                        onChangeArrayField(section.key, value)
-                    }
-                    onChangeObjectInArray={(index, key, value) =>
-                        onChangeObjectInArray(section.key, index, key, value)
-                    }
-                />
+                key={section.key}
+                section={section}
+                isOpen={openSections?.[section.key]}
+                onToggle={() => onToggleSection(section.key)}
+                sectionData={resumeData?.[section.key]}
+                onChangeField={(field, value) =>
+                    onChangeField(section.key, field, value)
+                }
+                onChangeArrayField={(value) =>
+                    onChangeArrayField(section.key, value)
+                }
+                onChangeObjectInArray={(index, key, value) =>
+                    onChangeObjectInArray(section.key, index, key, value)
+                }
+                errors={errors}
+            />
             ))}
         </div>
     );

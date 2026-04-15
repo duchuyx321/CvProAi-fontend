@@ -30,20 +30,34 @@ function LeftEditor({
     onSaveCv,
     onDownloadPdf,
     submitting = false,
+    errors = {},
+    isDirty = false,
+    saveStatus = 'idle',
 }) {
     const navigate = useNavigate();
+    const confirmLeaveIfDirty = (nextPath) => {
+        if (isDirty) {
+            const ok = window.confirm(
+                'Bạn có thay đổi chưa lưu. Nếu rời khỏi trang, dữ liệu chưa lưu có thể bị mất. Bạn vẫn muốn tiếp tục?',
+            );
+    
+            if (!ok) return;
+        }
+    
+        navigate(nextPath);
+    };
 
     return (
         <aside className={cx('wrapper', { isClosed: !isOpen })}>
             <div className={cx('panel-header')}>
-                <button
-                    type="button"
-                    className={cx('btn-icon')}
-                    onClick={() => navigate('/cv-templates')}
-                    title="Quay lại Thư viện mẫu"
-                >
-                    <FiArrowLeft />
-                </button>
+            <button
+    type="button"
+    className={cx('btn-icon')}
+    onClick={() => confirmLeaveIfDirty('/cv-templates')}
+    title="Quay lại Thư viện mẫu"
+>
+    <FiArrowLeft />
+</button>
 
                 <div className={cx('brand-group')}>
                     <img
@@ -54,9 +68,13 @@ function LeftEditor({
                     <span className={cx('brand')}>CvProAI</span>
                 </div>
 
-                <button type="button" className={cx('btn-template')}>
-                    <FiLayout /> Chọn mẫu
-                </button>
+                <button
+    type="button"
+    className={cx('btn-template')}
+    onClick={() => confirmLeaveIfDirty('/cv-templates')}
+>
+    <FiLayout /> Chọn mẫu
+</button>
 
                 <button
                     type="button"
@@ -71,17 +89,18 @@ function LeftEditor({
             <EditorTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
             <div className={cx('body')}>
-                {activeTab === 'content' && (
-                    <ContentTab
-                        sectionList={sectionList}
-                        openSections={openSections}
-                        onToggleSection={onToggleSection}
-                        resumeData={resumeData}
-                        onChangeField={onChangeField}
-                        onChangeArrayField={onChangeArrayField}
-                        onChangeObjectInArray={onChangeObjectInArray}
-                    />
-                )}
+            {activeTab === 'content' && (
+    <ContentTab
+        sectionList={sectionList}
+        openSections={openSections}
+        onToggleSection={onToggleSection}
+        resumeData={resumeData}
+        onChangeField={onChangeField}
+        onChangeArrayField={onChangeArrayField}
+        onChangeObjectInArray={onChangeObjectInArray}
+        errors={errors}
+    />
+)}
 
                 {activeTab === 'design' && (
                     <DesignTab
@@ -100,13 +119,39 @@ function LeftEditor({
             </div>
 
             <div className={cx('panel-footer')}>
-                <EditorToolbar
-                    onResetData={onResetData}
-                    onSaveCv={onSaveCv}
-                    onDownloadPdf={onDownloadPdf}
-                    submitting={submitting}
-                />
-            </div>
+    <div className={cx('editor-status')}>
+        {saveStatus === 'unsaved' && (
+            <span className={cx('status-badge', 'unsaved')}>
+                Chưa lưu thay đổi
+            </span>
+        )}
+
+        {saveStatus === 'saving' && (
+            <span className={cx('status-badge', 'saving')}>
+                Đang lưu...
+            </span>
+        )}
+
+        {saveStatus === 'saved' && (
+            <span className={cx('status-badge', 'saved')}>
+                Đã lưu
+            </span>
+        )}
+
+        {saveStatus === 'error' && (
+            <span className={cx('status-badge', 'error')}>
+                Lưu thất bại
+            </span>
+        )}
+    </div>
+
+    <EditorToolbar
+        onResetData={onResetData}
+        onSaveCv={onSaveCv}
+        onDownloadPdf={onDownloadPdf}
+        submitting={submitting}
+    />
+</div>
         </aside>
     );
 }

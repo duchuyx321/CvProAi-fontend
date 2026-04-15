@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
@@ -8,6 +8,9 @@ import LeftEditor from './components/LeftEditor';
 import RightPreview from './components/RightPreview';
 import styles from './CvEditor.module.scss';
 import { getCvTemplateDetail } from '~/services/cv-teamplate.service';
+import useBeforeUnloadGuard from '~/hooks/useBeforeUnloadGuard';
+import { validateCvData } from '~/utils/validation/cvSchemas';
+import scrollToFirstError from '~/utils/form/scrollToFirstError';
 
 const cx = classNames.bind(styles);
 
@@ -36,6 +39,10 @@ function CvEditor() {
         content: {},
         config: {},
     });
+    const [errors, setErrors] = useState({});
+    const [isDirty, setIsDirty] = useState(false);
+    const [saveStatus, setSaveStatus] = useState('idle'); 
+    const initialCvSnapshotRef = useRef('');
 
     const [openSections, setOpenSections] = useState({
         personal_info: true,
@@ -234,6 +241,13 @@ function CvEditor() {
         if (code) fetchCvDetail();
     }, [code]);
 
+        useEffect(() => {
+        if (cvData?.id && !initialCvSnapshotRef.current) {
+            initialCvSnapshotRef.current = JSON.stringify(cvData);
+        }
+    }, [cvData]);
+
+    useBeforeUnloadGuard(isDirty && !submitting);
     // ================= SECTIONS =================
     const sectionList = useMemo(
         () => [
@@ -295,10 +309,44 @@ function CvEditor() {
     const handleToggleSection = (key) => {
         setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
     };
+    const clearFieldError = (fieldName) => {
+        setErrors((prev) => {
+            if (!prev[fieldName]) return prev;
+            const next = { ...prev };
+            delete next[fieldName];
+            return next;
+        });
+    };
 
+    const markAsDirty = () => {
+        setIsDirty(true);
+        setSaveStatus('unsaved');
+    };
+
+    const runValidateCv = () => {
+        const nextErrors = validateCvData(cvData);
+        setErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            scrollToFirstError(nextErrors);
+            return false;
+        }
+
+        return true;
+    };
     const PERSONAL_CONTACT_FIELDS = ['email', 'phone', 'address', 'website'];
 
     const handleChangeField = (sectionKey, field, value) => {
+        markAsDirty();
+
+        if (field === 'email') clearFieldError('email');
+        if (field === 'phone') clearFieldError('phone');
+        if (field === 'address') clearFieldError('address');
+        if (field === 'website') clearFieldError('website');
+        if (field === 'full_name') clearFieldError('full_name');
+        if (field === 'headline') clearFieldError('headline');
+        if (sectionKey === 'summary') clearFieldError('summary');
+
         // ===== PERSONAL INFO =====
         if (sectionKey === 'personal_info') {
             if (PERSONAL_CONTACT_FIELDS.includes(field)) {
@@ -335,13 +383,12 @@ function CvEditor() {
                 ...prev,
                 content: {
                     ...(prev.content || {}),
-                    [contentKey]: value, // lưu string
+                    [contentKey]: value,
                 },
             }));
             return;
         }
 
-        // các section khác
         setCvData((prev) => ({
             ...prev,
             content: {
@@ -355,56 +402,153 @@ function CvEditor() {
     };
 
     const handleChangeArrayField = (sectionKey, nextValue) => {
+        markAsDirty();
+    
+        const normalizedValue = Array.isArray(nextValue) ? nextValue : [];
+    
+        if (sectionKey === 'experience' && normalizedValue.length > 0) {
+            clearFieldError('experience');
+        }
+    
+        if (sectionKey === 'education' && normalizedValue.length > 0) {
+            clearFieldError('education');
+        }
+    
+        if (sectionKey === 'skills' && normalizedValue.length > 0) {
+            clearFieldError('skills');
+        }
+    
+        if (sectionKey === 'projects' && normalizedValue.length > 0) {
+            clearFieldError('projects');
+        }
+    
+        if (sectionKey === 'certificates' && normalizedValue.length > 0) {
+            clearFieldError('certificates');
+        }
+    
         const contentKey = SECTION_KEY_MAP[sectionKey];
-
+    
         setCvData((prev) => ({
             ...prev,
             content: {
                 ...prev.content,
-                [contentKey]: Array.isArray(nextValue) ? nextValue : [],
+                [contentKey]: normalizedValue,
             },
         }));
     };
 
-    const handleChangeObjectInArray = (sectionKey, index, key, value) => {
-        const contentKey = SECTION_KEY_MAP[sectionKey];
+    const hasValue = (value) => String(value || '').trim().length > 0;
 
-        setCvData((prev) => {
-            const list = Array.isArray(prev.content?.[contentKey])
-                ? prev.content[contentKey]
-                : [];
+const handleChangeObjectInArray = (sectionKey, index, key, value) => {
+    markAsDirty();
 
-            const newList = [...list];
-            newList[index] = {
-                ...(newList[index] || {}),
-                [key]: value,
-            };
+    clearFieldError(sectionKey);
 
-            return {
-                ...prev,
-                content: {
-                    ...prev.content,
-                    [contentKey]: newList,
-                },
-            };
-        });
-    };
+    if (sectionKey === 'experience') {
+        if (key === 'company' && hasValue(value)) {
+            clearFieldError(`experience_company_${index}`);
+        }
+        if (key === 'role' && hasValue(value)) {
+            clearFieldError(`experience_role_${index}`);
+        }
+        if (key === 'description' && hasValue(value)) {
+            clearFieldError(`experience_description_${index}`);
+        }
+    }
+
+    if (sectionKey === 'projects') {
+        if (key === 'name' && hasValue(value)) {
+            clearFieldError(`projects_name_${index}`);
+        }
+        if (key === 'role' && hasValue(value)) {
+            clearFieldError(`projects_role_${index}`);
+        }
+        if (key === 'description' && hasValue(value)) {
+            clearFieldError(`projects_description_${index}`);
+        }
+    }
+
+    if (sectionKey === 'education') {
+        if (key === 'school' && hasValue(value)) {
+            clearFieldError(`education_school_${index}`);
+        }
+        if (key === 'degree' && hasValue(value)) {
+            clearFieldError(`education_degree_${index}`);
+        }
+        if (key === 'description' && hasValue(value)) {
+            clearFieldError(`education_description_${index}`);
+        }
+    }
+
+    if (sectionKey === 'certificates') {
+        if (key === 'name' && hasValue(value)) {
+            clearFieldError(`certificates_name_${index}`);
+        }
+        if (key === 'issuer' && hasValue(value)) {
+            clearFieldError(`certificates_issuer_${index}`);
+        }
+        if (key === 'description' && hasValue(value)) {
+            clearFieldError(`certificates_description_${index}`);
+        }
+    }
+
+    const contentKey = SECTION_KEY_MAP[sectionKey];
+
+    setCvData((prev) => {
+        const list = Array.isArray(prev.content?.[contentKey])
+            ? prev.content[contentKey]
+            : [];
+
+        const newList = [...list];
+        newList[index] = {
+            ...(newList[index] || {}),
+            [key]: value,
+        };
+
+        return {
+            ...prev,
+            content: {
+                ...prev.content,
+                [contentKey]: newList,
+            },
+        };
+    });
+};
 
     const handleChangeConfig = (nextConfig) => {
+        markAsDirty();
+
         setCvData((prev) => ({
             ...prev,
             config: nextConfig,
         }));
     };
 
-    const handleSaveCv = async () => {
+        const handleSaveCv = async () => {
         if (submitting) return;
+
+        const isValid = runValidateCv();
+        if (!isValid) {
+            toast.error('Vui lòng kiểm tra lại thông tin CV');
+            return;
+        }
 
         try {
             setSubmitting(true);
+            setSaveStatus('saving');
+
+            // TODO: gọi API save thật ở đây
+            // await updateCvApi(cvData.id, cvData);
+
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            setIsDirty(false);
+            setSaveStatus('saved');
+            initialCvSnapshotRef.current = JSON.stringify(cvData);
+
             toast.success('Lưu CV thành công');
-            // eslint-disable-next-line no-unused-vars
         } catch (error) {
+            setSaveStatus('error');
             toast.error('Lỗi lưu CV');
         } finally {
             setSubmitting(false);
@@ -418,6 +562,8 @@ function CvEditor() {
     const handleResetData = () => {
         if (window.confirm('Reset CV?')) {
             setCvData((prev) => ({ ...prev, content: {} }));
+            setErrors({});
+            markAsDirty();
             toast.success('Đã reset');
         }
     };
@@ -437,7 +583,7 @@ function CvEditor() {
                     </button>
                 )}
 
-                <LeftEditor
+<LeftEditor
                     isOpen={isLeftPanelOpen}
                     onTogglePanel={() => setIsLeftPanelOpen(false)}
                     activeTab={activeTab}
@@ -455,6 +601,9 @@ function CvEditor() {
                     onSaveCv={handleSaveCv}
                     onDownloadPdf={handleDownloadPdf}
                     submitting={submitting}
+                    errors={errors}
+                    isDirty={isDirty}
+                    saveStatus={saveStatus}
                 />
 
                 <RightPreview templateDetail={cvData} />

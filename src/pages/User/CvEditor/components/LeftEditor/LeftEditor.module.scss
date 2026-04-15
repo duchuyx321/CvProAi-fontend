@@ -69,3 +69,40 @@ $bg-hover: #f1f5f9;
 .panel-footer {
   flex-shrink: 0; /* Giữ cố định ở đáy */
 }
+.editor-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.unsaved {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.saving {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.saved {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
