@@ -1,8 +1,8 @@
 import * as Response from '~/utils/HttpsRequest';
 
-export const getPaymentHistory = async () => {
+export const getExportHistory = async () => {
     try {
-        const res = await Response.GET('payment/history');
+        const res = await Response.GET('export/history');
         return res;
     } catch (error) {
         const data = error?.response?.data;

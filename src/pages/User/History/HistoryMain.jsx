@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
-import { getPaymentHistory } from '~/services/history.service';
+// import { getPaymentHistory } from '~/services/history.service';
 import styles from './HistoryMain.module.scss';
 import Button from '~/components/Button';
 

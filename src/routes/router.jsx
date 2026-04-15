@@ -27,7 +27,7 @@ import DetailLayout from '~/layouts/DetailLayout';
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
-import ExportPage from '~/export/export';
+import Export from '~/Export/Export';
 
 
 // public router
@@ -131,8 +131,8 @@ const PublicRouter = [
     },
     {
         path: config.router.export,
-        component: ExportPage,
-        layout: DetailLayout,
+        component: Export,
+        layout: DefaultLayout,
     },
 ];
 
