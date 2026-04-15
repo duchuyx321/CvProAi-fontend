@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import classNames from 'classnames/bind';
 import {
-    FiCheck,
+    FiChevronDown,
+    FiFilePlus,
     FiFileText,
-    FiPlusCircle,
-    FiUploadCloud,
+    FiFolder,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -19,33 +19,34 @@ const ALLOWED_FILE_TYPES = [
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
+const ALLOWED_FILE_EXTENSIONS = ['pdf', 'doc', 'docx'];
+
+const getFileExtension = (fileName = '') => {
+    const fileNameParts = fileName.split('.');
+
+    if (fileNameParts.length < 2) return '';
+
+    return fileNameParts.pop().toLowerCase();
+};
 
 function CVUploadCard({
     selectedCV,
-    savedCVs,
     loadingSavedCVs,
-    onSelectSavedCV,
+    showSavedCVSection,
+    onToggleSavedCVSection,
     onUploadLocalCV,
 }) {
     const fileInputRef = useRef(null);
-    const [showCollection, setShowCollection] = useState(false);
-
-    const selectedFileName = selectedCV?.name || 'Chưa chọn CV';
-
-    const handleToggleCollection = () => {
-        setShowCollection((prev) => !prev);
-    };
-
-    const handleChooseLocalFile = () => {
-        fileInputRef.current?.click();
-    };
 
     const validateFile = (file) => {
         if (!file) {
             return 'Không tìm thấy file hợp lệ';
         }
 
-        const isValidType = ALLOWED_FILE_TYPES.includes(file.type);
+        const fileExtension = getFileExtension(file.name);
+        const isValidType =
+            ALLOWED_FILE_TYPES.includes(file.type) ||
+            ALLOWED_FILE_EXTENSIONS.includes(fileExtension);
 
         if (!isValidType) {
             return 'Chỉ hỗ trợ file PDF, DOC hoặc DOCX';
@@ -56,6 +57,10 @@ function CVUploadCard({
         }
 
         return '';
+    };
+
+    const handleChooseLocalFile = () => {
+        fileInputRef.current?.click();
     };
 
     const handleChange = (e) => {
@@ -72,118 +77,104 @@ function CVUploadCard({
         }
 
         onUploadLocalCV(file);
-        setShowCollection(false);
         e.target.value = '';
     };
+
+    const selectedSourceLabel =
+        selectedCV?.source === 'saved'
+            ? 'CV nội bộ từ hệ thống'
+            : selectedCV?.source === 'local'
+              ? 'CV import từ máy tính'
+              : loadingSavedCVs
+                ? 'Đang tải danh sách CV...'
+                : 'Chọn CV để bắt đầu phân tích';
+
+    const selectedStatusLabel =
+        selectedCV?.source === 'saved'
+            ? 'CV nội bộ'
+            : selectedCV?.source === 'local'
+              ? 'File bên ngoài'
+              : 'Chưa có CV';
 
     return (
         <div className={cx('card')}>
             <div className={cx('header')}>
-                <h2 className={cx('title')}>Chọn CV của bạn</h2>
+                <div>
+                    <h2 className={cx('title')}>Chọn CV của bạn</h2>
+                    <p className={cx('subtitle')}>
+                        Chọn một nguồn CV để bắt đầu phân tích cùng AI.
+                    </p>
+                </div>
+            </div>
+
+            <div className={cx('actions')}>
+                <button
+                    type="button"
+                    className={cx('actionButton')}
+                    onClick={handleChooseLocalFile}
+                >
+                    <span className={cx('actionIcon')}>
+                        <FiFilePlus />
+                    </span>
+
+                    <span className={cx('actionText')}>Import CV</span>
+                </button>
 
                 <button
                     type="button"
-                    className={cx('plusButton')}
-                    onClick={handleToggleCollection}
-                    aria-label="Mở bộ sưu tập CV"
+                    className={cx('actionButton', {
+                        active: showSavedCVSection,
+                    })}
+                    onClick={onToggleSavedCVSection}
+                    aria-expanded={showSavedCVSection}
                 >
-                    <FiPlusCircle />
+                    <span className={cx('actionIcon')}>
+                        <FiFolder />
+                    </span>
+
+                    <span className={cx('actionText')}>CV của tôi</span>
+
+                    <FiChevronDown
+                        className={cx('arrowIcon', {
+                            rotate: showSavedCVSection,
+                        })}
+                    />
                 </button>
             </div>
 
-            <div className={cx('selectedFile', { empty: !selectedCV })}>
-                <span className={cx('fileIcon')}>
-                    <FiFileText />
-                </span>
-
-                <span className={cx('fileName')}>{selectedFileName}</span>
-            </div>
-
-            <button
-                type="button"
-                className={cx('uploadButton')}
-                onClick={handleChooseLocalFile}
-            >
-                <FiUploadCloud className={cx('uploadIcon')} />
-                <span>Tải lên CV mới</span>
-            </button>
-
-            <p className={cx('uploadHint')}>
-                Hỗ trợ PDF, DOC, DOCX. Tối đa {MAX_FILE_SIZE_MB}MB
-            </p>
-
             <input
                 ref={fileInputRef}
-                id="cv-file-input"
                 className={cx('hiddenInput')}
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={handleChange}
             />
 
-            {showCollection ? (
-                <div className={cx('collectionWrapper')}>
-                    <h3 className={cx('collectionTitle')}>
-                        CV đã lưu trên CVPro
-                    </h3>
+            <div className={cx('selectedFile', { empty: !selectedCV })}>
+                <span className={cx('fileIcon')}>
+                    <FiFileText />
+                </span>
 
-                    {loadingSavedCVs ? (
-                        <p className={cx('collectionMessage')}>
-                            Đang tải danh sách CV...
-                        </p>
-                    ) : savedCVs.length === 0 ? (
-                        <p className={cx('collectionMessage')}>
-                            Bạn chưa có CV nào trong bộ sưu tập.
-                        </p>
-                    ) : (
-                        <div className={cx('collectionList')}>
-                            {savedCVs.map((cv) => {
-                                const cvId = cv?.id ?? cv?.cvId ?? cv?._id;
-                                const cvName =
-                                    cv?.fileName ||
-                                    cv?.title ||
-                                    cv?.name ||
-                                    cv?.originalFileName ||
-                                    'CV chưa đặt tên';
+                <div className={cx('selectedInfo')}>
+                    <div className={cx('selectedTop')}>
+                        <span className={cx('fileName')}>
+                            {selectedCV?.name || 'Chưa chọn CV'}
+                        </span>
 
-                                const isActive =
-                                    selectedCV?.source === 'saved' &&
-                                    selectedCV?.id === cvId;
+                        <span className={cx('sourceBadge')}>
+                            {selectedStatusLabel}
+                        </span>
+                    </div>
 
-                                return (
-                                    <button
-                                        key={cvId || cvName}
-                                        type="button"
-                                        className={cx('collectionItem', {
-                                            active: isActive,
-                                        })}
-                                        onClick={() => {
-                                            onSelectSavedCV(cv);
-                                            setShowCollection(false);
-                                        }}
-                                    >
-                                        <div className={cx('collectionMain')}>
-                                            <span className={cx('itemIcon')}>
-                                                <FiFileText />
-                                            </span>
-
-                                            <span className={cx('itemName')}>
-                                                {cvName}
-                                            </span>
-                                        </div>
-
-                                        {isActive ? (
-                                            <span className={cx('checkIcon')}>
-                                                <FiCheck />
-                                            </span>
-                                        ) : null}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                    <span className={cx('fileSource')}>
+                        {selectedSourceLabel}
+                    </span>
                 </div>
-            ) : null}
+            </div>
+
+            <p className={cx('uploadHint')}>
+                Hỗ trợ PDF, DOC, DOCX. Tối đa {MAX_FILE_SIZE_MB}MB
+            </p>
         </div>
     );
 }

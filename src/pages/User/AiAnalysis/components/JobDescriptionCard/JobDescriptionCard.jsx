@@ -110,7 +110,15 @@ function JobDescriptionCard({
                     <FiFileText />
                 </span>
 
-                <h2 className={cx('title')}>Mô tả công việc (Job Description)</h2>
+                <div>
+                    <h2 className={cx('title')}>
+                        Mô tả công việc (Job Description)
+                    </h2>
+                    <p className={cx('subtitle')}>
+                        Cung cấp mô tả công việc bằng văn bản hoặc tài liệu để AI
+                        phân tích chính xác hơn.
+                    </p>
+                </div>
             </div>
 
             <div className={cx('modeTabs')}>
@@ -144,10 +152,6 @@ function JobDescriptionCard({
                     <span className={cx('modeButtonText')}>Tài liệu</span>
                 </button>
             </div>
-
-            <p className={cx('modeHint')}>
-                Chọn 1 cách để cung cấp mô tả công việc.
-            </p>
 
             {jobDescriptionInputMode === 'TEXT' ? (
                 <textarea
@@ -243,7 +247,9 @@ function JobDescriptionCard({
                 >
                     <FiCpu />
                     <span>
-                        {analyzing ? 'Đang phân tích...' : 'Bắt đầu phân tích CV'}
+                        {analyzing
+                            ? 'Đang phân tích...'
+                            : 'Bắt đầu phân tích CV'}
                     </span>
                 </button>
             </div>

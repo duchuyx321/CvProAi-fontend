@@ -1,44 +1,59 @@
 .card {
-    padding: 16px;
-    background: #ffffff;
-    border: 1px solid #e4e8f1;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    --jd-input-height: 216px;
+
+    padding: 20px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+    border: 1px solid #e8edf5;
+    border-radius: 20px;
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
 }
 
 .header {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .titleIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: #eef2ff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     color: #2848f4;
+    flex-shrink: 0;
 }
 
 .title {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.35;
+    color: #1b2a4a;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
     margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    line-height: 1.4;
-    color: #20293a;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #72809a;
 }
 
 .modeTabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 16px;
 }
 
 .modeButton {
-    min-width: 118px;
-    height: 40px;
-    padding: 0 14px;
+    min-width: 126px;
+    height: 44px;
+    padding: 0 16px;
     border: 1px solid #dbe2f0;
     border-radius: 999px;
     background: #ffffff;
@@ -47,13 +62,13 @@
     justify-content: center;
     gap: 8px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: #5f6c84;
     cursor: pointer;
     transition: all 0.22s ease;
 
     &:hover {
-        border-color: #b8c1d6;
+        border-color: #c8d2e8;
         background: #f8faff;
         transform: translateY(-1px);
     }
@@ -69,7 +84,7 @@
     border-color: #2848f4;
     background: #eef2ff;
     color: #2848f4;
-    box-shadow: 0 8px 18px rgba(40, 72, 244, 0.08);
+    box-shadow: 0 10px 18px rgba(40, 72, 244, 0.08);
 }
 
 .modeButtonIcon {
@@ -79,7 +94,6 @@
     width: 16px;
     height: 16px;
     font-size: 14px;
-    line-height: 1;
     flex-shrink: 0;
 }
 
@@ -87,24 +101,23 @@
     line-height: 1;
 }
 
-.modeHint {
-    margin: 0 0 14px;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #8a94a8;
+.textarea,
+.filePanel {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--jd-input-height);
+    border-radius: 18px;
 }
 
 .textarea {
-    width: 100%;
-    min-height: 180px;
-    padding: 14px 16px;
+    display: block;
+    padding: 16px 18px;
     background: #f7f8fc;
-    border: 1px solid #f0f3f9;
-    border-radius: 10px;
+    border: 1px solid #edf1f7;
     resize: none;
     outline: none;
-    font-size: 13px;
-    line-height: 1.75;
+    font-size: 14px;
+    line-height: 1.8;
     color: #4e5b73;
     transition: background 0.2s ease, border-color 0.2s ease;
 
@@ -119,16 +132,15 @@
 }
 
 .filePanel {
-    min-height: 224px;
-    padding: 20px 16px;
+    padding: 16px 18px;
     border: 1px dashed #dbe2f0;
-    border-radius: 12px;
     background: #fafbff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 12px;
+    overflow: hidden;
     transition: border-color 0.2s ease, background 0.2s ease,
         box-shadow 0.2s ease;
 }
@@ -140,17 +152,18 @@
 }
 
 .filePanel.hasFile {
-    align-items: stretch;
     justify-content: center;
+    align-items: center;
 }
 
 .dropzoneButton {
+    box-sizing: border-box;
     width: 100%;
-    max-width: 360px;
-    min-height: 124px;
-    padding: 20px;
+    max-width: 460px;
+    min-height: 148px;
+    padding: 14px;
     border: none;
-    border-radius: 12px;
+    border-radius: 16px;
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -174,20 +187,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 42px;
+    font-size: 44px;
     color: #2848f4;
 }
 
 .dropzoneText {
     font-size: 18px;
-    font-weight: 700;
-    line-height: 1.4;
-    color: #20293a;
+    font-weight: 800;
+    line-height: 1.35;
+    color: #1f2d48;
     text-align: center;
 }
 
 .dropzoneSubText {
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.6;
     color: #8a94a8;
     text-align: center;
@@ -196,16 +209,17 @@
 .uploadHint {
     margin: 0;
     font-size: 12px;
-    line-height: 1.5;
+    line-height: 1.6;
     color: #8a94a8;
     text-align: center;
 }
 
 .selectedFile {
+    box-sizing: border-box;
     width: 100%;
-    max-width: 480px;
-    padding: 12px 14px;
-    border-radius: 10px;
+    max-width: 520px;
+    padding: 14px;
+    border-radius: 16px;
     border: 1px solid #e8edf6;
     background: #f8faff;
     display: flex;
@@ -223,10 +237,14 @@
 }
 
 .selectedFileIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #eef2ff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 18px;
     color: #2848f4;
     flex-shrink: 0;
 }
@@ -239,9 +257,9 @@
 }
 
 .selectedFileName {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
     color: #20293a;
     white-space: nowrap;
     overflow: hidden;
@@ -255,8 +273,8 @@
 }
 
 .removeFileButton {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: none;
     border-radius: 999px;
@@ -284,32 +302,34 @@
 }
 
 .actions {
-    margin-top: 16px;
+    margin-top: 18px;
     display: flex;
     justify-content: flex-end;
 }
 
 .submitButton {
-    min-width: 198px;
-    height: 44px;
-    padding: 0 18px;
+    min-width: 220px;
+    height: 52px;
+    padding: 0 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    background: #2440f5;
-    box-shadow: 0 10px 24px rgba(36, 64, 245, 0.2);
-    font-size: 14px;
-    font-weight: 700;
+    gap: 10px;
+    background: linear-gradient(135deg, #3552ff 0%, #2340f5 100%);
+    box-shadow: 0 16px 28px rgba(36, 64, 245, 0.22);
+    font-size: 15px;
+    font-weight: 800;
     line-height: 1.4;
     color: #ffffff;
     cursor: pointer;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease,
+        box-shadow 0.2s ease;
 
     &:hover {
         transform: translateY(-1px);
+        box-shadow: 0 18px 32px rgba(36, 64, 245, 0.26);
     }
 
     &:active {
@@ -324,6 +344,11 @@
 }
 
 @media (max-width: 768px) {
+    .card {
+        --jd-input-height: 196px;
+        padding: 18px 16px;
+    }
+
     .modeTabs {
         flex-wrap: wrap;
     }
@@ -333,14 +358,14 @@
         min-width: 0;
     }
 
-    .filePanel {
-        min-height: 200px;
-    }
-
     .dropzoneButton,
     .selectedFile,
     .submitButton {
         width: 100%;
         max-width: none;
+    }
+
+    .actions {
+        justify-content: stretch;
     }
 }

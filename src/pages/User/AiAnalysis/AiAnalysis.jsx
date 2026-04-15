@@ -1,37 +1,79 @@
 import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
+import { FiStar } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
-import CVAnalysisLeft from './components/CVAnalysisLeft';
-import CVAnalysisRight from './components/CVAnalysisRight';
+import CVUploadCard from './components/CVUploadCard';
+import JobDescriptionCard from './components/JobDescriptionCard';
+import SavedCVList from './components/CVList';
 import { buildAnalyzeCVFormData } from '~/services/aiAnalysis.service';
-import { getMyCVCollection } from '~/services/cv.service';
 import { validateAIAnalysisForm } from '~/utils/aiAnalysis.validator';
 import { validateJobDescriptionFile } from '~/utils/jobDescriptionFile.validator';
 import styles from './AiAnalysis.module.scss';
 
 const cx = classNames.bind(styles);
 
-const DEFAULT_ANALYSIS_RESULT = {
-    score: 85,
-    levelLabel: 'Rất tiềm năng',
-    statusLabel: 'Hoàn tất',
-    missingSkills: [
-        'React Native',
-        'CI/CD Pipeline',
-        'AWS Lambda',
-        'Microservices Architecture',
-    ],
-    suggestions: [
-        'Bạn nên nhấn mạnh hơn vào các dự án sử dụng <strong>TypeScript</strong> vì nhà tuyển dụng yêu cầu rất cao về kỹ năng này.',
-        'Phần "Kinh nghiệm làm việc" hiện tại đang thiếu các con số định lượng. Hãy thử thêm các chỉ số như <strong>"Tăng hiệu suất 20%"</strong> hoặc <strong>"Tiết kiệm 10 giờ/tuần"</strong>.',
-        'Cân nhắc bổ sung thêm chứng chỉ <strong>AWS Certified Developer</strong> nếu bạn đã có đủ bề dày cho phần thiếu hụt về hạ tầng cloud.',
-    ],
-};
+const MOCK_SAVED_CVS = [
+    {
+        id: 1,
+        fileName: 'CV_Frontend_React_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-04-10',
+        role: 'Frontend Developer',
+        location: 'Hồ Chí Minh',
+        level: '2 năm kinh nghiệm',
+    },
+    {
+        id: 2,
+        fileName: 'CV_NodeJS_Backend_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-04-08',
+        role: 'Backend Developer',
+        location: 'Đà Nẵng',
+        level: '3 năm kinh nghiệm',
+    },
+    {
+        id: 3,
+        fileName: 'CV_Fullstack_JavaScript_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-04-06',
+        role: 'Fullstack Developer',
+        location: 'Hà Nội',
+        level: '4 năm kinh nghiệm',
+    },
+    {
+        id: 4,
+        fileName: 'CV_Intern_Frontend_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-04-03',
+        role: 'Frontend Intern',
+        location: 'Hồ Chí Minh',
+        level: 'Sinh viên năm cuối',
+    },
+    {
+        id: 5,
+        fileName: 'CV_Designer_Product_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-03-28',
+        role: 'Product Designer',
+        location: 'Cần Thơ',
+        level: '2 năm kinh nghiệm',
+    },
+    {
+        id: 6,
+        fileName: 'CV_Tester_QA_NguyenVanA.pdf',
+        fileUrl: '#',
+        updatedAt: '2026-03-20',
+        role: 'QA Tester',
+        location: 'Hồ Chí Minh',
+        level: '1.5 năm kinh nghiệm',
+    },
+];
 
 function AiAnalysis() {
     const [savedCVs, setSavedCVs] = useState([]);
     const [loadingSavedCVs, setLoadingSavedCVs] = useState(false);
+    const [showSavedCVSection, setShowSavedCVSection] = useState(false);
 
     const [selectedCV, setSelectedCV] = useState(null);
 
@@ -41,71 +83,30 @@ function AiAnalysis() {
     const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
 
     const [analyzing, setAnalyzing] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState(null);
-    const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
     useEffect(() => {
-        loadMyCVCollection();
+        loadMockCVCollection();
     }, []);
 
-    const resetAnalysisResult = () => {
-        setAnalysisResult(null);
-        setHasAnalyzed(false);
-    };
-
-    const normalizeAnalysisResult = (result) => {
-        if (!result) {
-            return DEFAULT_ANALYSIS_RESULT;
-        }
-
-        const normalizedScore = Number(result?.score ?? result?.matchingScore);
-
-        return {
-            score: Number.isNaN(normalizedScore)
-                ? DEFAULT_ANALYSIS_RESULT.score
-                : normalizedScore,
-            levelLabel:
-                result?.levelLabel ||
-                result?.level ||
-                result?.assessment ||
-                DEFAULT_ANALYSIS_RESULT.levelLabel,
-            statusLabel:
-                result?.statusLabel ||
-                result?.status ||
-                DEFAULT_ANALYSIS_RESULT.statusLabel,
-            missingSkills: Array.isArray(result?.missingSkills)
-                ? result.missingSkills
-                : Array.isArray(result?.missing_skills)
-                  ? result.missing_skills
-                  : DEFAULT_ANALYSIS_RESULT.missingSkills,
-            suggestions: Array.isArray(result?.suggestions)
-                ? result.suggestions
-                : Array.isArray(result?.aiSuggestions)
-                  ? result.aiSuggestions
-                  : Array.isArray(result?.recommendations)
-                    ? result.recommendations
-                    : DEFAULT_ANALYSIS_RESULT.suggestions,
-        };
-    };
-
-    const loadMyCVCollection = async () => {
+    const loadMockCVCollection = async () => {
         try {
             setLoadingSavedCVs(true);
 
-            const result = await getMyCVCollection();
+            await new Promise((resolve) => {
+                setTimeout(resolve, 400);
+            });
 
-            if (!result.success) {
-                toast.error(result.message || 'Không thể tải danh sách CV');
-                return;
-            }
-
-            setSavedCVs(result.data || []);
+            setSavedCVs(MOCK_SAVED_CVS);
         } catch (error) {
-            console.error('Load CV collection error:', error);
+            console.error('Load mock CV collection error:', error);
             toast.error('Không thể tải danh sách CV');
         } finally {
             setLoadingSavedCVs(false);
         }
+    };
+
+    const handleToggleSavedCVSection = () => {
+        setShowSavedCVSection((prev) => !prev);
     };
 
     const handleSelectSavedCV = (cv) => {
@@ -126,7 +127,6 @@ function AiAnalysis() {
             source: 'saved',
         });
 
-        resetAnalysisResult();
         toast.success('Đã chọn CV từ bộ sưu tập');
     };
 
@@ -140,8 +140,18 @@ function AiAnalysis() {
             source: 'local',
         });
 
-        resetAnalysisResult();
-        toast.success('Đã chọn CV thành công');
+        setShowSavedCVSection(false);
+        toast.success('Đã chọn CV từ máy tính');
+    };
+
+    const handlePreviewMockCV = (cv, e) => {
+        e.stopPropagation();
+        toast.info(`Mock preview: ${cv.fileName}`);
+    };
+
+    const handleDownloadMockCV = (cv, e) => {
+        e.stopPropagation();
+        toast.info(`Mock download: ${cv.fileName}`);
     };
 
     const handleChangeJobDescriptionInputMode = (mode) => {
@@ -154,18 +164,10 @@ function AiAnalysis() {
         if (mode === 'FILE') {
             setJobDescriptionText('');
         }
-
-        if (hasAnalyzed || analysisResult) {
-            resetAnalysisResult();
-        }
     };
 
     const handleJobDescriptionTextChange = (value) => {
         setJobDescriptionText(value);
-
-        if (hasAnalyzed || analysisResult) {
-            resetAnalysisResult();
-        }
     };
 
     const handleUploadJobDescriptionFile = (file) => {
@@ -184,19 +186,11 @@ function AiAnalysis() {
             file,
         });
 
-        if (hasAnalyzed || analysisResult) {
-            resetAnalysisResult();
-        }
-
         toast.success('Đã tải file mô tả công việc');
     };
 
     const handleRemoveJobDescriptionFile = () => {
         setJobDescriptionFile(null);
-
-        if (hasAnalyzed || analysisResult) {
-            resetAnalysisResult();
-        }
     };
 
     const fetchAnalyzeAPI = async () => {
@@ -213,7 +207,7 @@ function AiAnalysis() {
             setTimeout(resolve, 700);
         });
 
-        return DEFAULT_ANALYSIS_RESULT;
+        return true;
     };
 
     const handleAnalyze = async () => {
@@ -236,7 +230,7 @@ function AiAnalysis() {
 
             const resultFetchAPI = fetchAnalyzeAPI();
 
-            const data = await toast.promise(resultFetchAPI, {
+            await toast.promise(resultFetchAPI, {
                 pending: 'Đang phân tích CV...',
                 success: 'Phân tích CV thành công',
                 error: {
@@ -249,8 +243,8 @@ function AiAnalysis() {
                 },
             });
 
-            setAnalysisResult(normalizeAnalysisResult(data));
-            setHasAnalyzed(true);
+            // TODO:
+            // navigate('/ai-analysis/result', { state: { ... } });
         } catch (error) {
             console.error('Analyze CV error:', error);
         } finally {
@@ -260,30 +254,69 @@ function AiAnalysis() {
 
     return (
         <div className={cx('wrapper')}>
-            <div className={cx('container')}>
-                <CVAnalysisLeft
-                    selectedCV={selectedCV}
-                    savedCVs={savedCVs}
-                    loadingSavedCVs={loadingSavedCVs}
-                    onSelectSavedCV={handleSelectSavedCV}
-                    onUploadLocalCV={handleUploadLocalCV}
-                />
+            <div className={cx('pageShell')}>
+                <div className={cx('container')}>
+                    <aside className={cx('sidebar')}>
+                        <CVUploadCard
+                            selectedCV={selectedCV}
+                            loadingSavedCVs={loadingSavedCVs}
+                            showSavedCVSection={showSavedCVSection}
+                            onToggleSavedCVSection={handleToggleSavedCVSection}
+                            onUploadLocalCV={handleUploadLocalCV}
+                        />
 
-                <CVAnalysisRight
-                    jobDescriptionInputMode={jobDescriptionInputMode}
-                    jobDescriptionText={jobDescriptionText}
-                    selectedJobDescriptionFile={jobDescriptionFile}
-                    onChangeJobDescriptionInputMode={
-                        handleChangeJobDescriptionInputMode
-                    }
-                    onJobDescriptionTextChange={handleJobDescriptionTextChange}
-                    onUploadJobDescriptionFile={handleUploadJobDescriptionFile}
-                    onRemoveJobDescriptionFile={handleRemoveJobDescriptionFile}
-                    onAnalyze={handleAnalyze}
-                    analyzing={analyzing}
-                    analysisResult={analysisResult}
-                    hasAnalyzed={hasAnalyzed}
-                />
+                        <div className={cx('tipCard')}>
+                            <span className={cx('tipBadge')}>
+                                <FiStar />
+                                <span>Mẹo từ chuyên gia</span>
+                            </span>
+
+                            <h2 className={cx('tipTitle')}>
+                                Tối ưu chất lượng CV trước khi phân tích
+                            </h2>
+
+                            <p className={cx('tipDescription')}>
+                                Đảm bảo CV của bạn ở định dạng PDF và văn bản có
+                                thể quét được để AI đọc chính xác hơn. Nội dung rõ
+                                ràng, có số liệu định lượng và mô tả vai trò cụ
+                                thể sẽ giúp tăng chất lượng đánh giá.
+                            </p>
+                        </div>
+                    </aside>
+
+                    <section className={cx('workspace')}>
+                        <JobDescriptionCard
+                            jobDescriptionInputMode={jobDescriptionInputMode}
+                            jobDescriptionText={jobDescriptionText}
+                            selectedJobDescriptionFile={jobDescriptionFile}
+                            onChangeJobDescriptionInputMode={
+                                handleChangeJobDescriptionInputMode
+                            }
+                            onJobDescriptionTextChange={
+                                handleJobDescriptionTextChange
+                            }
+                            onUploadJobDescriptionFile={
+                                handleUploadJobDescriptionFile
+                            }
+                            onRemoveJobDescriptionFile={
+                                handleRemoveJobDescriptionFile
+                            }
+                            onAnalyze={handleAnalyze}
+                            analyzing={analyzing}
+                        />
+                    </section>
+                </div>
+
+                {showSavedCVSection ? (
+                    <SavedCVList
+                        savedCVs={savedCVs}
+                        loadingSavedCVs={loadingSavedCVs}
+                        selectedCV={selectedCV}
+                        onSelectSavedCV={handleSelectSavedCV}
+                        onPreviewCV={handlePreviewMockCV}
+                        onDownloadCV={handleDownloadMockCV}
+                    />
+                ) : null}
             </div>
         </div>
     );
