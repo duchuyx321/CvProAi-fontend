@@ -5,7 +5,7 @@ import CvPreview from '~/components/CvPreview';
 
 const cx = classNames.bind(styles);
 
-function RightPreview({ templateDetail = {} }) {
+function RightPreview({ templateDetail = {}, pageRef = null }) {
     const [zoom, setZoom] = useState(80);
 
     const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
@@ -31,6 +31,7 @@ function RightPreview({ templateDetail = {} }) {
                             name: templateDetail?.title,
                             config: templateDetail?.config,
                         }}
+                        pageRef={pageRef}
                     />
                 </div>
             </div>

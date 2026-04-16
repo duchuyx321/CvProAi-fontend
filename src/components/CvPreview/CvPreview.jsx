@@ -6,7 +6,7 @@ import ZoneRenderer from './components/ZoneRenderer';
 
 const cx = classNames.bind(styles);
 
-function CvPreview({ template, cv }) {
+function CvPreview({ template, cv, pageRef = null }) {
     const previewData = useMemo(
         () => buildPreviewData({ template, cv }),
         [template, cv],
@@ -42,7 +42,7 @@ function CvPreview({ template, cv }) {
     };
 
     return (
-        <div className={cx('previewShell')}>
+        <div className={cx('previewShell')} ref={pageRef}>
             <div className={cx('page')} style={pageStyle}>
                 {layoutType === 'STACK' ? (
                     <div className={cx('layoutStack')}>
@@ -118,6 +118,13 @@ function CvPreview({ template, cv }) {
                         </div>
                     </div>
                 ) : null}
+                <div
+                    data-cvproai-watermark="footer"
+                    className={cx('logo')}
+                    data-visible={'true'}
+                >
+                    © CvProAI.vn
+                </div>
             </div>
         </div>
     );

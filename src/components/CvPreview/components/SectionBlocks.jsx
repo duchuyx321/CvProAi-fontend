@@ -51,11 +51,13 @@ export function ProfileSection({ section, data, content, layoutType }) {
         return (
             <div className={cx('profileTop')}>
                 {avatar ? (
-                    <img
-                        src={avatar}
-                        alt={name || 'avatar'}
-                        className={cx('avatarCircle')}
-                    />
+                    <div className={cx('profileBannerAvatar')}>
+                        <img
+                            src={avatar}
+                            alt={name || 'avatar'}
+                            className={cx('avatarCircle')}
+                        />
+                    </div>
                 ) : null}
 
                 <div className={cx('profileTopInfo')}>

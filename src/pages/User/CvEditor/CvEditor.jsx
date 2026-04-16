@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 import { FiMenu } from 'react-icons/fi';
+import { toBlob } from 'html-to-image';
 
 import LeftEditor from './components/LeftEditor';
 import RightPreview from './components/RightPreview';
@@ -28,7 +29,8 @@ function CvEditor() {
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('content');
     const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
-
+    const [previewImage, setPreviewImage] = useState('');
+    const pageRef = useRef(null);
     const [cvData, setCvData] = useState({
         id: '',
         title: '',
@@ -396,23 +398,80 @@ function CvEditor() {
             config: nextConfig,
         }));
     };
+    const waitForImages = async (container) => {
+        const images = Array.from(container.querySelectorAll('img'));
+
+        await Promise.all(
+            images.map((img) => {
+                if (img.complete) return Promise.resolve();
+
+                return new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }),
+        );
+    };
 
     const handleSaveCv = async () => {
         if (submitting) return;
-
+        if (!pageRef?.current) return;
         try {
             setSubmitting(true);
-            toast.success('Lưu CV thành công');
-            // eslint-disable-next-line no-unused-vars
+
+            // đợi font load xong
+            if (document.fonts?.ready) {
+                await document.fonts.ready;
+            }
+
+            // đợi ảnh trong CV load xong
+            await waitForImages(pageRef.current);
+
+            // chụp node preview
+            const blob = await toBlob(pageRef.current, {
+                cacheBust: true,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+            });
+
+            if (!blob) {
+                throw new Error('Không tạo được ảnh preview');
+            }
+
+            // tạo URL tạm để xem trước
+            const localUrl = URL.createObjectURL(blob);
+            setPreviewImage(localUrl);
+            console.log(localUrl);
+            // call api
+            toast.success('Chụp preview thành công');
         } catch (error) {
-            toast.error('Lỗi lưu CV');
+            console.error(error);
+            toast.error('Lỗi chụp preview');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDownloadPdf = () => {
-        toast.info('Chưa làm PDF');
+        if (!pageRef?.current) return;
+        const htmlText = pageRef.current?.outerHTML;
+        const getAllCssText = () => {
+            let cssText = '';
+
+            for (const sheet of Array.from(document.styleSheets)) {
+                try {
+                    const rules = Array.from(sheet.cssRules || []);
+                    cssText += rules.map((rule) => rule.cssText).join('\n');
+                } catch (e) {
+                    // stylesheet ngoài domain có thể không đọc được
+                    console.warn('Cannot read stylesheet', sheet.href);
+                }
+            }
+
+            return cssText;
+        };
+
+        const cssText = getAllCssText();
     };
 
     const handleResetData = () => {
@@ -457,7 +516,7 @@ function CvEditor() {
                     submitting={submitting}
                 />
 
-                <RightPreview templateDetail={cvData} />
+                <RightPreview templateDetail={cvData} pageRef={pageRef} />
             </div>
         </section>
     );
