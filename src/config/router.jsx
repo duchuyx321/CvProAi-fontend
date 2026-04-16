@@ -16,8 +16,11 @@ export const router = {
     dashboard: '/dashboard',
     cvTemplates: '/user/cv-templates',
     CvTemplateDetail: '/cv-templates/:code',
-    // cvEditorRouter: '/cv-editor',
-    cvEditor: '/cv-editor/:code',
+    
+    // CV editor    
+    createCv: '/create-cv/:code',
+    editCv: '/edit-cv/:slug',
+
     myCvs: '/my-cvs',
     aiAnalysis: '/ai-analysis',
     upgradePremium: '/upgrade-premium',

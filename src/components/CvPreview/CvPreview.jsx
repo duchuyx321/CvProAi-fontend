@@ -30,6 +30,7 @@ function CvPreview({ template, cv, pageRef = null }) {
 
     const pageStyle = {
         fontFamily: theme?.fontFamily || 'Arial, sans-serif',
+        fontSize: `${theme?.fontSize || 12}px`,      
         '--cv-primary': primary,
         '--cv-accent': accent,
         '--cv-item-gap': `${theme?.spacing?.itemGap || 12}px`,
@@ -39,6 +40,7 @@ function CvPreview({ template, cv, pageRef = null }) {
         paddingRight: `${margin?.right || 12}mm`,
         paddingBottom: `${margin?.bottom || 12}mm`,
         paddingLeft: `${margin?.left || 12}mm`,
+        '--cv-avatar-radius': theme?.avatar_shape === 'circle' ? '50%' : '8px',
     };
 
     return (

@@ -1,231 +1,136 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import { FiMenu } from 'react-icons/fi';
 import { toBlob } from 'html-to-image';
+import Modal from '~/components/Modal';
+import Button from '~/components/Button';
+import Input from '~/components/Input';
 
 import LeftEditor from './components/LeftEditor';
 import RightPreview from './components/RightPreview';
 import styles from './CvEditor.module.scss';
-import { getCvTemplateDetail } from '~/services/cv-teamplate.service';
+import { config } from '~/config';
+import {
+    buildEditorResumeData,
+    createInitialCvState,
+    getContentKey,
+    isArraySection,
+    normalizeSectionType,
+    validateTemplateConfig,
+} from '~/utils/cv-section.schema';
+import { MOCK_TEMPLATE_DETAIL } from '../CvTemplateDetail/CvTemplateDetail';
+import { buildPatchFromDirtyFields } from '~/utils/cv-patch.utils';
 
 const cx = classNames.bind(styles);
+const MOCK_CV_STORAGE_PREFIX = 'mock-cv:';
 
-const SECTION_KEY_MAP = {
-    personal_info: 'profile_header',
-    summary: 'SUMMARY',
-    skills: 'SKILLS',
-    experience: 'EXPERIENCE',
-    projects: 'PROJECTS',
-    education: 'EDUCATION',
-    certificates: 'CERTIFICATES',
+const buildMockCvStorageKey = (slug) => `${MOCK_CV_STORAGE_PREFIX}${slug}`;
+
+const cloneDeep = (value) => structuredClone(value);
+
+const getMockCvBySlug = (slug) => {
+    if (!slug) return null;
+    try {
+        const raw = localStorage.getItem(buildMockCvStorageKey(slug));
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.error('Lỗi khi lấy mock CV từ localStorage', error);
+        return null;
+    }
+};
+
+const saveMockCvBySlug = (slug, data) => {
+    if (!slug) return;
+    localStorage.setItem(buildMockCvStorageKey(slug), JSON.stringify(data));
+};
+
+const generateCvSlug = (name = '') => {
+    const normalized = name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9\\s-]/g, '')
+        .trim()
+        .replace(/\\s+/g, '-')
+        .replace(/-+/g, '-');
+
+    return `cv-templates-${normalized || 'untitled'}-${Date.now()}`;
 };
 
 function CvEditor() {
-    const { code } = useParams();
+    const { code, slug } = useParams();
+    const navigate = useNavigate();
+
+    const isCreateMode = Boolean(code) && !slug;
+    const isEditMode = Boolean(slug) && !code;
+    const canDownloadPdf = isEditMode && Boolean(slug);
 
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [activeTab, setActiveTab] = useState('content');
     const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+    const [cvData, setCvData] = useState(createInitialCvState);
     const [previewImage, setPreviewImage] = useState('');
+
+    const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+    const [cvNameDraft, setCvNameDraft] = useState('');
+    const [originalData, setOriginalData] = useState(null);
+    const [dirtyFields, setDirtyFields] = useState({});
+
     const pageRef = useRef(null);
-    const [cvData, setCvData] = useState({
-        id: '',
-        title: '',
-        code: '',
-        content: {},
-        config: {},
-    });
 
-    const [openSections, setOpenSections] = useState({
-        personal_info: true,
-        summary: false,
-        skills: false,
-        experience: false,
-        projects: false,
-        education: false,
-        certificates: false,
-    });
+    const isDirty = useMemo(
+        () => Object.keys(dirtyFields).length > 0,
+        [dirtyFields],
+    );
 
-    // ================= FETCH DATA =================
+    const markDirtyField = useCallback((path) => {
+        if (!path) return;
+        setDirtyFields((prev) => ({ ...prev, [path]: true }));
+    }, []);
+
     useEffect(() => {
         const fetchCvDetail = async () => {
             try {
                 setLoading(true);
-                // const result = await getCvTemplateDetail(code);
-                const result = {
-                    success: true,
-                    messsage: 'Lấy mẫu cv thành công',
-                    data: {
-                        id: '29713ded-64c6-4af0-b11a-1323f3a51eb3',
-                        code: 'DEV_01',
-                        name: 'Mẫu CV đơn giản cho Dev 01',
-                        preview_url:
-                            'https://res.cloudinary.com/djzsbcrk9/image/upload/v1775665562/cvproai/lbglt6pqbmazd9thj3jf.webp',
-                        is_premium: false,
-                        config: {
-                            theme: {
-                                colors: {
-                                    accent: '#EAF3FC',
-                                    primary: '#3F73A7',
-                                },
-                                prefix: '//',
-                                spacing: {
-                                    itemGap: 12,
-                                    sectionGap: 24,
-                                },
-                                fontFamily: 'Inter',
-                            },
-                            zones: {
-                                left_col: [
-                                    'profile',
-                                    'contact',
-                                    'skills',
-                                    'additional',
-                                ],
-                                right_col: [
-                                    'summary',
-                                    'education',
-                                    'experience',
-                                ],
-                            },
-                            layout: {
-                                key: 'split_blue_dev',
-                                body: {
-                                    layout: 'SPLIT',
-                                    columns: [
-                                        {
-                                            id: 'left_col',
-                                            width: 33,
-                                        },
-                                        {
-                                            id: 'right_col',
-                                            width: 67,
-                                        },
-                                    ],
-                                },
-                                page: {
-                                    size: 'A4',
-                                    margin: {
-                                        top: 12,
-                                        left: 12,
-                                        right: 12,
-                                        bottom: 12,
-                                    },
-                                },
-                            },
-                            version: 1,
-                            sections: {
-                                skills: {
-                                    type: 'SKILLS',
-                                    title: 'Các Kỹ Năng',
-                                    fields: ['name', 'description'],
-                                    variant: 'sidebar_box_richtext',
-                                },
-                                contact: {
-                                    type: 'CONTACT',
-                                    title: 'Thông Tin Liên Hệ',
-                                    fields: [
-                                        'birth_date',
-                                        'email',
-                                        'website',
-                                        'phone',
-                                        'address',
-                                    ],
-                                    variant: 'icon_list',
-                                },
-                                profile: {
-                                    type: 'profile_header',
-                                    title: '',
-                                    fields: [
-                                        'avatar_url',
-                                        'headline',
-                                        'full_name',
-                                    ],
-                                    variant: 'sidebar_avatar_badge_name',
-                                },
-                                summary: {
-                                    type: 'SUMMARY',
-                                    title: 'Mục Tiêu Nghề Nghiệp',
-                                    fields: ['SUMMARY'],
-                                    variant: 'content_box_richtext',
-                                },
-                                education: {
-                                    type: 'EDUCATION',
-                                    title: 'Học Vấn',
-                                    fields: [
-                                        {
-                                            items: [
-                                                {
-                                                    items: [
-                                                        'degree',
-                                                        'school',
-                                                        'description',
-                                                    ],
-                                                    layout: 'STACK',
-                                                },
-                                                {
-                                                    items: [
-                                                        'start_date',
-                                                        'end_date',
-                                                        'is_current',
-                                                    ],
-                                                    layout: 'STACK',
-                                                },
-                                            ],
-                                            layout: 'SPLIT',
-                                        },
-                                    ],
-                                    variant: 'card_right_date_badge',
-                                },
-                                additional: {
-                                    type: 'ADDITIONAL',
-                                    title: 'Thông Tin Thêm',
-                                    fields: ['content'],
-                                    variant: 'sidebar_box_richtext',
-                                },
-                                experience: {
-                                    type: 'EXPERIENCE',
-                                    title: 'Kinh Nghiệm Làm Việc',
-                                    fields: [
-                                        {
-                                            items: [
-                                                {
-                                                    items: [
-                                                        'role',
-                                                        'company',
-                                                        'description',
-                                                    ],
-                                                    layout: 'STACK',
-                                                },
-                                                {
-                                                    items: [
-                                                        'start_date',
-                                                        'end_date',
-                                                        'is_current',
-                                                    ],
-                                                    layout: 'STACK',
-                                                },
-                                            ],
-                                            layout: 'SPLIT',
-                                        },
-                                    ],
-                                    variant: 'card_right_date_badge',
-                                },
-                            },
+                let result;
+
+                if (isEditMode) {
+                    const parsedMockCv = getMockCvBySlug(slug);
+                    result = {
+                        ...MOCK_TEMPLATE_DETAIL,
+                        data: parsedMockCv || {
+                            ...MOCK_TEMPLATE_DETAIL.data,
+                            slug,
                         },
-                        created_at: '2026-04-08T03:42:24.278Z',
-                    },
-                    date: '09:17:01 13/4/2026',
-                    path: '/api/v1/cv-templates/code/DEV_01',
-                };
+                    };
+                } else if (isCreateMode) {
+                    result = {
+                        ...MOCK_TEMPLATE_DETAIL,
+                        data: { ...MOCK_TEMPLATE_DETAIL.data, code },
+                    };
+                } else {
+                    throw new Error('Thiếu code hoặc slug để xác định CV');
+                }
+
                 if (!result?.success) {
                     throw new Error(result?.message || 'Không thể tải CV');
                 }
 
-                setCvData(result.data || {});
+                const nextCvData = result?.data || createInitialCvState();
+                const validation = validateTemplateConfig(nextCvData?.config);
+
+                if (!validation?.isValid) {
+                    throw new Error(
+                        validation?.message || 'Cấu hình CV không hợp lệ',
+                    );
+                }
+
+                setCvData(nextCvData);
+                setOriginalData(cloneDeep(nextCvData));
+                setDirtyFields({});
             } catch (error) {
                 toast.error(error?.message || 'Lỗi load CV');
             } finally {
@@ -233,172 +138,145 @@ function CvEditor() {
             }
         };
 
-        if (code) fetchCvDetail();
-    }, [code]);
+        fetchCvDetail();
+    }, [code, slug, isCreateMode, isEditMode]);
 
-    // ================= SECTIONS =================
-    const sectionList = useMemo(
-        () => [
-            {
-                key: 'personal_info',
-                title: 'Thông tin cá nhân',
-                type: 'personal_info',
-                number: 1,
-            },
-            {
-                key: 'summary',
-                title: 'Mục tiêu nghề nghiệp',
-                type: 'summary',
-                number: 2,
-            },
-            { key: 'skills', title: 'Kỹ năng', type: 'skills', number: 3 },
-            {
-                key: 'experience',
-                title: 'Kinh nghiệm',
-                type: 'experience',
-                number: 4,
-            },
-            { key: 'projects', title: 'Dự án', type: 'projects', number: 5 },
-            {
-                key: 'education',
-                title: 'Học vấn',
-                type: 'education',
-                number: 6,
-            },
-            {
-                key: 'certificates',
-                title: 'Chứng chỉ',
-                type: 'certificates',
-                number: 7,
-            },
-        ],
-        [],
-    );
+    useEffect(() => {
+        if (!isDirty) return;
 
-    // ================= MAP DATA =================
-    const editorResumeData = {
-        personal_info: {
-            ...(cvData?.content?.profile_header || {}),
-            ...(cvData?.content?.CONTACT || {}),
-        },
+        const handleBeforeUnload = (event) => {
+            event.preventDefault();
+            event.returnValue = '';
+        };
 
-        summary: {
-            summary: cvData?.content?.SUMMARY || '',
-        },
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () =>
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
 
-        skills: cvData?.content?.SKILLS || [],
-        experience: cvData?.content?.EXPERIENCE || [],
-        projects: cvData?.content?.PROJECTS || [],
-        education: cvData?.content?.EDUCATION || [],
-        certificates: cvData?.content?.CERTIFICATES || [],
-    };
+    const resumeData = useMemo(() => buildEditorResumeData(cvData), [cvData]);
 
-    // ================= HANDLERS =================
-    const handleToggleSection = (key) => {
-        setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    const PERSONAL_CONTACT_FIELDS = ['email', 'phone', 'address', 'website'];
-
-    const handleChangeField = (sectionKey, field, value) => {
-        // ===== PERSONAL INFO =====
-        if (sectionKey === 'personal_info') {
-            if (PERSONAL_CONTACT_FIELDS.includes(field)) {
-                setCvData((prev) => ({
-                    ...prev,
-                    content: {
-                        ...prev.content,
-                        CONTACT: {
-                            ...(prev.content?.CONTACT || {}),
-                            [field]: value,
-                        },
-                    },
-                }));
-                return;
-            }
-
-            setCvData((prev) => ({
-                ...prev,
-                content: {
-                    ...prev.content,
-                    profile_header: {
-                        ...(prev.content?.profile_header || {}),
-                        [field]: value,
-                    },
-                },
-            }));
-            return;
-        }
-
-        const contentKey = SECTION_KEY_MAP[sectionKey] || sectionKey;
-
-        if (sectionKey === 'summary') {
-            setCvData((prev) => ({
-                ...prev,
-                content: {
-                    ...(prev.content || {}),
-                    [contentKey]: value, // lưu string
-                },
-            }));
-            return;
-        }
-
-        // các section khác
-        setCvData((prev) => ({
-            ...prev,
-            content: {
-                ...(prev.content || {}),
-                [contentKey]: {
-                    ...(prev.content?.[contentKey] || {}),
-                    [field]: value,
-                },
-            },
-        }));
-    };
-
-    const handleChangeArrayField = (sectionKey, nextValue) => {
-        const contentKey = SECTION_KEY_MAP[sectionKey];
-
-        setCvData((prev) => ({
-            ...prev,
-            content: {
-                ...prev.content,
-                [contentKey]: Array.isArray(nextValue) ? nextValue : [],
-            },
-        }));
-    };
-
-    const handleChangeObjectInArray = (sectionKey, index, key, value) => {
-        const contentKey = SECTION_KEY_MAP[sectionKey];
-
+    const updateContentKey = useCallback((contentKey, updater) => {
         setCvData((prev) => {
-            const list = Array.isArray(prev.content?.[contentKey])
-                ? prev.content[contentKey]
-                : [];
+            const prevContent = prev?.content || {};
+            const prevValue = prevContent[contentKey];
+            const nextValue =
+                typeof updater === 'function' ? updater(prevValue) : updater;
 
-            const newList = [...list];
-            newList[index] = {
-                ...(newList[index] || {}),
-                [key]: value,
-            };
+            if (nextValue === undefined) {
+                const { [contentKey]: _removed, ...restContent } = prevContent;
+                return { ...prev, content: restContent };
+            }
 
             return {
                 ...prev,
-                content: {
-                    ...prev.content,
-                    [contentKey]: newList,
-                },
+                content: { ...prevContent, [contentKey]: nextValue },
             };
         });
-    };
+    }, []);
 
-    const handleChangeConfig = (nextConfig) => {
-        setCvData((prev) => ({
-            ...prev,
-            config: nextConfig,
-        }));
-    };
-    const waitForImages = async (container) => {
+    const handleChangeField = useCallback(
+        (sectionKey, field, value) => {
+            const sectionConfig = cvData?.config?.sections?.[sectionKey] || {};
+            const normalizedType = normalizeSectionType(
+                sectionKey,
+                sectionConfig,
+            );
+            const contentKey = getContentKey(sectionKey, sectionConfig);
+
+            if (normalizedType === 'summary') {
+                markDirtyField(`content.${contentKey}`);
+                updateContentKey(
+                    contentKey,
+                    typeof value === 'string' ? value : value?.summary || '',
+                );
+                return;
+            }
+
+            markDirtyField(`content.${contentKey}.${field}`);
+            updateContentKey(contentKey, (prevValue = {}) => ({
+                ...prevValue,
+                [field]: value,
+            }));
+        },
+        [cvData?.config?.sections, markDirtyField, updateContentKey],
+    );
+
+    const handleChangeArrayField = useCallback(
+        (sectionKey, nextValue) => {
+            const sectionConfig = cvData?.config?.sections?.[sectionKey] || {};
+            const contentKey = getContentKey(sectionKey, sectionConfig);
+
+            markDirtyField(`content.${contentKey}`);
+            updateContentKey(
+                contentKey,
+                Array.isArray(nextValue) ? nextValue : [],
+            );
+        },
+        [cvData?.config?.sections, markDirtyField, updateContentKey],
+    );
+
+    const handleChangeObjectInArray = useCallback(
+        (sectionKey, index, key, value) => {
+            const sectionConfig = cvData?.config?.sections?.[sectionKey] || {};
+            const contentKey = getContentKey(sectionKey, sectionConfig);
+
+            markDirtyField(`content.${contentKey}`);
+            updateContentKey(contentKey, (prevValue) => {
+                const currentList = Array.isArray(prevValue) ? prevValue : [];
+                const nextList = [...currentList];
+                nextList[index] = { ...(nextList[index] || {}), [key]: value };
+                return nextList;
+            });
+        },
+        [cvData?.config?.sections, markDirtyField, updateContentKey],
+    );
+
+    const handleChangeConfig = useCallback(
+        (nextConfig) => {
+            markDirtyField('config');
+            setCvData((prev) => ({ ...prev, config: nextConfig }));
+        },
+        [markDirtyField],
+    );
+
+    const handleChangeCvName = useCallback(
+        (value) => {
+            markDirtyField('name');
+            setCvData((prev) => ({ ...prev, name: value }));
+        },
+        [markDirtyField],
+    );
+
+    const handleRemoveSection = useCallback(
+        (sectionKey) => {
+            const sectionConfig = cvData?.config?.sections?.[sectionKey] || {};
+            const normalizedType = normalizeSectionType(
+                sectionKey,
+                sectionConfig,
+            );
+            const contentKey = getContentKey(sectionKey, sectionConfig);
+
+            markDirtyField(`content.${contentKey}`);
+
+            if (normalizedType === 'summary') {
+                updateContentKey(contentKey, '');
+                return;
+            }
+
+            if (isArraySection(sectionKey, sectionConfig)) {
+                updateContentKey(contentKey, []);
+                return;
+            }
+
+            updateContentKey(contentKey, {});
+        },
+        [cvData?.config?.sections, markDirtyField, updateContentKey],
+    );
+
+    const waitForImages = useCallback(async (container) => {
+        if (!container) return;
+
         const images = Array.from(container.querySelectorAll('img'));
 
         await Promise.all(
@@ -411,23 +289,24 @@ function CvEditor() {
                 });
             }),
         );
-    };
+    }, []);
 
-    const handleSaveCv = async () => {
+    const handleGeneratePreview = useCallback(async () => {
         if (submitting) return;
-        if (!pageRef?.current) return;
+        if (!pageRef?.current) {
+            toast.error('Không tìm thấy vùng preview CV');
+            return null;
+        }
+
         try {
             setSubmitting(true);
 
-            // đợi font load xong
             if (document.fonts?.ready) {
                 await document.fonts.ready;
             }
 
-            // đợi ảnh trong CV load xong
             await waitForImages(pageRef.current);
 
-            // chụp node preview
             const blob = await toBlob(pageRef.current, {
                 cacheBust: true,
                 pixelRatio: 2,
@@ -438,32 +317,170 @@ function CvEditor() {
                 throw new Error('Không tạo được ảnh preview');
             }
 
-            // tạo URL tạm để xem trước
             const localUrl = URL.createObjectURL(blob);
-            setPreviewImage(localUrl);
-            console.log(localUrl);
-            // call api
+            setPreviewImage((prev) => {
+                if (prev) {
+                    URL.revokeObjectURL(prev);
+                }
+                return localUrl;
+            });
+
+            console.log('Preview image URL:', localUrl);
             toast.success('Chụp preview thành công');
+            return { blob, localUrl };
         } catch (error) {
             console.error(error);
-            toast.error('Lỗi chụp preview');
+            toast.error(error?.message || 'Lỗi chụp preview');
+            return null;
         } finally {
             setSubmitting(false);
         }
-    };
+    }, [submitting, waitForImages]);
 
-    const handleDownloadPdf = () => {
-        if (!pageRef?.current) return;
+    const submitSaveCv = useCallback(
+        async (finalCvName) => {
+            const trimmedName = (finalCvName || '').trim();
+
+            if (!trimmedName) {
+                toast.error('Vui lòng nhập tên CV');
+                return;
+            }
+
+            setSubmitting(true);
+
+            try {
+                const nextSlug = cvData?.slug || generateCvSlug(trimmedName);
+                const payload = {
+                    ...cvData,
+                    name: trimmedName,
+                    slug: nextSlug,
+                };
+
+                const patchPayload = buildPatchFromDirtyFields(
+                    originalData,
+                    payload,
+                    dirtyFields,
+                );
+
+                if (!patchPayload || Object.keys(patchPayload).length === 0) {
+                    toast.info('Bạn chưa thay đổi nội dung CV');
+                    return;
+                }
+
+                console.log('>>> patchPayload gui backend:', patchPayload);
+
+                // Khi cần chụp preview trước lúc save thì mở đoạn này:
+                // if (pageRef?.current) {
+                //     if (document.fonts?.ready) {
+                //         await document.fonts.ready;
+                //     }
+                //     await waitForImages(pageRef.current);
+                //     const blob = await toBlob(pageRef.current, {
+                //         cacheBust: true,
+                //         pixelRatio: 2,
+                //         backgroundColor: '#ffffff',
+                //     });
+                //     if (blob) {
+                //         const localUrl = URL.createObjectURL(blob);
+                //         setPreviewImage((prev) => {
+                //             if (prev) URL.revokeObjectURL(prev);
+                //             return localUrl;
+                //         });
+                //         console.log('Preview image before save:', localUrl);
+                //     }
+                // }
+
+                // Khi nối API thật
+                // if (isEditMode) {
+                //     await updateCvBySlug(nextSlug, patchPayload);
+                // } else {
+                //     await createCv(payload);
+                // }
+
+                await new Promise((resolve) => setTimeout(resolve, 300));
+
+                saveMockCvBySlug(nextSlug, payload);
+                setCvData(payload);
+                setOriginalData(cloneDeep(payload));
+                setDirtyFields({});
+
+                if (isEditMode) {
+                    toast.success('Cập nhật CV thành công (mock)');
+                    return;
+                }
+
+                toast.success('Tạo CV thành công (mock)');
+                navigate(config.router.editCv.replace(':slug', nextSlug), {
+                    replace: true,
+                });
+            } catch (error) {
+                toast.error(error?.message || 'Lỗi lưu CV');
+            } finally {
+                setSubmitting(false);
+            }
+        },
+        [cvData, originalData, dirtyFields, isEditMode, navigate],
+    );
+
+    const handleSaveCv = useCallback(async () => {
+        if (submitting) return;
+
+        if (!isDirty) {
+            toast.info('Bạn chưa thay đổi nội dung CV');
+            return;
+        }
+
+        const currentName = (cvData?.name || '').trim();
+
+        if (!currentName) {
+            if (isCreateMode) {
+                setCvNameDraft(cvData?.name || '');
+                setIsNameModalOpen(true);
+            } else {
+                toast.error('Vui lòng nhập tên CV');
+            }
+            return;
+        }
+
+        await submitSaveCv(currentName);
+    }, [submitting, isDirty, cvData?.name, isCreateMode, submitSaveCv]);
+
+    const handleCloseNameModal = useCallback(() => {
+        if (submitting) return;
+        setCvNameDraft(cvData?.name || '');
+        setIsNameModalOpen(false);
+    }, [submitting, cvData?.name]);
+
+    const handleConfirmCvName = useCallback(async () => {
+        const trimmedName = cvNameDraft.trim();
+
+        if (!trimmedName) {
+            toast.error('Vui lòng nhập tên CV');
+            return;
+        }
+
+        markDirtyField('name');
+        setCvData((prev) => ({ ...prev, name: trimmedName }));
+        setIsNameModalOpen(false);
+        await submitSaveCv(trimmedName);
+    }, [cvNameDraft, markDirtyField, submitSaveCv]);
+
+    const handleDownloadPdf = useCallback(() => {
+        if (!pageRef?.current) {
+            toast.error('Không tìm thấy vùng preview CV');
+            return;
+        }
+
         const htmlText = pageRef.current?.outerHTML;
+
         const getAllCssText = () => {
             let cssText = '';
 
             for (const sheet of Array.from(document.styleSheets)) {
                 try {
                     const rules = Array.from(sheet.cssRules || []);
-                    cssText += rules.map((rule) => rule.cssText).join('\n');
+                    cssText += rules.map((rule) => rule.cssText).join('\\n');
                 } catch (e) {
-                    // stylesheet ngoài domain có thể không đọc được
                     console.warn('Cannot read stylesheet', sheet.href);
                 }
             }
@@ -472,53 +489,126 @@ function CvEditor() {
         };
 
         const cssText = getAllCssText();
-    };
 
-    const handleResetData = () => {
-        if (window.confirm('Reset CV?')) {
-            setCvData((prev) => ({ ...prev, content: {} }));
-            toast.success('Đã reset');
+        console.log('HTML Preview:', htmlText);
+        console.log('CSS Preview:', cssText);
+
+        toast.info('Đã lấy HTML/CSS để chuẩn bị export PDF');
+    }, []);
+
+    const handleResetData = useCallback(() => {
+        if (!window.confirm('Bạn có chắc muốn reset toàn bộ dữ liệu CV không?'))
+            return;
+
+        if (!originalData) {
+            toast.error('Không có dữ liệu gốc để reset');
+            return;
         }
-    };
 
-    // ================= UI =================
-    if (loading) return <div>Loading...</div>;
+        setCvData(cloneDeep(originalData));
+        setDirtyFields({});
+        toast.success('Đã reset về dữ liệu ban đầu');
+    }, [originalData]);
+
+    useEffect(() => {
+        return () => {
+            if (previewImage) {
+                URL.revokeObjectURL(previewImage);
+            }
+        };
+    }, [previewImage]);
+
+    if (loading) {
+        return (
+            <section className={cx('wrapper')}>
+                <div className={cx('loading')}>
+                    <p>Đang tải dữ liệu CV...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <section className={cx('wrapper')}>
-            <div
-                className={cx('inner')}
-                style={{ display: 'flex', height: '100vh' }}
+        <>
+            <ToastContainer position="top-right" autoClose={2500} />
+
+            <section className={cx('wrapper')}>
+                <div className={cx('inner')}>
+                    {!isLeftPanelOpen && (
+                        <button
+                            type="button"
+                            className={cx('open-panel-btn')}
+                            onClick={() => setIsLeftPanelOpen(true)}
+                        >
+                            <FiMenu />
+                        </button>
+                    )}
+
+                    <LeftEditor
+                        isOpen={isLeftPanelOpen}
+                        onTogglePanel={() => setIsLeftPanelOpen(false)}
+                        resumeData={resumeData}
+                        onChangeField={handleChangeField}
+                        onChangeArrayField={handleChangeArrayField}
+                        onChangeObjectInArray={handleChangeObjectInArray}
+                        onRemoveSection={handleRemoveSection}
+                        onChangeConfig={handleChangeConfig}
+                        templateConfig={cvData?.config || {}}
+                        onResetData={handleResetData}
+                        onSaveCv={handleSaveCv}
+                        onDownloadPdf={handleDownloadPdf}
+                        onGeneratePreview={handleGeneratePreview}
+                        canDownloadPdf={canDownloadPdf}
+                        submitting={submitting}
+                        cvName={cvData?.name || ''}
+                        onChangeCvName={handleChangeCvName}
+                        isDirty={isDirty}
+                        canSave={isDirty && !submitting}
+                    />
+
+                    <RightPreview templateDetail={cvData} pageRef={pageRef} />
+                </div>
+            </section>
+
+            <Modal
+                isOpen={isNameModalOpen}
+                onClose={handleCloseNameModal}
+                title="Đặt tên cho CV của bạn"
+                description="Việc đặt tên cho CV sẽ khiến việc quản lý CV trở nên dễ dàng hơn."
+                size="md"
+                closeOnOverlayClick={!submitting}
+                closeOnEsc={!submitting}
+                footer={
+                    <Button
+                        primary
+                        type="button"
+                        className={cx('modalPrimaryBtn')}
+                        onClick={handleConfirmCvName}
+                        disabled={submitting}
+                    >
+                        Tiếp tục
+                    </Button>
+                }
             >
-                {!isLeftPanelOpen && (
-                    <button onClick={() => setIsLeftPanelOpen(true)}>
-                        <FiMenu />
-                    </button>
-                )}
-
-                <LeftEditor
-                    isOpen={isLeftPanelOpen}
-                    onTogglePanel={() => setIsLeftPanelOpen(false)}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    sectionList={sectionList}
-                    openSections={openSections}
-                    onToggleSection={handleToggleSection}
-                    resumeData={editorResumeData}
-                    onChangeField={handleChangeField}
-                    onChangeArrayField={handleChangeArrayField}
-                    onChangeObjectInArray={handleChangeObjectInArray}
-                    templateConfig={cvData?.config || {}}
-                    onChangeConfig={handleChangeConfig}
-                    onResetData={handleResetData}
-                    onSaveCv={handleSaveCv}
-                    onDownloadPdf={handleDownloadPdf}
-                    submitting={submitting}
-                />
-
-                <RightPreview templateDetail={cvData} pageRef={pageRef} />
-            </div>
-        </section>
+                <div className={cx('saveNameModalBody')}>
+                    <Input
+                        type="text"
+                        className={cx('saveNameInput')}
+                        value={cvNameDraft}
+                        onChange={(valueOrEvent) =>
+                            setCvNameDraft(
+                                valueOrEvent?.target?.value ??
+                                    valueOrEvent ??
+                                    '',
+                            )
+                        }
+                        placeholder="Ví dụ: CV Nhân viên kinh doanh"
+                        maxLength={120}
+                        autoFocus
+                    />
+                </div>
+            </Modal>
+        </>
     );
 }
 

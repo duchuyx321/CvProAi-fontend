@@ -1,38 +1,45 @@
 import classNames from 'classnames/bind';
-import SectionEditor from '../SectionEditor';
 import styles from './ContentTab.module.scss';
+import SectionList from '../../components/SectionList';
 
 const cx = classNames.bind(styles);
 
 function ContentTab({
-    sectionList = [],
+    sections = [],
     openSections = {},
-    onToggleSection,
     resumeData = {},
+    onToggleSection,
+    onRemoveSection,
+    onAddSectionItem,
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
 }) {
+    const hasSections = Array.isArray(sections) && sections.length > 0;
+
+    if (!hasSections) {
+        return (
+            <div className={cx('wrapper')}>
+                <div className={cx('emptyState')}>
+                    <p>Chưa có mục nào trong cấu trúc CV.</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={cx('wrapper')}>
-            {sectionList.map((section) => (
-                <SectionEditor
-                    key={section.key}
-                    section={section}
-                    isOpen={openSections?.[section.key]}
-                    onToggle={() => onToggleSection(section.key)}
-                    sectionData={resumeData?.[section.key]}
-                    onChangeField={(field, value) =>
-                        onChangeField(section.key, field, value)
-                    }
-                    onChangeArrayField={(value) =>
-                        onChangeArrayField(section.key, value)
-                    }
-                    onChangeObjectInArray={(index, key, value) =>
-                        onChangeObjectInArray(section.key, index, key, value)
-                    }
-                />
-            ))}
+            <SectionList
+                sections={sections}
+                openSections={openSections}
+                resumeData={resumeData}
+                onToggleSection={onToggleSection}
+                onRemoveSection={onRemoveSection}
+                onAddSectionItem={onAddSectionItem}
+                onChangeField={onChangeField}
+                onChangeArrayField={onChangeArrayField}
+                onChangeObjectInArray={onChangeObjectInArray}
+            />
         </div>
     );
 }
