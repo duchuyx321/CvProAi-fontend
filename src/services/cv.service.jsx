@@ -4,7 +4,7 @@ const CV_COLLECTION_ENDPOINT = '/api/cv/my-collection';
 const parseResponse = async (response) => {
     try {
         return await response.json();
-    } catch (error) {
+    } catch {
         return null;
     }
 };

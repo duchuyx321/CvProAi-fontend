@@ -16,6 +16,7 @@ import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
 import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
+import ResultAi from '~/pages/User/AiAnalysis/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
@@ -100,6 +101,11 @@ const PublicRouter = [
         path: config.router.aiAnalysis,
         component: AiAnalysis,
         layout: DefaultLayout,
+    },
+    {
+        path: `${config.router.aiAnalysisResult}/:aiRunId?`,
+        component: ResultAi,
+        layout: DetailLayout,
     },
     {
         path: config.router.upgradePremium,

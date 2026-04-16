@@ -16,6 +16,7 @@ export const router = {
     cvTemplates: '/templates',
     myCvs: '/my-cvs',
     aiAnalysis: '/ai-analysis',
+    aiAnalysisResult: '/ai-analysis/result',
     upgradePremium: '/upgrade-premium',
     profile: '/profile',
     security: '/security',

@@ -4,7 +4,7 @@ const AI_ANALYSIS_ENDPOINT = '/api/ai-analysis';
 const parseResponse = async (response) => {
     try {
         return await response.json();
-    } catch (error) {
+    } catch {
         return null;
     }
 };
@@ -102,6 +102,61 @@ export const analyzeCVByAI = async (
             success: false,
             data: null,
             message: error?.message || 'Không thể phân tích CV',
+        };
+    }
+};
+
+const buildAIAnalysisResultEndpoint = (aiRunId) =>
+    `${AI_ANALYSIS_ENDPOINT}/result/${aiRunId}`;
+
+export const getAiAnalysisResultByRunId = async (aiRunId, options = {}) => {
+    if (!aiRunId) {
+        return {
+            success: false,
+            data: null,
+            message: 'Thiếu aiRunId để tải kết quả phân tích',
+        };
+    }
+
+    try {
+        const response = await fetch(buildAIAnalysisResultEndpoint(aiRunId), {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            signal: options.signal,
+        });
+
+        const result = await parseResponse(response);
+
+        if (!response.ok || result?.success === false) {
+            return {
+                success: false,
+                data: null,
+                message:
+                    result?.message || 'Không thể tải kết quả phân tích',
+            };
+        }
+
+        return {
+            success: true,
+            data: result?.data ?? result,
+            message: result?.message || '',
+        };
+    } catch (error) {
+        if (error?.name === 'AbortError') {
+            return {
+                success: false,
+                data: null,
+                message: 'Yêu cầu tải kết quả phân tích đã bị hủy',
+            };
+        }
+
+        return {
+            success: false,
+            data: null,
+            message: error?.message || 'Không thể tải kết quả phân tích',
         };
     }
 };

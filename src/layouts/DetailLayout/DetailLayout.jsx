@@ -14,7 +14,7 @@ function DetailLayout({ children }) {
     const navigate = useNavigate();
 
     const handleOnBack = () => {
-        navigate(config.router.home);
+        navigate(-1);
     };
 
     return (
