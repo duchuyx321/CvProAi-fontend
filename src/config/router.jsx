@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export const router = {
     // Public
     home: '/',
@@ -30,6 +29,7 @@ export const router = {
     security: '/security',
     package: '/package',
     history: '/history',
+    cvAnalysisHistory: '/cv-analysis-history',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',

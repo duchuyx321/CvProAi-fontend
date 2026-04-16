@@ -30,6 +30,7 @@ import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
 import CvTemplateDetail from '~/pages/User/CvTemplateDetail';
 import CvEditor from '~/pages/User/CvEditor';
+import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
 
 // public router
 const PublicRouter = [
@@ -154,6 +155,11 @@ const PublicRouter = [
         component: History,
         layout: DetailLayout,
     },
+    {
+        path: config.router.cvAnalysisHistory,
+        component: CvAnalysisHistory,
+        layout: DefaultLayout,
+    }
 ];
 
 // user router
