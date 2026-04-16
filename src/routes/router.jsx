@@ -105,7 +105,12 @@ const PublicRouter = [
         layout: DefaultLayout,
     },
     {
-        path: config.router.cvEditor,
+        path: config.router.createCv,
+        component: CvEditor,
+        layout: null,
+    },
+    {
+        path: config.router.editCv,
         component: CvEditor,
         layout: null,
     },

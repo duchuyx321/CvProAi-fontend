@@ -26,17 +26,21 @@ function CvPreview({ template, cv }) {
     const rightWidth = columns[1]?.width || 65;
     const primary = theme?.colors?.primary || '#3b6fa3';
     const accent = theme?.colors?.accent || '#eaf2fb';
+    const bg_session = theme?.colors?.bg_session || '#ffff';
 
     const pageStyle = {
         fontFamily: theme?.fontFamily || 'Arial, sans-serif',
+        fontSize: `${theme?.fontSize || 12}px`,      
         '--cv-primary': primary,
         '--cv-accent': accent,
         '--cv-item-gap': `${theme?.spacing?.itemGap || 12}px`,
         '--cv-section-gap': `${theme?.spacing?.sectionGap || 24}px`,
+        '--bg-session': bg_session,
         paddingTop: `${margin?.top || 12}mm`,
         paddingRight: `${margin?.right || 12}mm`,
         paddingBottom: `${margin?.bottom || 12}mm`,
         paddingLeft: `${margin?.left || 12}mm`,
+        '--cv-avatar-radius': theme?.avatar_shape === 'circle' ? '50%' : '8px',
     };
 
     return (
@@ -58,7 +62,7 @@ function CvPreview({ template, cv }) {
                     <div
                         className={cx('layoutSplit')}
                         style={{
-                            gridTemplateColumns: `${leftWidth}% ${rightWidth}%`,
+                            gridTemplateColumns: `minmax(0, ${leftWidth}fr) minmax(0, ${rightWidth}fr)`,
                         }}
                     >
                         <ZoneRenderer

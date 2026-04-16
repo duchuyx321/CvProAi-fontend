@@ -19,14 +19,13 @@ function SectionList({
         return null;
     }
 
+    const validSections = sections.filter((section) => section?.key);
+
     return (
         <div className={cx('wrapper')}>
-            {sections.map((section) => {
-                const sectionKey = section?.key;
-                const sectionData =
-                    sectionKey && resumeData
-                        ? resumeData[sectionKey]
-                        : undefined;
+            {validSections.map((section) => {
+                const sectionKey = section.key;
+                const sectionData = resumeData?.[sectionKey];
 
                 return (
                     <SectionItem

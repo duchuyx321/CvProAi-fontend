@@ -1,13 +1,33 @@
 import classNames from 'classnames/bind';
-import {
-    FiChevronDown,
-    FiChevronUp,
-    FiPlus,
-    FiTrash2,
-} from 'react-icons/fi';
+import { FiChevronDown, FiPlus, FiTrash2 } from 'react-icons/fi';
 import styles from './SectionActions.module.scss';
 
 const cx = classNames.bind(styles);
+
+function ActionButton({
+    title,
+    onClick,
+    children,
+    className,
+    disabled = false,
+}) {
+    const handleClick = (event) => {
+        event.stopPropagation();
+        onClick?.(event);
+    };
+
+    return (
+        <button
+            type="button"
+            className={cx('actionBtn', className)}
+            title={title}
+            onClick={handleClick}
+            disabled={disabled}
+        >
+            {children}
+        </button>
+    );
+}
 
 function SectionActions({
     expandable = false,
@@ -16,54 +36,37 @@ function SectionActions({
     showDelete = false,
     onToggle,
     onRemove,
-    onAdd,
 }) {
-    const handleRemove = (event) => {
-        event.stopPropagation();
-        onRemove?.();
-    };
-
-    const handleToggle = (event) => {
-        event.stopPropagation();
-        onToggle?.();
-    };
-
-    const handleAdd = (event) => {
-        event.stopPropagation();
-        onAdd?.();
-    };
-
     return (
         <div className={cx('wrapper')}>
-            {removable && showDelete && (
-                <button
-                    type="button"
-                    className={cx('actionBtn', 'deleteBtn')}
-                    onClick={handleRemove}
-                    title="Xóa mục"
-                >
-                    <FiTrash2 />
-                </button>
-            )}
-
-            {expandable ? (
-                <button
-                    type="button"
-                    className={cx('actionBtn')}
-                    onClick={handleToggle}
-                    title={expanded ? 'Thu gọn' : 'Mở rộng'}
-                >
-                    {expanded ? <FiChevronUp /> : <FiChevronDown />}
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    className={cx('actionBtn')}
-                    onClick={handleAdd}
+            {/* {addable && (
+                <ActionButton
                     title="Thêm mục"
+                    onClick={onAdd}
+                    className="addBtn"
                 >
                     <FiPlus />
-                </button>
+                </ActionButton>
+            )} */}
+
+            {removable && showDelete && (
+                <ActionButton
+                    title="Xóa mục"
+                    onClick={onRemove}
+                    className="deleteBtn"
+                >
+                    <FiTrash2 />
+                </ActionButton>
+            )}
+
+            {expandable && (
+                <ActionButton
+                    title={expanded ? 'Thu gọn' : 'Mở rộng'}
+                    onClick={onToggle}
+                    className={cx('toggleBtn', { expanded })}
+                >
+                    <FiChevronDown />
+                </ActionButton>
             )}
         </div>
     );

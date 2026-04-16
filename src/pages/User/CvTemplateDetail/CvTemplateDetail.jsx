@@ -13,8 +13,8 @@ import CvPreview from '~/components/CvPreview/CvPreview';
 
 const cx = classNames.bind(styles);
 
-export const MOCK_CV_DETAIL_RESPONSE = {
-
+// eslint-disable-next-line react-refresh/only-export-components
+export const MOCK_TEMPLATE_DETAIL = {
     success: true,
     messsage: 'Lấy mẫu cv thành công',
     data: {
@@ -24,6 +24,50 @@ export const MOCK_CV_DETAIL_RESPONSE = {
         preview_url:
             'https://res.cloudinary.com/djzsbcrk9/image/upload/v1775665562/cvproai/lbglt6pqbmazd9thj3jf.webp',
         is_premium: false,
+        content: {
+            profile_header: {
+                full_name: 'Nguyễn Văn A',
+                headline: 'Senior Frontend Developer',
+                avatar_url: '',
+            },
+            CONTACT: {
+                email: 'anv@example.com',
+                phone: '0901234567',
+                website: '',
+                birth_date: '',
+                address: 'Quận 1, TP. Hồ Chí Minh',
+            },
+            SUMMARY:
+                '<p>Với hơn 5 năm kinh nghiệm trong việc phát triển ứng dụng web, tôi mong muốn mang khả năng tối ưu hiệu năng và xây dựng giao diện người dùng mượt mà để đóng góp vào sự thành công của doanh nghiệp.</p>',
+            SKILLS: [
+                { name: 'ReactJS', description: 'Xây dựng UI hiện đại' },
+                { name: 'TypeScript', description: 'Code an toàn, rõ ràng' },
+            ],
+            EXPERIENCE: [
+                {
+                    role: 'Senior Frontend Developer',
+                    company: 'Công ty Công nghệ XYZ',
+                    start_date: '01/2021',
+                    end_date: '',
+                    is_current: true,
+                    description:
+                        '<p>Dẫn dắt đội ngũ 5 người phát triển nền tảng thương mại điện tử.</p>',
+                },
+            ],
+            EDUCATION: [
+                {
+                    school: 'Đại học Bách Khoa',
+                    degree: 'Kỹ thuật Phần mềm',
+                    start_date: '2014',
+                    end_date: '2018',
+                    is_current: false,
+                    description: '<p>Tốt nghiệp loại Khá.</p>',
+                },
+            ],
+            ADDITIONAL: {
+                content: '<p>Có thể làm việc tốt trong môi trường Agile/Scrum.</p>',
+            },
+        },
         config: {
             theme: {
                 colors: {
@@ -38,31 +82,16 @@ export const MOCK_CV_DETAIL_RESPONSE = {
                 fontFamily: 'Inter',
             },
             zones: {
-                left_col: [
-                    'profile',
-                    'contact',
-                    'skills',
-                    'additional',
-                ],
-                right_col: [
-                    'summary',
-                    'education',
-                    'experience',
-                ],
+                left_col: ['profile', 'contact', 'skills', 'additional'],
+                right_col: ['summary', 'education', 'experience'],
             },
             layout: {
                 key: 'split_blue_dev',
                 body: {
                     layout: 'SPLIT',
                     columns: [
-                        {
-                            id: 'left_col',
-                            width: 33,
-                        },
-                        {
-                            id: 'right_col',
-                            width: 67,
-                        },
+                        { id: 'left_col', width: 33 },
+                        { id: 'right_col', width: 67 },
                     ],
                 },
                 page: {
@@ -83,27 +112,16 @@ export const MOCK_CV_DETAIL_RESPONSE = {
                     fields: ['name', 'description'],
                     variant: 'sidebar_box_richtext',
                 },
-
                 contact: {
                     type: 'CONTACT',
                     title: 'Thông Tin Liên Hệ',
-                    fields: [
-                        'birth_date',
-                        'email',
-                        'website',
-                        'phone',
-                        'address',
-                    ],
+                    fields: ['birth_date', 'email', 'website', 'phone', 'address'],
                     variant: 'icon_list',
                 },
                 profile: {
                     type: 'profile_header',
-                    title: '',
-                    fields: [
-                        'avatar_url',
-                        'headline',
-                        'full_name',
-                    ],
+                    title: 'Thông tin cá nhân',
+                    fields: ['avatar_url', 'headline', 'full_name'],
                     variant: 'sidebar_avatar_badge_name',
                 },
                 summary: {
@@ -119,19 +137,11 @@ export const MOCK_CV_DETAIL_RESPONSE = {
                         {
                             items: [
                                 {
-                                    items: [
-                                        'degree',
-                                        'school',
-                                        'description',
-                                    ],
+                                    items: ['degree', 'school', 'description'],
                                     layout: 'STACK',
                                 },
                                 {
-                                    items: [
-                                        'start_date',
-                                        'end_date',
-                                        'is_current',
-                                    ],
+                                    items: ['start_date', 'end_date', 'is_current'],
                                     layout: 'STACK',
                                 },
                             ],
@@ -153,19 +163,11 @@ export const MOCK_CV_DETAIL_RESPONSE = {
                         {
                             items: [
                                 {
-                                    items: [
-                                        'role',
-                                        'company',
-                                        'description',
-                                    ],
+                                    items: ['role', 'company', 'description'],
                                     layout: 'STACK',
                                 },
                                 {
-                                    items: [
-                                        'start_date',
-                                        'end_date',
-                                        'is_current',
-                                    ],
+                                    items: ['start_date', 'end_date', 'is_current'],
                                     layout: 'STACK',
                                 },
                             ],
@@ -180,7 +182,7 @@ export const MOCK_CV_DETAIL_RESPONSE = {
     },
     date: '09:17:01 13/4/2026',
     path: '/api/v1/cv-templates/code/DEV_01',
-}
+};
 
 
 
@@ -199,7 +201,7 @@ function CvTemplateDetail() {
                 setLoading(true);
 
                 // const result = await getCvTemplateDetail(code);
-                const result = MOCK_CV_DETAIL_RESPONSE;
+                const result = MOCK_TEMPLATE_DETAIL;
 
                 setTemplateDetail(result.data);
             } catch (error) {
@@ -225,7 +227,7 @@ function CvTemplateDetail() {
             setSubmitting(true);
 
             navigate(
-                config.router.cvEditor.replace(':code', templateDetail?.code),
+                config.router.createCv.replace(':code', templateDetail?.code),
             );
         } catch (error) {
             toast.error(

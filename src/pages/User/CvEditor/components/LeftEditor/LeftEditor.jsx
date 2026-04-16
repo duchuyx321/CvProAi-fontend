@@ -10,6 +10,12 @@ import StructureTab from './components/StructureTab';
 import EditorToolbar from '../EditorToolbar';
 import styles from './LeftEditor.module.scss';
 import images from '~/assets';
+import { config } from '~/config';
+import {
+    buildSectionListFromConfig,
+    createDefaultArrayItem,
+    mapResumeDataBySection,
+} from '~/utils/cv-section.schema';
 
 const cx = classNames.bind(styles);
 
@@ -34,92 +40,10 @@ const REMOVABLE_SECTION_KEYS = new Set([
 
 const NON_EXPANDABLE_SECTION_KEYS = new Set([]);
 
-const DEFAULT_ARRAY_ITEM_MAP = {
-    skills: { name: '', description: '' },
-    experience: {
-        role: '',
-        company: '',
-        start_date: '',
-        end_date: '',
-        is_current: false,
-        description: '<p></p>',
-    },
-    projects: {
-        name: '',
-        role: '',
-        start_date: '',
-        end_date: '',
-        technologies: '',
-        description: '<p></p>',
-    },
-    education: {
-        school: '',
-        degree: '',
-        start_date: '',
-        end_date: '',
-        is_current: false,
-        description: '<p></p>',
-    },
-    certificates: {
-        name: '',
-        issuer: '',
-        issue_date: '',
-        description: '<p></p>',
-    },
+const SECTION_LIST_OPTIONS = {
+    removableSectionKeys: REMOVABLE_SECTION_KEYS,
+    nonExpandableSectionKeys: NON_EXPANDABLE_SECTION_KEYS,
 };
-
-function normalizeSectionType(sectionKey, sectionConfig = {}) {
-    const rawType = sectionConfig?.type || sectionKey;
-
-    const typeMap = {
-        profile: 'personal_info',
-        profile_header: 'personal_info',
-        contact: 'contact',
-        CONTACT: 'contact',
-        summary: 'summary',
-        SUMMARY: 'summary',
-        skills: 'skills',
-        SKILLS: 'skills',
-        experience: 'experience',
-        EXPERIENCE: 'experience',
-        projects: 'projects',
-        PROJECTS: 'projects',
-        education: 'education',
-        EDUCATION: 'education',
-        certificates: 'certificates',
-        CERTIFICATES: 'certificates',
-        additional: 'additional',
-        ADDITIONAL: 'additional',
-    };
-
-    return typeMap[sectionKey] || typeMap[rawType] || sectionKey;
-}
-
-function buildSectionListFromConfig(templateConfig = {}) {
-    const zones = templateConfig?.zones || {};
-    const sections = templateConfig?.sections || {};
-
-    const orderedKeys = Object.values(zones).flat().filter(Boolean);
-    const uniqueOrderedKeys = [...new Set(orderedKeys)];
-
-    return uniqueOrderedKeys.map((sectionKey, index) => {
-        const sectionConfig = sections?.[sectionKey] || {};
-        const normalizedType = normalizeSectionType(sectionKey, sectionConfig);
-
-        return {
-            key: sectionKey,
-            zoneKey: sectionKey,
-            title: sectionConfig?.title || sectionKey,
-            type: normalizedType,
-            number: index + 1,
-            removable: REMOVABLE_SECTION_KEYS.has(sectionKey),
-            expandable: !NON_EXPANDABLE_SECTION_KEYS.has(sectionKey),
-            rawType: sectionConfig?.type || sectionKey,
-            fields: sectionConfig?.fields || [],
-            variant: sectionConfig?.variant || '',
-        };
-    });
-}
 
 function buildInitialOpenSections(sectionList = []) {
     if (!Array.isArray(sectionList) || sectionList.length === 0) return {};
@@ -128,70 +52,6 @@ function buildInitialOpenSections(sectionList = []) {
         acc[section.key] = index === 0;
         return acc;
     }, {});
-}
-
-function mapResumeDataBySection(templateConfig = {}, resumeData = {}) {
-    const sections = templateConfig?.sections || {};
-    const nextResumeData = { ...resumeData };
-
-    Object.keys(sections).forEach((sectionKey) => {
-        const normalizedType = normalizeSectionType(sectionKey, sections[sectionKey]);
-
-        if (nextResumeData[sectionKey] !== undefined) return;
-
-        switch (normalizedType) {
-            case 'personal_info':
-                nextResumeData[sectionKey] =
-                    resumeData.profile || resumeData.personal_info || {};
-                break;
-
-            case 'contact':
-                nextResumeData[sectionKey] = resumeData.contact || {};
-                break;
-
-            case 'summary':
-                nextResumeData[sectionKey] = resumeData.summary || {};
-                break;
-
-            case 'skills':
-                nextResumeData[sectionKey] = resumeData.skills || [];
-                break;
-
-            case 'experience':
-                nextResumeData[sectionKey] = resumeData.experience || [];
-                break;
-
-            case 'projects':
-                nextResumeData[sectionKey] = resumeData.projects || [];
-                break;
-
-            case 'education':
-                nextResumeData[sectionKey] = resumeData.education || [];
-                break;
-
-            case 'certificates':
-                nextResumeData[sectionKey] = resumeData.certificates || [];
-                break;
-
-            case 'additional':
-                nextResumeData[sectionKey] = resumeData.additional || {};
-                break;
-
-            default:
-                nextResumeData[sectionKey] = resumeData[sectionKey] || {};
-                break;
-        }
-    });
-
-    return nextResumeData;
-}
-
-function createDefaultArrayItem(sectionKey, sectionType) {
-    return (
-        DEFAULT_ARRAY_ITEM_MAP[sectionKey] ||
-        DEFAULT_ARRAY_ITEM_MAP[sectionType] ||
-        {}
-    );
 }
 
 function LeftEditor({
@@ -207,15 +67,33 @@ function LeftEditor({
     onResetData,
     onSaveCv,
     onDownloadPdf,
+    canDownloadPdf = false,
+    canSave = false,
     submitting = false,
+    cvName = '',
+    onChangeCvName,
 }) {
     const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState('content');
     const [openSections, setOpenSections] = useState({});
 
+    const handleChangeCvTitle = (valueOrEvent) => {
+        onChangeCvName?.(valueOrEvent?.target?.value ?? valueOrEvent ?? '');
+    };
+
+    const handleNavigateWithConfirm = (path) => {
+        const confirmed = window.confirm(
+            'Những thay đổi bạn đã thực hiện có thể không được lưu lại. Bạn có chắc muốn rời khỏi trang này không?',
+        );
+
+        if (!confirmed) return;
+
+        navigate(path);
+    };
+
     const sectionList = useMemo(
-        () => buildSectionListFromConfig(templateConfig),
+        () => buildSectionListFromConfig(templateConfig, SECTION_LIST_OPTIONS),
         [templateConfig],
     );
 
@@ -276,14 +154,14 @@ function LeftEditor({
     const handleAddSectionItem = (sectionKey) => {
         if (!sectionKey) return;
 
-        const section = sectionList.find((item) => item.key === sectionKey);
-        const sectionType = section?.type || sectionKey;
         const currentValue = normalizedResumeData?.[sectionKey];
+        const sectionConfig = templateConfig?.sections?.[sectionKey] || {};
 
-        if (Array.isArray(currentValue)) {
-            const nextItem = createDefaultArrayItem(sectionKey, sectionType);
-            onChangeArrayField?.(sectionKey, [...currentValue, nextItem]);
-        }
+        if (!Array.isArray(currentValue)) return;
+
+        const nextItem = createDefaultArrayItem(sectionKey, sectionConfig);
+
+        onChangeArrayField?.(sectionKey, [...currentValue, nextItem]);
 
         setOpenSections((prev) => ({
             ...prev,
@@ -297,7 +175,7 @@ function LeftEditor({
                 <button
                     type="button"
                     className={cx('btn-icon')}
-                    onClick={() => navigate('/cv-templates')}
+                    onClick={() => handleNavigateWithConfirm(config.router.cvSample)}
                     title="Quay lại Thư viện mẫu"
                 >
                     <FiArrowLeft />
@@ -312,7 +190,23 @@ function LeftEditor({
                     <span className={cx('brand')}>CvProAI</span>
                 </div>
 
-                <button type="button" className={cx('btn-template')}>
+                <div className={cx('cvTitleBox')}>
+                    <input
+                        type="text"
+                        className={cx('cvTitleInput')}
+                        value={cvName || ''}
+                        onChange={handleChangeCvTitle}
+                        placeholder="CV chưa đặt tên"
+                        maxLength={120}
+                        disabled={submitting}
+                    />
+                </div>
+
+                <button
+                    type="button"
+                    className={cx('btn-template')}
+                    onClick={() => handleNavigateWithConfirm(config.router.cvSample)}
+                >
                     <FiLayout /> Chọn mẫu
                 </button>
 
@@ -368,7 +262,9 @@ function LeftEditor({
                     onResetData={onResetData}
                     onSaveCv={onSaveCv}
                     onDownloadPdf={onDownloadPdf}
+                    canDownloadPdf={canDownloadPdf}
                     submitting={submitting}
+                    canSave={canSave}
                 />
             </div>
         </aside>
