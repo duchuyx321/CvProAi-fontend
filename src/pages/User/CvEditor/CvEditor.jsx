@@ -480,6 +480,7 @@ function CvEditor() {
                 try {
                     const rules = Array.from(sheet.cssRules || []);
                     cssText += rules.map((rule) => rule.cssText).join('\\n');
+                    // eslint-disable-next-line no-unused-vars
                 } catch (e) {
                     console.warn('Cannot read stylesheet', sheet.href);
                 }

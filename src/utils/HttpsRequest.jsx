@@ -9,6 +9,16 @@ const refreshClient = axios.create({
     baseURL: import.meta.env.VITE_HTTPS_BACKEND,
     withCredentials: true,
 });
+
+let refreshPromise = null;
+
+const extractAccessToken = (payload) =>
+    payload?.data?.meta?.accessToken ||
+    payload?.data?.accessToken ||
+    payload?.meta?.accessToken ||
+    payload?.accessToken ||
+    null;
+
 const emitAuthExpired = () => {
     window.dispatchEvent(
         new CustomEvent('auth:expired', {
@@ -21,10 +31,7 @@ const emitAuthExpired = () => {
 
 const refreshToken = async () => {
     const response = await refreshClient.post('auth/refresh');
-    const accessToken =
-        response?.data?.meta?.accessToken ||
-        response?.data?.accessToken ||
-        null;
+    const accessToken = extractAccessToken(response?.data);
 
     if (!accessToken) {
         throw new Error('No access token');
@@ -32,6 +39,16 @@ const refreshToken = async () => {
 
     localStorage.setItem('accessToken', `Bearer ${accessToken}`);
     return accessToken;
+};
+
+const getRefreshToken = async () => {
+    if (!refreshPromise) {
+        refreshPromise = refreshToken().finally(() => {
+            refreshPromise = null;
+        });
+    }
+
+    return refreshPromise;
 };
 
 httpsRequests.interceptors.request.use(
@@ -65,8 +82,14 @@ httpsRequests.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
         try {
-            const accessToken = await refreshToken();
+            const accessToken = await getRefreshToken();
             originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return httpsRequests(originalRequest);

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 export const router = {
     // Public
     home: '/',
@@ -17,14 +16,15 @@ export const router = {
     dashboard: '/dashboard',
     cvTemplates: '/user/cv-templates',
     CvTemplateDetail: '/cv-templates/:code',
-    
-    // CV editor    
+
+    // CV editor
     createCv: '/create-cv/:code',
     editCv: '/edit-cv/:slug',
 
     myCvs: '/my-cvs',
     aiAnalysis: '/ai-analysis',
-    aiAnalysisResult: '/ai-analysis/result',
+    aiAnalysisResult_route: '/ai-analysis/result/',
+    aiAnalysisResult: '/ai-analysis/result/:aiRunId',
     upgradePremium: '/upgrade-premium',
     profile: '/profile',
     security: '/security',

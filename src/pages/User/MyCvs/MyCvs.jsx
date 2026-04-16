@@ -1,11 +1,5 @@
-import React from 'react'
-
 function MyCvs() {
-  return (
-    <div>
-      MyCv
-    </div>
-  )
+    return <div>MyCv</div>;
 }
 
-export default MyCvs
+export default MyCvs;
