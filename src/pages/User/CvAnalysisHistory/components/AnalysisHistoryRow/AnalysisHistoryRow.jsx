@@ -5,11 +5,9 @@ import styles from './AnalysisHistoryRow.module.scss';
 const cx = classNames.bind(styles);
 
 function ScoreBar({ value, status, analysisStatus }) {
-    if (
-        status !== analysisStatus.SUCCESS ||
-        value === null ||
-        value === undefined
-    ) {
+    const isValidScore = typeof value === 'number';
+
+    if (status !== analysisStatus.SUCCESS || !isValidScore) {
         return <span className={cx('scorePending')}>—</span>;
     }
 
@@ -66,32 +64,44 @@ function AnalysisStatusBadge({ status, analysisStatus }) {
 }
 
 function AnalysisHistoryRow({ item = {}, analysisStatus }) {
+    const {
+        fileName = '—',
+        isBest = false,
+        role = '—',
+        analyzedAt = '—',
+        score = null,
+        keywords = [],
+        status,
+    } = item;
+
+    const safeKeywords = Array.isArray(keywords) ? keywords : [];
+
     return (
         <div className={cx('tableRow')}>
             <div className={cx('cell', 'fileCell')}>
                 <FiFileText className={cx('fileIcon')} />
                 <div className={cx('fileInfo')}>
-                    <span className={cx('fileName')}>{item.fileName || '—'}</span>
-                    {item.isBest && <span className={cx('bestBadge')}>BEST SCORE</span>}
+                    <span className={cx('fileName')}>{fileName}</span>
+                    {isBest && <span className={cx('bestBadge')}>BEST SCORE</span>}
                 </div>
             </div>
 
-            <div className={cx('cell', 'roleCell')}>{item.role || '—'}</div>
+            <div className={cx('cell', 'roleCell')}>{role}</div>
 
-            <div className={cx('cell', 'dateCell')}>{item.analyzedAt || '—'}</div>
+            <div className={cx('cell', 'dateCell')}>{analyzedAt}</div>
 
             <div className={cx('cell', 'scoreCell')}>
                 <ScoreBar
-                    value={item.score}
-                    status={item.status}
+                    value={score}
+                    status={status}
                     analysisStatus={analysisStatus}
                 />
             </div>
 
             <div className={cx('cell', 'keywordCell')}>
                 <div className={cx('keywordList')}>
-                    {item.keywords?.length ? (
-                        item.keywords.map((keyword, index) => (
+                    {safeKeywords.length > 0 ? (
+                        safeKeywords.map((keyword, index) => (
                             <span
                                 key={`${keyword}-${index}`}
                                 className={cx('keywordTag')}
@@ -107,7 +117,7 @@ function AnalysisHistoryRow({ item = {}, analysisStatus }) {
 
             <div className={cx('cell', 'statusCell')}>
                 <AnalysisStatusBadge
-                    status={item.status}
+                    status={status}
                     analysisStatus={analysisStatus}
                 />
             </div>

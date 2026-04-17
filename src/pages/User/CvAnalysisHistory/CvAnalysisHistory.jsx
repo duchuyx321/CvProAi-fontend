@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import {
-    FiSearch,
     FiDownload,
     FiChevronLeft,
     FiChevronRight,
-    FiFilter,
     FiTrendingUp,
 } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi2';
@@ -42,7 +40,7 @@ export const HISTORY_DATA = {
             analyzedAt: '14:20, 20/10/2023',
             score: 85,
             keywords: ['Figma', 'Design System', 'Strategy'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
         {
             id: 2,
@@ -52,7 +50,7 @@ export const HISTORY_DATA = {
             analyzedAt: '09:15, 18/10/2023',
             score: 62,
             keywords: ['Agile', 'Backlog', 'Roadmap'],
-            status: ANALYSIS_STATUS.RUNNING,
+            status: 'RUNNING',
         },
         {
             id: 3,
@@ -62,7 +60,7 @@ export const HISTORY_DATA = {
             analyzedAt: '16:45, 15/10/2023',
             score: 45,
             keywords: ['SEO'],
-            status: ANALYSIS_STATUS.FAILED,
+            status: 'FAILED',
         },
         {
             id: 4,
@@ -72,7 +70,7 @@ export const HISTORY_DATA = {
             analyzedAt: '11:30, 14/10/2023',
             score: null,
             keywords: [],
-            status: ANALYSIS_STATUS.QUEUED,
+            status: 'QUEUED',
         },
         {
             id: 5,
@@ -82,7 +80,7 @@ export const HISTORY_DATA = {
             analyzedAt: '10:05, 12/10/2023',
             score: 78,
             keywords: ['ReactJS', 'Sass', 'REST API'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
         {
             id: 6,
@@ -92,7 +90,7 @@ export const HISTORY_DATA = {
             analyzedAt: '08:40, 11/10/2023',
             score: 71,
             keywords: ['SQL', 'Power BI', 'Excel'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
         {
             id: 7,
@@ -102,7 +100,7 @@ export const HISTORY_DATA = {
             analyzedAt: '13:50, 10/10/2023',
             score: 53,
             keywords: ['Recruitment', 'Communication'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
         {
             id: 8,
@@ -112,7 +110,7 @@ export const HISTORY_DATA = {
             analyzedAt: '15:10, 09/10/2023',
             score: 66,
             keywords: ['Selenium', 'Test Case'],
-            status: ANALYSIS_STATUS.RUNNING,
+            status: 'RUNNING',
         },
         {
             id: 9,
@@ -122,7 +120,7 @@ export const HISTORY_DATA = {
             analyzedAt: '09:20, 08/10/2023',
             score: 58,
             keywords: ['BRD', 'Wireframe', 'UAT'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
         {
             id: 10,
@@ -132,7 +130,7 @@ export const HISTORY_DATA = {
             analyzedAt: '17:00, 07/10/2023',
             score: null,
             keywords: ['Docker', 'CI/CD'],
-            status: ANALYSIS_STATUS.QUEUED,
+            status: 'QUEUED',
         },
         {
             id: 11,
@@ -142,7 +140,7 @@ export const HISTORY_DATA = {
             analyzedAt: '14:35, 06/10/2023',
             score: 49,
             keywords: ['Content SEO', 'Social Media'],
-            status: ANALYSIS_STATUS.FAILED,
+            status: 'FAILED',
         },
         {
             id: 12,
@@ -152,7 +150,7 @@ export const HISTORY_DATA = {
             analyzedAt: '11:25, 05/10/2023',
             score: 74,
             keywords: ['Flutter', 'Dart', 'Firebase'],
-            status: ANALYSIS_STATUS.SUCCESS,
+            status: 'SUCCESS',
         },
     ],
 };
@@ -173,7 +171,6 @@ function StatsCard({ icon, label, value, variant }) {
 
 function CvAnalysisHistory() {
     const [analysisList, setAnalysisList] = useState([]);
-    const [searchValue, setSearchValue] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
@@ -189,33 +186,18 @@ function CvAnalysisHistory() {
                 setAnalysisList(result?.data || []);
             } catch (error) {
                 console.error('Lỗi lấy lịch sử phân tích CV:', error);
-            } finally {
-                // setLoading(false);
             }
         };
 
         fetchAnalysisHistory();
     }, []);
 
-    const filteredAnalysisList = useMemo(() => {
-        const keyword = searchValue.trim().toLowerCase();
-
-        if (!keyword) return analysisList;
-
-        return analysisList.filter(
-            (item) =>
-                item.fileName?.toLowerCase().includes(keyword) ||
-                item.role?.toLowerCase().includes(keyword) ||
-                item.keywords?.some((tag) => tag.toLowerCase().includes(keyword)),
-        );
-    }, [analysisList, searchValue]);
-
-    const totalPages = Math.max(1, Math.ceil(filteredAnalysisList.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(analysisList.length / PAGE_SIZE));
 
     const pagedList = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
-        return filteredAnalysisList.slice(start, start + PAGE_SIZE);
-    }, [filteredAnalysisList, currentPage]);
+        return analysisList.slice(start, start + PAGE_SIZE);
+    }, [analysisList, currentPage]);
 
     const statsData = useMemo(() => {
         const total = analysisList.length;
@@ -259,26 +241,16 @@ function CvAnalysisHistory() {
         ];
     }, [analysisList]);
 
-    const handleSearchChange = (e) => {
-        setSearchValue(e.target.value);
-        setCurrentPage(1);
-    };
-
-    const handleResetFilter = () => {
-        setSearchValue('');
-        setCurrentPage(1);
-    };
-
     const handleExportHistory = () => {
         // Chưa có backend export
+        // const blob = await exportAnalysisHistory();
         console.log('Export analysis history - mock mode');
     };
 
     const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
-    const startItem =
-        filteredAnalysisList.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-    const endItem = Math.min(currentPage * PAGE_SIZE, filteredAnalysisList.length);
+    const startItem = analysisList.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const endItem = Math.min(currentPage * PAGE_SIZE, analysisList.length);
 
     return (
         <div className={cx('wrapper')}>
@@ -319,42 +291,6 @@ function CvAnalysisHistory() {
                 ))}
             </div>
 
-            <div className={cx('filterCard')}>
-                <div className={cx('filterTop')}>
-                    <div className={cx('searchBox')}>
-                        <FiSearch className={cx('searchIcon')} />
-                        <input
-                            type="text"
-                            placeholder="Tìm tên CV, vị trí, từ khóa..."
-                            className={cx('searchInput')}
-                            value={searchValue}
-                            onChange={handleSearchChange}
-                        />
-                    </div>
-
-                    <button type="button" className={cx('filterChip')}>
-                        Khoảng thời gian
-                    </button>
-
-                    <button type="button" className={cx('filterChip')}>
-                        Điểm phù hợp
-                    </button>
-                </div>
-
-                <div className={cx('filterBottom')}>
-                    <button type="button" className={cx('iconFilterBtn')}>
-                        <FiFilter />
-                    </button>
-                    <button
-                        type="button"
-                        className={cx('resetBtn')}
-                        onClick={handleResetFilter}
-                    >
-                        Reset
-                    </button>
-                </div>
-            </div>
-
             <div className={cx('tableCard')}>
                 <div className={cx('tableHeader')}>
                     <div className={cx('th', 'fileCell')}>TÊN CV</div>
@@ -383,8 +319,7 @@ function CvAnalysisHistory() {
 
                 <div className={cx('tableFooter')}>
                     <p className={cx('resultText')}>
-                        Hiển thị {startItem}–{endItem} của {filteredAnalysisList.length}{' '}
-                        kết quả
+                        Hiển thị {startItem}–{endItem} của {analysisList.length} kết quả
                     </p>
 
                     <div className={cx('pagination')}>

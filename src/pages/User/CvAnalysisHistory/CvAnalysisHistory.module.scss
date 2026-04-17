@@ -70,9 +70,6 @@
 
 .primaryBtn:hover,
 .secondaryBtn:hover,
-.filterChip:hover,
-.iconFilterBtn:hover,
-.resetBtn:hover,
 .pageBtn:hover,
 .pageNav:hover {
     transform: translateY(-1px);
@@ -142,110 +139,11 @@
     font-weight: 800;
 }
 
-.filterCard,
 .tableCard {
+    overflow: hidden;
     background: #ffffff;
     border-radius: 24px;
     box-shadow: 0 8px 30px rgba(17, 24, 39, 0.04);
-}
-
-.filterCard {
-    padding: 18px 20px;
-    margin-bottom: 28px;
-}
-
-.filterTop {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 14px;
-    margin-bottom: 18px;
-}
-
-.searchBox {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.searchIcon {
-    position: absolute;
-    left: 16px;
-    font-size: 18px;
-    color: #98a2b3;
-    pointer-events: none;
-}
-
-.searchInput {
-    width: 100%;
-    height: 54px;
-    border: none;
-    outline: none;
-    border-radius: 16px;
-    background: #f5f6fd;
-    padding: 0 16px 0 46px;
-    font-size: 15px;
-    color: #182033;
-    transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease;
-
-    &::placeholder {
-        color: #98a2b3;
-    }
-
-    &:focus {
-        background: #ffffff;
-        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.12);
-    }
-}
-
-.filterChip {
-    height: 54px;
-    padding: 0 18px;
-    border: none;
-    border-radius: 16px;
-    background: #f5f6fd;
-    color: #344054;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-        transform 0.2s ease,
-        background-color 0.2s ease;
-}
-
-.filterBottom {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.iconFilterBtn {
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: 14px;
-    background: #4f46e5;
-    color: #ffffff;
-    font-size: 18px;
-    cursor: pointer;
-    transition:
-        transform 0.2s ease,
-        opacity 0.2s ease;
-}
-
-.resetBtn {
-    border: none;
-    background: transparent;
-    color: #4f46e5;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.tableCard {
-    overflow: hidden;
 }
 
 .tableHeader {
@@ -319,4 +217,11 @@
 .pageBtn.active {
     background: #4f46e5;
     color: #ffffff;
+}
+
+.pageNav:disabled,
+.pageBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
