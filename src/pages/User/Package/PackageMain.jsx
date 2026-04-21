@@ -1,193 +1,172 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
-import { MdVerified } from 'react-icons/md';
-import { IoCheckmarkCircleOutline } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 
-import Button from '~/components/Button';
-import { getCurrentPackage, cancelPackageRenew } from '~/services/package.service';
+import PackageCard from './components/PackageCard';
 import styles from './PackageMain.module.scss';
+// import {
+//     cancelPackageSubscription,
+//     getMyPackage,
+// } from '~/services/package.service';
 
 const cx = classNames.bind(styles);
-// mock data, sẽ xóa khi có API
-const MOCK_PACKAGE = {
-    name: 'Gói Premium',
-    desc: 'Bạn đang tận hưởng toàn bộ tính năng cao cấp của hệ thống CvProAI',
-    price: '199.000đ',
-    unit: '/ tháng',
-    renewDate: '15/06/2026',
-    status: 'active',
-    benefits: [
-        'Phân tích AI không giới hạn',
-        'Xuất PDF không watermark',
-        'Gợi ý nâng cao từ AI',
-        'Hỗ trợ ưu tiên 24/7',
-        'Truy cập tất cả các mẫu thiết kế',
-    ],
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const PACKAGE_MOCKS = {
+    success: true,
+    message: 'Lấy thông tin gói dịch vụ thành công',
+    data: {
+        current_plan: {
+            id: 'plan_premium_active',
+            name: 'Premium',
+            description:
+                'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
+            price: '199000',
+            currency: 'VND',
+            billing_cycle: 'MONTH',
+            cv_limit: 20,
+            export_limit: 15,
+            ai_limit: 10,
+            premium_template: true,
+            remove_watermark: true,
+            custom_domain: true,
+            priority_support: true,
+            is_active: true,
+            slug: 'premium',
+            view_full_ai_analysis: true,
+            started_at: '2026-05-15T00:00:00.000Z',
+            expires_at: '2026-06-15T00:00:00.000Z',
+            auto_renew: true,
+            cancel_at_period_end: false,
+            cancelled_at: null,
+            can_cancel: true,
+            status: 'ACTIVE',
+        },
+        usage: {
+            cv_used: 8,
+            export_used: 5,
+            ai_used: 4,
+        },
+    },
+    date: '08:39:35 21/04/2026',
+    path: '/api/v1/users/me/package',
 };
 
 function PackageMain() {
-    const [packageInfo, setPackageInfo] = useState(MOCK_PACKAGE); 
-    const [submitting, setSubmitting] = useState(false);
-
-    const {
-        name = '',
-        desc = '',
-        price = '',
-        unit = '',
-        renewDate = '',
-        benefits = [],
-        status = '',
-    } = packageInfo || {};
-
-    const benefitList = useMemo(() => {
-        if (Array.isArray(benefits) && benefits.length) {
-            return benefits;
-        }
-        return [];
-    }, [benefits]);
+    const [packageData, setPackageData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const fetchCurrentPackage = async () => {
+        const fetchPackage = async () => {
+            setIsLoading(true);
+
             try {
-                const result = await getCurrentPackage();
+                // const result = await getMyPackage();
+                const result = PACKAGE_MOCKS;
 
                 if (!result?.success) {
                     throw new Error(
-                        result?.message || 'Không thể tải thông tin gói dịch vụ',
+                        result?.message ||
+                            'Không thể tải thông tin gói dịch vụ',
                     );
                 }
 
-                setPackageInfo(result?.data || null);
+                if (!result?.data?.current_plan) {
+                    throw new Error('Dữ liệu gói hiện tại không hợp lệ');
+                }
+
+                setPackageData(result.data);
             } catch (error) {
                 toast.error(
                     error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
                 );
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        fetchCurrentPackage();
+        fetchPackage();
     }, []);
 
-    const handleCancelRenew = async () => {
-        if (submitting) return;
+    const updateCurrentPlan = (updater) => {
+        setPackageData((prev) => {
+            if (!prev?.current_plan) return prev;
+
+            return {
+                ...prev,
+                current_plan: {
+                    ...prev.current_plan,
+                    ...updater,
+                },
+            };
+        });
+    };
+
+    const handleCancelPackage = async () => {
+        const confirmed = window.confirm(
+            'Nếu bạn hủy, bạn vẫn sẽ được toàn quyền truy cập vào các tính năng của gói cho đến hết chu kỳ thanh toán hiện tại. Bạn có muốn tiếp tục không?',
+        );
+
+        if (!confirmed) return;
+
+        setIsSubmitting(true);
 
         try {
-            setSubmitting(true);
+            // const result = await cancelPackageSubscription();
+            const result = {
+                success: true,
+                message: 'Đã hủy gia hạn gói thành công',
+            };
 
-            const cancelPromise = cancelPackageRenew().then((result) => {
-                if (!result?.success) {
-                    throw new Error(
-                        result?.message || 'Hủy gia hạn thất bại',
-                    );
-                }
+            if (!result?.success) {
+                throw new Error(
+                    result?.message || 'Không thể hủy gói dịch vụ',
+                );
+            }
 
-                return result;
+            updateCurrentPlan({
+                auto_renew: false,
+                cancel_at_period_end: true,
+                cancelled_at: new Date().toISOString(),
+                can_cancel: false,
+                status: 'ACTIVE',
             });
 
-            await toast.promise(cancelPromise, {
-                pending: 'Đang xử lý...',
-                success: {
-                    render({ data }) {
-                        return data?.message || 'Hủy gia hạn thành công';
-                    },
-                },
-                error: {
-                    render({ data }) {
-                        return (
-                            data?.message ||
-                            'Có lỗi xảy ra, vui lòng thử lại sau'
-                        );
-                    },
-                },
-            });
-
-            setPackageInfo((prev) => ({
-                ...prev,
-                status: 'cancelled',
-            }));
-        } catch {
-            // toast.promise đã hiển thị lỗi rồi, không cần xử lý thêm
+            toast.success(result.message);
+        } catch (error) {
+            toast.error(
+                error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
+            );
         } finally {
-            setSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
-    if (packageInfo === null) {
-        return null;
-    }
-
-    if (!packageInfo?.name) {
+    if (isLoading) {
         return (
             <div className={cx('wrapper')}>
-                <section className={cx('card')}>
-                    <p className={cx('empty')}>
-                        Bạn chưa đăng ký gói dịch vụ nào
-                    </p>
-                </section>
+                <p className={cx('loading')}>Đang tải thông tin gói dịch vụ...</p>
+            </div>
+        );
+    }
+
+    if (!packageData) {
+        return (
+            <div className={cx('wrapper')}>
+                <p className={cx('empty')}>Không có dữ liệu gói dịch vụ.</p>
             </div>
         );
     }
 
     return (
         <div className={cx('wrapper')}>
-            <section className={cx('card')}>
-                <div className={cx('head')}>
-                    <div className={cx('titleWrap')}>
-                        <h1 className={cx('title')}>{name}</h1>
-                        <span className={cx('icon')}>
-                            <MdVerified />
-                        </span>
-                    </div>
-
-                    <p className={cx('desc')}>{desc}</p>
-                </div>
-
-                <div className={cx('priceBox')}>
-                    <span className={cx('price')}>{price}</span>
-                    <span className={cx('unit')}>{unit}</span>
-                </div>
-
-                <div className={cx('meta')}>
-                    <span className={cx('metaLabel')}>Gia hạn tiếp theo :</span>
-                    <span className={cx('metaValue')}>
-                        {renewDate || 'Chưa cập nhật'}
-                    </span>
-                </div>
-
-                {benefitList.length > 0 && (
-                    <div className={cx('section')}>
-                        <h2 className={cx('sectionTitle')}>Quyền lợi của bạn</h2>
-
-                        <div className={cx('list')}>
-                            {benefitList.map((item, index) => (
-                                <div
-                                    key={`${item}-${index}`}
-                                    className={cx('item')}
-                                >
-                                    <span className={cx('itemIcon')}>
-                                        <IoCheckmarkCircleOutline />
-                                    </span>
-                                    <span className={cx('itemText')}>{item}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className={cx('actions')}>
-                    <Button
-                        type="button"
-                        className={cx('btnCancel', {
-                            disabled: status === 'cancelled',
-                        })}
-                        onClick={handleCancelRenew}
-                        disabled={submitting || status === 'cancelled'}
-                    >
-                        {status === 'cancelled' ? 'Đã hủy gia hạn' : 'Hủy gia hạn'}
-                    </Button>
-                </div>
-            </section>
+            <PackageCard
+                plan={packageData.current_plan}
+                usage={packageData.usage}
+                isSubmitting={isSubmitting}
+                onCancelPackage={handleCancelPackage}
+            />
         </div>
     );
 }

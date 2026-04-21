@@ -1,0 +1,74 @@
+.row {
+    display: grid;
+    grid-template-columns: 1.05fr 1.1fr 1.35fr 0.9fr 0.9fr 1fr;
+    gap: 10px;
+    padding: 18px 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 40px;
+    font-size: 1.5rem;
+    color: #374151;
+}
+
+.code {
+    font-weight: 600;
+    color: #111827;
+}
+
+.plan {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.planName {
+    font-weight: 600;
+    color: #111827;
+}
+
+.planCycle {
+    font-size: 1.3rem;
+    color: #6b7280;
+}
+
+.method {
+    color: #4b5563;
+}
+
+.status {
+    justify-content: flex-start;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.success {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.failed {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
