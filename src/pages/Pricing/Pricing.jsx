@@ -2,97 +2,80 @@ import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
-import { config } from '~/config';
-// import { useAuth } from '~/context/AuthContext';
-// import { getPricing } from '~/services/pricing.service';
-
+import { getPlanRoute } from '~/utils/pricing.utils';
 import styles from './Pricing.module.scss';
 import PricingCard from './components/PricingCard';
+import { useAuth } from '~/context/AuthContext';
+// import { getPricing } from '~/services/pricing.service';
 
 const cx = classNames.bind(styles);
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const PRICING_RESPONSE = {
     success: true,
-    message: 'Lấy bảng giá thành công',
+    message: 'Lấy dữ liệu thành công',
     data: [
         {
-            id: 1,
-            key: 'free',
-            title: 'Gói Miễn phí',
-            description: 'Trí tuệ cho các nhu cầu tạo CV cơ bản hằng ngày',
-            pricePrefix: '',
-            price: '0đ',
-            unit: '/vĩnh viễn',
-            featureTitle: '',
-            features: [
-                'Phân tích AI giới hạn (5 lần/tháng)',
-                'Xuất PDF có watermark',
-            ],
-            buttonText: 'Bắt đầu ngay',
-            popular: false,
-            badgeText: '',
-            note: '',
+            id: '02cd62a8-749a-4541-8202-be8e947a489b',
+            name: 'Free',
+            description:
+                'Gói miễn phí để tạo CV, phân tích AI cơ bản và xuất file với giới hạn hằng tháng.',
+            price: '0',
+            currency: 'VND',
+            billing_cycle: 'MONTH',
+            cv_limit: 2,
+            export_limit: 5,
+            ai_limit: 3,
+            premium_template: false,
+            remove_watermark: false,
+            custom_domain: false,
+            priority_support: false,
+            is_active: true,
+            slug: 'free',
+            view_full_ai_analysis: true,
         },
         {
-            id: 2,
-            key: 'premium',
-            title: 'Gói Premium',
-            description: 'Tối ưu toàn diện hơn với AI nâng cao và không giới hạn',
-            pricePrefix: '',
-            price: '199.000đ',
-            unit: '/tháng',
-            featureTitle: 'Mọi tính năng trong gói Miễn phí và:',
-            features: [
-                'Tạo CV không giới hạn',
-                'Phân tích AI nâng cao (Không giới hạn)',
-                'PDF không watermark (Chất lượng cao)',
-                'Xem lịch sử phân tích và giao dịch',
-            ],
-            buttonText: 'Nâng cấp Premium',
-            popular: true,
-            badgeText: 'PHỔ BIẾN NHẤT',
-            note: 'Phù hợp cho người dùng cần tối ưu CV chuyên sâu và sử dụng thường xuyên.',
+            id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+            name: 'Premium',
+            description:
+                'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
+            price: '199000',
+            currency: 'VND',
+            billing_cycle: 'MONTH',
+            cv_limit: 20,
+            export_limit: 15,
+            ai_limit: 10,
+            premium_template: true,
+            remove_watermark: true,
+            custom_domain: true,
+            priority_support: true,
+            is_active: true,
+            slug: 'premium',
+            view_full_ai_analysis: true,
         },
     ],
-    meta: {
-        timestamp: '2026-04-13T09:17:01Z',
-        totalPlans: 2,
-    },
 };
 
-function getPlanRoute(planKey, isAuthenticated) {
-    if (!isAuthenticated) {
-        if (planKey === 'free') return config.router.register;
-        if (planKey === 'premium') return config.router.login;
-
-        return config.router.home;
-    }
-
-    if (planKey === 'free') return config.router.cvTemplates;
-    if (planKey === 'premium') return config.router.payment;
-
-    return config.router.home;
-}
-
 function Pricing() {
-    // const { isAuthenticated } = useAuth();
-    const isAuthenticated = false;
+    const { isAuthenticated } = useAuth();
+    // const isAuthenticated = true;
 
     const [pricing, setPricing] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPricing = async () => {
-            try {
-                setIsLoading(true);
+        let cancelled = false;
 
+        const fetchPricing = async () => {
+            setIsLoading(true);
+
+            try {
                 // const result = await getPricing();
                 const result = PRICING_RESPONSE;
 
                 if (!result?.success) {
                     throw new Error(
-                        result?.message || 'Không thể tải bảng giá',
+                        result?.message ?? 'Không thể tải bảng giá',
                     );
                 }
 
@@ -100,23 +83,35 @@ function Pricing() {
                     throw new Error('Dữ liệu bảng giá không hợp lệ');
                 }
 
-                setPricing(result.data);
+                const activePlans = result.data
+                    .filter((plan) => plan.is_active)
+                    .map((plan) => ({
+                        ...plan,
+                        to: getPlanRoute(plan.slug, isAuthenticated),
+                    }));
+
+                if (!cancelled) {
+                    setPricing(activePlans);
+                }
             } catch (error) {
-                toast.error(
-                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
-                );
+                if (!cancelled) {
+                    toast.error(
+                        error?.message ?? 'Có lỗi xảy ra, vui lòng thử lại sau',
+                    );
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchPricing();
-    }, []);
 
-    const pricingViewData = pricing.map((plan) => ({
-        ...plan,
-        to: getPlanRoute(plan.key, isAuthenticated),
-    }));
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
 
     return (
         <section className={cx('wrapper')}>
@@ -129,10 +124,17 @@ function Pricing() {
                 </div>
 
                 <div className={cx('grid')}>
-                    {!isLoading &&
-                        pricingViewData.map((plan) => (
+                    {isLoading ? (
+                        <p className={cx('loading')}>Đang tải bảng giá...</p>
+                    ) : pricing.length === 0 ? (
+                        <p className={cx('empty')}>
+                            Hiện chưa có gói dịch vụ nào.
+                        </p>
+                    ) : (
+                        pricing.map((plan) => (
                             <PricingCard key={plan.id} plan={plan} />
-                        ))}
+                        ))
+                    )}
                 </div>
             </div>
         </section>

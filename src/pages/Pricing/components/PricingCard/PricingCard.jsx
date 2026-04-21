@@ -2,57 +2,61 @@ import { IoCheckmarkCircleOutline } from 'react-icons/io5';
 import classNames from 'classnames/bind';
 
 import Button from '~/components/Button';
+import {
+    buildPlanFeatures,
+    formatPrice,
+    mapBillingCycleToUnit,
+} from '~/utils/pricing.utils';
 import styles from './PricingCard.module.scss';
 
 const cx = classNames.bind(styles);
 
+const PLAN_SLUGS = {
+    FREE: 'free',
+    PREMIUM: 'premium',
+};
+
 function PricingCard({ plan = {} }) {
-    const {
-        title,
-        description,
-        pricePrefix,
-        price,
-        unit,
-        featureTitle,
-        features = [],
-        buttonText,
-        popular = false,
-        badgeText,
-        note,
-        to,
-    } = plan;
+    const isPremium = plan.slug === PLAN_SLUGS.PREMIUM;
+
+    const displayName =
+        plan.slug === PLAN_SLUGS.FREE
+            ? 'Gói Miễn phí'
+            : plan.name || 'Gói dịch vụ';
+
+    const features = buildPlanFeatures(plan);
 
     return (
-        <article className={cx('card', { popular })}>
-            {popular && badgeText ? (
-                <span className={cx('badge')}>{badgeText}</span>
-            ) : null}
+        <article className={cx('card', { popular: isPremium })}>
+            {isPremium && <span className={cx('badge')}>PHỔ BIẾN NHẤT</span>}
 
             <div className={cx('head')}>
-                <h2 className={cx('cardTitle')}>{title}</h2>
+                <h2 className={cx('cardTitle')}>{displayName}</h2>
 
-                {description ? (
-                    <p className={cx('cardDesc')}>{description}</p>
-                ) : null}
+                {plan.description && (
+                    <p className={cx('cardDesc')}>{plan.description}</p>
+                )}
 
                 <div className={cx('priceBox')}>
-                    {pricePrefix ? (
-                        <span className={cx('pricePrefix')}>{pricePrefix}</span>
-                    ) : null}
-
-                    <span className={cx('price')}>{price}</span>
-                    <span className={cx('unit')}>{unit}</span>
+                    <span className={cx('price')}>
+                        {formatPrice(plan.price, plan.currency)}
+                    </span>
+                    <span className={cx('unit')}>
+                        {mapBillingCycleToUnit(plan.billing_cycle)}
+                    </span>
                 </div>
             </div>
 
             <div className={cx('body')}>
-                {featureTitle ? (
-                    <p className={cx('featureTitle')}>{featureTitle}</p>
-                ) : null}
+                {isPremium && (
+                    <p className={cx('featureTitle')}>
+                        Mọi tính năng trong gói Miễn phí và:
+                    </p>
+                )}
 
                 <ul className={cx('list')}>
-                    {features.map((item) => (
-                        <li key={`${title}-${item}`} className={cx('item')}>
+                    {features.map((item, index) => (
+                        <li key={`${plan.slug}-${index}`} className={cx('item')}>
                             <span className={cx('itemIcon')}>
                                 <IoCheckmarkCircleOutline />
                             </span>
@@ -64,15 +68,13 @@ function PricingCard({ plan = {} }) {
 
             <div className={cx('actions')}>
                 <Button
-                    to={to}
-                    primary={popular}
-                    className={cx('btn', { btnPrimary: popular })}
+                    to={plan.to}
+                    primary={isPremium}
+                    className={cx('btn', { btnPrimary: isPremium })}
                 >
-                    {buttonText || 'Xem chi tiết'}
+                    {isPremium ? 'Nâng cấp Premium' : 'Bắt đầu ngay'}
                 </Button>
             </div>
-
-            {note ? <p className={cx('note')}>{note}</p> : null}
         </article>
     );
 }

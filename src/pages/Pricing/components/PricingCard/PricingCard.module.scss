@@ -71,13 +71,6 @@
     flex-wrap: wrap;
 }
 
-.pricePrefix {
-    width: 100%;
-    font-size: 1.4rem;
-    line-height: 1.4;
-    color: #6b7280;
-}
-
 .price {
     font-size: 4.4rem;
     font-weight: 800;
@@ -163,12 +156,5 @@
     color: #fff;
     background: linear-gradient(90deg, #4f46e5 0%, #5b4ce6 100%);
     box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
-}
-
-.note {
-    margin: 0;
-    font-size: 1.4rem;
-    line-height: 1.5;
-    color: #6b7280;
 }
 
