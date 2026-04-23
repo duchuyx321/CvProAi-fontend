@@ -30,7 +30,7 @@ export const router = {
     security: '/security',
     package: '/package',
     history: '/history',
-    payment: '/payment/:packageId',
+    payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
     upgradeOptions: '/upgrade-options/:packageId',
     // Admin
