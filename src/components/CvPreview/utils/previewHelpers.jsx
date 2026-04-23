@@ -1,14 +1,28 @@
+import { DEFAULT_CV_AVATAR_URL } from '~/utils/cv-data.normalizer';
+
 const SECTION_KEY_MAP = {
+    profile: 'profile_header',
     profile_header: 'profile_header',
+    personal_info: 'profile_header',
+    contact: 'CONTACT',
     CONTACT: 'CONTACT',
+    summary: 'SUMMARY',
     SUMMARY: 'SUMMARY',
+    experience: 'EXPERIENCE',
     EXPERIENCE: 'EXPERIENCE',
+    education: 'EDUCATION',
     EDUCATION: 'EDUCATION',
+    skills: 'SKILLS',
     SKILLS: 'SKILLS',
+    projects: 'PROJECTS',
     PROJECTS: 'PROJECTS',
+    additional: 'ADDITIONAL',
     ADDITIONAL: 'ADDITIONAL',
+    activities: 'ACTIVITIES',
     ACTIVITIES: 'ACTIVITIES',
+    awards: 'AWARDS',
     AWARDS: 'AWARDS',
+    certificates: 'CERTIFICATES',
     CERTIFICATES: 'CERTIFICATES',
 };
 
@@ -38,6 +52,14 @@ export function resolveSectionData(type, content) {
 export function resolveFieldValue(field, source = {}, content = {}) {
     if (field === 'SUMMARY') return content?.SUMMARY || '';
 
+    if (field === 'avatar_url') {
+        return (
+            source?.avatar_url ||
+            content?.profile_header?.avatar_url ||
+            DEFAULT_CV_AVATAR_URL
+        );
+    }
+
     if (
         source?.[field] !== undefined &&
         source?.[field] !== null &&
@@ -46,8 +68,10 @@ export function resolveFieldValue(field, source = {}, content = {}) {
         return source[field];
     }
 
-    if (content?.profile_header?.[field]) return content.profile_header[field];
-    if (content?.CONTACT?.[field]) return content.CONTACT[field];
+    if (content?.profile_header?.[field] !== undefined) {
+        return content.profile_header[field];
+    }
+    if (content?.CONTACT?.[field] !== undefined) return content.CONTACT[field];
 
     return '';
 }

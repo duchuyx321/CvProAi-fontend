@@ -29,7 +29,8 @@ import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
 import CvTemplateDetail from '~/pages/User/CvTemplateDetail';
-import CvEditor from '~/pages/User/CvEditor';
+import CreateCv from '~/pages/User/CreateCv';
+import EditCv from '~/pages/User/EditCv';
 
 // public router
 const PublicRouter = [
@@ -106,12 +107,12 @@ const PublicRouter = [
     },
     {
         path: config.router.createCv,
-        component: CvEditor,
+        component: CreateCv,
         layout: null,
     },
     {
         path: config.router.editCv,
-        component: CvEditor,
+        component: EditCv,
         layout: null,
     },
     {

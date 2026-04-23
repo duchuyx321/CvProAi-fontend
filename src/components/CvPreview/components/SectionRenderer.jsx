@@ -18,10 +18,11 @@ function SectionTitle({ title, prefix }) {
 }
 
 function SectionRenderer({ sectionKey, section, content, theme, layoutType }) {
-    const data = resolveSectionData(section?.type, content);
+    const sectionType = section?.type || sectionKey;
+    const data = resolveSectionData(sectionType, content);
     if (isEmpty(data)) return null;
 
-    const hasTitle = section?.type !== 'profile_header' && !!section?.title;
+    const hasTitle = sectionType !== 'profile_header' && !!section?.title;
 
     return (
         <section className={cx('section')} data-section-key={sectionKey}>
