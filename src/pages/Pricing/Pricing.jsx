@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
-import { getPlanRoute } from '~/utils/pricing.utils';
 import styles from './Pricing.module.scss';
 import PricingCard from './components/PricingCard';
 import { useAuth } from '~/context/AuthContext';
@@ -57,8 +56,12 @@ export const PRICING_RESPONSE = {
 };
 
 function Pricing() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     // const isAuthenticated = true;
+    
+    const currentPlanSlug = user?.plan?.slug ?? user?.membership ?? 'free';
+
+    const isCurrentPremium = isAuthenticated && currentPlanSlug === 'premium';
 
     const [pricing, setPricing] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -83,13 +86,7 @@ function Pricing() {
                     throw new Error('Dữ liệu bảng giá không hợp lệ');
                 }
 
-                const activePlans = result.data
-                    .filter((plan) => plan.is_active)
-                    .map((plan) => ({
-                        ...plan,
-                        to: getPlanRoute(plan.slug, isAuthenticated),
-                    }));
-
+                const activePlans = result.data.filter((plan) => plan.is_active);
                 if (!cancelled) {
                     setPricing(activePlans);
                 }
@@ -111,7 +108,7 @@ function Pricing() {
         return () => {
             cancelled = true;
         };
-    }, [isAuthenticated]);
+    }, []);
 
     return (
         <section className={cx('wrapper')}>
@@ -132,7 +129,13 @@ function Pricing() {
                         </p>
                     ) : (
                         pricing.map((plan) => (
-                            <PricingCard key={plan.id} plan={plan} />
+                            <PricingCard
+                                key={plan.id}
+                                plan={plan}
+                                isAuthenticated={isAuthenticated}
+                                isCurrentPlan={isAuthenticated && currentPlanSlug === plan.slug}
+                                isCurrentPremium={isCurrentPremium}
+                            />
                         ))
                     )}
                 </div>
