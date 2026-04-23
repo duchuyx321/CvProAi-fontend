@@ -30,6 +30,9 @@ import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
 import CvTemplateDetail from '~/pages/User/CvTemplateDetail';
 import CvEditor from '~/pages/User/CvEditor';
+import Payment from '~/pages/User/Payment';
+import PaymentSuccess from '~/pages/User/PaymentSuccess';
+import UpgradeOptionsPage from '~/pages/User/UpgradeOptionsPage';
 
 // public router
 const PublicRouter = [
@@ -135,6 +138,11 @@ const PublicRouter = [
         layout: DefaultLayout,
     },
     {
+        path: config.router.upgradeOptions,
+        component: UpgradeOptionsPage,
+        layout: DetailLayout,
+    },
+    {
         path: config.router.profile,
         component: Profile,
         layout: DetailLayout,
@@ -154,18 +162,33 @@ const PublicRouter = [
         component: History,
         layout: DetailLayout,
     },
-];
 
-// user router
-const UserRouter = [];
+    {
+        path: config.router.payment,
+        component: Payment,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.paymentSuccess,
+        component: PaymentSuccess,
+        layout: DetailLayout,
+    },
 
-// admin router
-const AdminRouter = [
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
         layout: AdminLayout,
     },
+];
+
+// user router
+const UserRouter = [
+    
+];
+
+// admin router
+const AdminRouter = [
+    
     {
         path: config.router.manageUsers,
         component: ManageUsers,
