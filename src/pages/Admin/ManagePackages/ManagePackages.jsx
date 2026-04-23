@@ -1,11 +1,7 @@
-import React from 'react'
+import ManagePackageList from './ManagePackageList';
 
 function ManagePackages() {
-  return (
-    <div>
-      ManagePackages
-    </div>
-  )
+    return <ManagePackageList />;
 }
 
-export default ManagePackages
+export default ManagePackages;

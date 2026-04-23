@@ -1,0 +1,240 @@
+.wrapper {
+    padding: 16px 16px 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.02);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: #6366f1;
+
+    svg {
+        font-size: 16px;
+    }
+}
+
+.title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 700;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.limitList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.limitCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 56px;
+    padding: 12px 14px;
+    border: 1px solid #edf2f7;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.limitMeta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.limitIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #6366f1;
+    flex-shrink: 0;
+
+    svg {
+        font-size: 16px;
+    }
+}
+
+.limitText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+        color: #0f172a;
+        font-size: 13px;
+        line-height: 1.4;
+        font-weight: 700;
+    }
+
+    span {
+        color: #94a3b8;
+        font-size: 11px;
+        line-height: 1.45;
+        font-weight: 500;
+    }
+}
+
+.limitControl {
+    flex-shrink: 0;
+
+    input {
+        width: 64px;
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        outline: none;
+        background: #ffffff;
+        color: #0f172a;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+        &:focus {
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+        }
+
+        &:disabled {
+            background: #f8fafc;
+            color: #475569;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    }
+}
+
+.errorGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: -4px;
+}
+
+.error {
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.featureGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+}
+
+.featureToggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid #edf2f7;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #475569;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        border-color: #dbe4f0;
+        background: #fafcff;
+    }
+
+    &:disabled {
+        background: #f8fafc;
+        cursor: not-allowed;
+    }
+}
+
+.featureToggleChecked {
+    border-color: #e4e7ff;
+    background: #ffffff;
+}
+
+.featureToggleDisabled {
+    opacity: 0.92;
+}
+
+.featureCheck {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #d7deea;
+    border-radius: 50%;
+    background: #ffffff;
+    color: transparent;
+    flex-shrink: 0;
+
+    svg {
+        font-size: 15px;
+    }
+}
+
+.featureCheckActive {
+    border-color: #6366f1;
+    background: #6366f1;
+    color: #ffffff;
+}
+
+.featureLabel {
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .wrapper {
+        padding: 16px;
+    }
+
+    .featureGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .limitCard {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .limitControl {
+        width: 100%;
+
+        input {
+            width: 100%;
+            text-align: left;
+        }
+    }
+}

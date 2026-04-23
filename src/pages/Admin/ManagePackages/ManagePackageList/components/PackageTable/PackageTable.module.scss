@@ -1,0 +1,272 @@
+.tableShell {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: collapse;
+    table-layout: fixed;
+thead th {
+    padding: 18px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #eef2f7;
+    border-bottom: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+}
+
+    tbody td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #eef2f7;
+        color: #334155;
+        font-size: 14px;
+        line-height: 1.45;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: #fcfdff;
+    }
+
+    th:nth-child(1),
+    td:nth-child(1) {
+        width: 11%;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+        width: 16%;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+        width: 13%;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+        width: 11%;
+    }
+
+    th:nth-child(5),
+    td:nth-child(5) {
+        width: 21%;
+    }
+
+    th:nth-child(6),
+    td:nth-child(6) {
+        width: 11%;
+    }
+
+    th:nth-child(7),
+    td:nth-child(7) {
+        width: 12%;
+    }
+
+    th:nth-child(8),
+    td:nth-child(8) {
+        width: 15%;
+    }
+}
+
+.placeholder {
+    height: 220px;
+    text-align: center;
+    color: #94a3b8 !important;
+    font-size: 14px !important;
+}
+
+.code {
+    color: #64748b !important;
+    font-weight: 600;
+}
+
+.codeText,
+.durationText {
+    white-space: nowrap;
+}
+
+.name {
+    color: #0f172a !important;
+    font-weight: 700;
+}
+
+.nameText {
+    display: inline-block;
+    max-width: 160px;
+}
+
+.duration {
+    color: #1e293b;
+}
+
+.chipList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 220px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.emptyValue {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.statusActive {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.statusPaused {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.paginationWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 64px;
+    margin-top: auto;
+    padding: 16px 24px;
+    border-top: 1px solid #eef2f7;
+    background: #ffffff;
+    flex-wrap: wrap;
+}
+
+.summary {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pageBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    svg {
+        font-size: 18px;
+    }
+}
+
+.active {
+    border-color: #6366f1;
+    background: #6366f1;
+    color: #ffffff;
+
+    &:hover {
+        background: #6366f1 !important;
+    }
+}
+
+.ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .table {
+        min-width: 980px;
+    }
+
+    .paginationWrapper {
+        padding: 14px 18px 18px;
+    }
+
+    .pagination {
+        gap: 6px;
+    }
+}

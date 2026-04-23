@@ -11,7 +11,7 @@ export const router = {
     cvSample: '/cv-templates',
     CvDetail: '/cv-templates/:code',
     pricing: '/pricing',
-    // createCV: '/create-cv',
+
     // User
     dashboard: '/dashboard',
     cvTemplates: '/user/cv-templates',
@@ -30,6 +30,7 @@ export const router = {
     security: '/security',
     package: '/package',
     history: '/history',
+
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
@@ -37,4 +38,8 @@ export const router = {
     adminSettings: '/admin/settings',
     manageOrders: '/admin/orders',
     managePackages: '/admin/packages',
+
+    createPackage: '/admin/packages/create',
+    packageDetail: '/admin/packages/:packageId',
+    packageActions: '/admin/packages/:packageId/actions',
 };

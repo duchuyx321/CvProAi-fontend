@@ -1,0 +1,237 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(6px);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal {
+    position: relative;
+    width: min(100%, 520px);
+    padding: 22px 22px 20px;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow:
+        0 20px 44px rgba(15, 23, 42, 0.16),
+        0 8px 20px rgba(15, 23, 42, 0.07);
+    border: 1px solid #fee2e2;
+    animation: modalIn 0.22s ease;
+}
+
+.closeBtn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+        font-size: 18px;
+    }
+
+    &:hover:not(:disabled) {
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.iconBox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #ef4444;
+
+    svg {
+        font-size: 24px;
+    }
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title {
+    margin: 0;
+    color: #ef4444;
+    font-size: 22px;
+    line-height: 1.16;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.subTitle {
+    margin: -2px 0 4px;
+    color: #991b1b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.description {
+    margin: 0;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.65;
+
+    strong {
+        color: #1e3a5f;
+        font-weight: 800;
+    }
+}
+
+.warningBox {
+    margin-top: 6px;
+    padding: 14px 15px;
+    border-radius: 16px;
+    background: #fef2f2;
+    color: #ef4444;
+    font-size: 13px;
+    line-height: 1.55;
+    font-weight: 700;
+}
+
+.confirmHint {
+    margin-top: 8px;
+    padding: 11px 13px;
+    border-radius: 14px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 700;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 170px;
+    height: 46px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: none;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.btnDanger {
+    background: linear-gradient(135deg, #ef4444 0%, #f43f3f 100%);
+    color: #ffffff;
+    box-shadow: 0 12px 20px rgba(239, 68, 68, 0.18);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        filter: brightness(0.99);
+    }
+}
+
+.btnDangerConfirm {
+    background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+    box-shadow: 0 12px 20px rgba(185, 28, 28, 0.22);
+
+    &:hover:not(:disabled) {
+        filter: brightness(0.98);
+    }
+}
+
+.btnGhost {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #dbe3ef;
+
+    &:hover:not(:disabled) {
+        background: #f8fafc;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 640px) {
+    .overlay {
+        padding: 14px;
+    }
+
+    .modal {
+        width: 100%;
+        padding: 18px 16px 16px;
+        border-radius: 20px;
+    }
+
+    .title {
+        font-size: 20px;
+    }
+
+    .actions {
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        min-width: 100%;
+        height: 44px;
+        font-size: 14px;
+    }
+}

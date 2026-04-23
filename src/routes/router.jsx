@@ -21,7 +21,10 @@ import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
 import ManageOrders from '~/pages/Admin/ManageOrders';
-import ManagePackages from '~/pages/Admin/ManagePackages';
+import ManagePackages from '~/pages/Admin/ManagePackages/ManagePackages';
+import CreatePackage from '~/pages/Admin/ManagePackages/CreatePackage';
+import PackageDetail from '~/pages/Admin/ManagePackages/PackageDetail';
+import PackageActions from '~/pages/Admin/ManagePackages/PackageActions';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
 import DetailLayout from '~/layouts/DetailLayout';
@@ -154,13 +157,8 @@ const PublicRouter = [
         component: History,
         layout: DetailLayout,
     },
-];
 
-// user router
-const UserRouter = [];
-
-// admin router
-const AdminRouter = [
+    // admin
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
@@ -187,10 +185,28 @@ const AdminRouter = [
         layout: AdminLayout,
     },
     {
+        path: config.router.createPackage,
+        component: CreatePackage,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.packageDetail,
+        component: PackageDetail,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.packageActions,
+        component: PackageActions,
+        layout: DetailLayout,
+    },
+    {
         path: config.router.adminSettings,
         component: AdminSettings,
         layout: AdminLayout,
     },
 ];
+
+const UserRouter = [];
+const AdminRouter = [];
 
 export { PublicRouter, UserRouter, AdminRouter };
