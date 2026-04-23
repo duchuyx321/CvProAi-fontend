@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
@@ -17,14 +17,6 @@ import { getDashboardOverview } from '~/services/dashboard.service';
 import styles from './Dashboard.module.scss';
 
 const cx = classNames.bind(styles);
-const PREVIEW_CV_LIMIT = 5;
-const DEFAULT_DASHBOARD_STATS = {
-    totalCv: 0,
-    aiUsed: 0,
-    aiLimit: 0,
-    currentPlan: '--',
-    totalPdfExports: 0,
-};
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -32,11 +24,7 @@ function Dashboard() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [isAllCvModalOpen, setIsAllCvModalOpen] = useState(false);
-    const [dashboardData, setDashboardData] = useState({
-        stats: DEFAULT_DASHBOARD_STATS,
-        recentCvs: [],
-    });
+    const [dashboardData, setDashboardData] = useState({});
 
     const loadDashboardData = useCallback(async ({ silent = false } = {}) => {
         if (silent) {
@@ -57,21 +45,12 @@ function Dashboard() {
                 setErrorMessage('');
             }
 
-            setDashboardData({
-                stats:
-                    result?.data?.stats ||
-                    DEFAULT_DASHBOARD_STATS,
-                recentCvs: result?.data?.recentCvs || [],
-            });
+            setDashboardData(result.data);
         } catch (error) {
             setErrorMessage(
                 error?.message ||
                     'Không thể tải dữ liệu dashboard. Vui lòng thử lại.',
             );
-            setDashboardData({
-                stats: DEFAULT_DASHBOARD_STATS,
-                recentCvs: [],
-            });
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
@@ -82,35 +61,10 @@ function Dashboard() {
         loadDashboardData();
     }, [loadDashboardData]);
 
-    const { stats, recentCvs } = dashboardData;
-
     const aiUsageText =
-        Number(stats?.aiLimit) > 0
-            ? `${stats.aiUsed}/${stats.aiLimit}`
-            : `${stats.aiUsed}`;
-
-    const previewRecentCvs = useMemo(
-        () => recentCvs.slice(0, PREVIEW_CV_LIMIT),
-        [recentCvs],
-    );
-
-    const resolveCvEditPath = (cv = {}) => {
-        const identifier = cv?.slug || cv?.id;
-
-        if (!identifier) {
-            return '';
-        }
-
-        return config.router.editCv.replace(':slug', String(identifier));
-    };
-
-    const handleOpenCvEditor = (cv = {}) => {
-        const path = resolveCvEditPath(cv);
-        if (!path) return;
-
-        setIsAllCvModalOpen(false);
-        navigate(path);
-    };
+        Number(dashboardData?.ai_limit) > 0
+            ? `${dashboardData.ai_use}/${dashboardData.ai_limit}`
+            : `${dashboardData.ai_use}`;
 
     const renderCvRows = (items = []) => {
         if (!items.length) {
@@ -125,26 +79,16 @@ function Dashboard() {
 
         return items.map((cv, index) => {
             const rowKey = cv?.id || cv?.slug || `${cv?.name || 'cv'}-${index}`;
-            const canOpen = Boolean(resolveCvEditPath(cv));
 
             return (
-                <tr
-                    key={rowKey}
-                    className={cx({ 'clickable-row': canOpen })}
-                    onClick={() => {
-                        if (canOpen) {
-                            handleOpenCvEditor(cv);
-                        }
-                    }}
-                >
+                <tr key={rowKey} className={cx('clickable-row')}>
                     <td>
                         <div className={cx('cv-name-cell')}>
                             <FiFileText className={cx('file-icon')} />
-                            <span className={cx('cv-name')}>{cv.name}</span>
+                            <span className={cx('cv-name')}>{cv.title}</span>
                         </div>
                     </td>
-                    <td className={cx('text-muted')}>{cv.template}</td>
-                    <td className={cx('text-muted')}>{cv.updated}</td>
+                    <td className={cx('text-muted')}>{cv?.updatedAt}</td>
                     <td>
                         <span className={cx('status-badge', cv.statusCode)}>
                             {cv.status}
@@ -202,7 +146,9 @@ function Dashboard() {
                             <span className={cx('tag', 'gray')}>Tổng cộng</span>
                         </div>
                         <p className={cx('stat-label')}>Số CV đã tạo</p>
-                        <h3 className={cx('stat-value')}>{stats.totalCv}</h3>
+                        <h3 className={cx('stat-value')}>
+                            {dashboardData?.totalCvs}
+                        </h3>
                     </div>
 
                     <div className={cx('stat-card')}>
@@ -226,7 +172,9 @@ function Dashboard() {
                             </span>
                         </div>
                         <p className={cx('stat-label')}>Gói tài khoản</p>
-                        <h3 className={cx('stat-value')}>{stats.currentPlan}</h3>
+                        <h3 className={cx('stat-value')}>
+                            {dashboardData?.namePlan}
+                        </h3>
                     </div>
 
                     <div className={cx('stat-card')}>
@@ -238,7 +186,7 @@ function Dashboard() {
                         </div>
                         <p className={cx('stat-label')}>Số lần xuất PDF</p>
                         <h3 className={cx('stat-value')}>
-                            {stats.totalPdfExports}
+                            {dashboardData?.totalExport}
                         </h3>
                     </div>
                 </div>
@@ -250,13 +198,17 @@ function Dashboard() {
 
                             <div className={cx('header-actions')}>
                                 <span className={cx('cv-count')}>
-                                    {recentCvs.length} CV
+                                    {dashboardData?.cvs?.length ?? 0} CV
                                 </span>
                                 <button
                                     type="button"
                                     className={cx('btn-link')}
-                                    onClick={() => setIsAllCvModalOpen(true)}
-                                    disabled={!recentCvs.length}
+                                    disabled={
+                                        !(dashboardData?.cvs ?? []).length > 0
+                                    }
+                                    onClick={() =>
+                                        navigate(config.router.myCvs)
+                                    }
                                 >
                                     Xem tất cả
                                 </button>
@@ -268,12 +220,13 @@ function Dashboard() {
                                 <thead>
                                     <tr>
                                         <th>TÊN CV</th>
-                                        <th>MẪU THIẾT KẾ</th>
                                         <th>CẬP NHẬT</th>
                                         <th>TRẠNG THÁI</th>
                                     </tr>
                                 </thead>
-                                <tbody>{renderCvRows(previewRecentCvs)}</tbody>
+                                <tbody>
+                                    {renderCvRows(dashboardData?.cvs)}
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -285,7 +238,12 @@ function Dashboard() {
                                 Sử dụng công cụ phân tích từ khóa để tăng khả
                                 năng vượt qua vòng lọc ATS.
                             </p>
-                            <button className={cx('btn-ai-action')}>
+                            <button
+                                className={cx('btn-ai-action')}
+                                onClick={() =>
+                                    navigate(config.router.aiAnalysis)
+                                }
+                            >
                                 Thử ngay bây giờ{' '}
                                 <FiArrowRight className={cx('arrow')} />
                             </button>
@@ -294,28 +252,6 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
-
-            <Modal
-                isOpen={isAllCvModalOpen}
-                onClose={() => setIsAllCvModalOpen(false)}
-                title="Tất cả CV gần đây"
-                description={`Đang hiển thị ${recentCvs.length} CV mới nhất của bạn.`}
-                size="xl"
-            >
-                <div className={cx('modal-table-wrap')}>
-                    <table className={cx('cv-table')}>
-                        <thead>
-                            <tr>
-                                <th>TÊN CV</th>
-                                <th>MẪU THIẾT KẾ</th>
-                                <th>CẬP NHẬT</th>
-                                <th>TRẠNG THÁI</th>
-                            </tr>
-                        </thead>
-                        <tbody>{renderCvRows(recentCvs)}</tbody>
-                    </table>
-                </div>
-            </Modal>
         </>
     );
 }
