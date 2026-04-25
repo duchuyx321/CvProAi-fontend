@@ -1,6 +1,7 @@
 import { IoCheckmarkCircleOutline } from 'react-icons/io5';
 import { HiCheckBadge } from 'react-icons/hi2';
 import classNames from 'classnames/bind';
+
 import Button from '~/components/Button';
 import {
     buildPlanFeatures,
@@ -14,19 +15,35 @@ const cx = classNames.bind(styles);
 
 function getRoute(isPremium, isAuthenticated, slug) {
     if (!isAuthenticated) return config.router.login;
-    if (isPremium) return config.router.upgradeOptions.replace(':packageId', slug);
+
+    if (isPremium && slug) {
+        return config.router.upgradeOptions.replace(':packageId', slug);
+    }
+
     return undefined;
 }
+
 const PLAN_SLUGS = {
     FREE: 'free',
     PREMIUM: 'premium',
 };
 
-function getCtaLabel({ planSlug, isCurrentPlan, isCurrentPremium, isAuthenticated }) {
+function normalizeSlug(value = '') {
+    return value.trim().toLowerCase();
+}
+
+function getCtaLabel({
+    isFree,
+    isPremium,
+    isCurrentPlan,
+    isCurrentPremium,
+    isAuthenticated,
+}) {
     if (isCurrentPlan) return 'Gói hiện tại';
-    if (isCurrentPremium && planSlug === PLAN_SLUGS.FREE) return 'Free';
-    if (isAuthenticated && planSlug === PLAN_SLUGS.FREE) return 'Gói hiện tại';
-    if (planSlug === PLAN_SLUGS.PREMIUM) return 'Nâng cấp Premium';
+    if (isCurrentPremium && isFree) return 'Free';
+    if (isAuthenticated && isFree) return 'Gói hiện tại';
+    if (isPremium) return 'Nâng cấp Premium';
+
     return 'Bắt đầu ngay';
 }
 
@@ -36,18 +53,23 @@ function PricingCard({
     isCurrentPlan = false,
     isCurrentPremium = false,
 }) {
-    const isPremium = plan.slug === PLAN_SLUGS.PREMIUM;
+    const planSlug = normalizeSlug(plan.slug);
+
+    const isFree = planSlug === PLAN_SLUGS.FREE;
+    const isPremium = planSlug === PLAN_SLUGS.PREMIUM;
+
     const features = buildPlanFeatures(plan);
 
-    const route = getRoute(isPremium, isAuthenticated, plan.slug);
+    const route = getRoute(isPremium, isAuthenticated, planSlug);
 
     const isDisabled =
         isCurrentPlan ||
-        (isCurrentPremium && plan.slug === PLAN_SLUGS.FREE) ||
-        (isAuthenticated && plan.slug === PLAN_SLUGS.FREE);
+        (isCurrentPremium && isFree) ||
+        (isAuthenticated && isFree);
 
     const ctaLabel = getCtaLabel({
-        planSlug: plan.slug,
+        isFree,
+        isPremium,
         isCurrentPlan,
         isCurrentPremium,
         isAuthenticated,
@@ -89,8 +111,8 @@ function PricingCard({
                 )}
 
                 <ul className={cx('list')}>
-                    {features.map((item, index) => (
-                        <li key={`${plan.slug}-${index}`} className={cx('item')}>
+                    {features.map((item) => (
+                        <li key={`${plan.id}-${item}`} className={cx('item')}>
                             <span className={cx('itemIcon')}>
                                 <IoCheckmarkCircleOutline />
                             </span>

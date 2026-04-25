@@ -5,63 +5,83 @@ import { toast } from 'react-toastify';
 import styles from './Pricing.module.scss';
 import PricingCard from './components/PricingCard';
 import { useAuth } from '~/context/AuthContext';
-// import { getPricing } from '~/services/pricing.service';
+import { getPricing } from '~/services/pricing.service';
 
 const cx = classNames.bind(styles);
 
+function normalizeSlug(value = '') {
+    return value.trim().toLowerCase();
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
-export const PRICING_RESPONSE = {
-    success: true,
-    message: 'Lấy dữ liệu thành công',
-    data: [
-        {
-            id: '02cd62a8-749a-4541-8202-be8e947a489b',
-            name: 'Free',
-            description:
-                'Gói miễn phí để tạo CV, phân tích AI cơ bản và xuất file với giới hạn hằng tháng.',
-            price: '0',
-            currency: 'VND',
-            billing_cycle: 'MONTH',
-            cv_limit: 2,
-            export_limit: 5,
-            ai_limit: 3,
-            premium_template: false,
-            remove_watermark: false,
-            custom_domain: false,
-            priority_support: false,
-            is_active: true,
-            slug: 'free',
-            view_full_ai_analysis: true,
-        },
-        {
-            id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-            name: 'Premium',
-            description:
-                'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
-            price: '199000',
-            currency: 'VND',
-            billing_cycle: 'MONTH',
-            cv_limit: 20,
-            export_limit: 15,
-            ai_limit: 10,
-            premium_template: true,
-            remove_watermark: true,
-            custom_domain: true,
-            priority_support: true,
-            is_active: true,
-            slug: 'premium',
-            view_full_ai_analysis: true,
-        },
-    ],
-};
+// export const PRICING_RESPONSE = {
+//     success: true,
+//     message: 'Lấy dữ liệu thành công',
+//     data: [
+//         {
+//             id: '02cd62a8-749a-4541-8202-be8e947a489b',
+//             name: 'Free',
+//             description:
+//                 'Gói miễn phí để tạo CV, phân tích AI cơ bản và xuất file với giới hạn hằng tháng.',
+//             price: '0',
+//             currency: 'VND',
+//             billing_cycle: 'MONTH',
+//             cv_limit: 2,
+//             export_limit: 5,
+//             ai_limit: 3,
+//             premium_template: false,
+//             remove_watermark: false,
+//             custom_domain: false,
+//             priority_support: false,
+//             allow_ai_addon_purchase: false,
+//             is_active: true,
+//             slug: 'free',
+//             view_full_ai_analysis: true,
+//         },
+//         {
+//             id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+//             name: 'Premium',
+//             description:
+//                 'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
+//             price: '199000',
+//             currency: 'VND',
+//             billing_cycle: 'MONTH',
+//             cv_limit: 20,
+//             export_limit: 15,
+//             ai_limit: 10,
+//             premium_template: true,
+//             remove_watermark: true,
+//             custom_domain: true,
+//             priority_support: true,
+//             allow_ai_addon_purchase: true,
+//             is_active: true,
+//             slug: 'premium',
+//             view_full_ai_analysis: true,
+//         },
+//     ],
+// };
 
 function Pricing() {
     const { isAuthenticated, user } = useAuth();
+
+    // giả lập user đã đăng nhập và đang dùng gói Premium
     // const isAuthenticated = true;
-    
-    const currentPlanSlug = user?.plan?.slug ?? user?.membership ?? 'free';
+    // const user = {
+    //     plan: {
+    //         name: 'Premium',
+    //         slug: 'Premium',
+    //     },
+    // };
+
+    const currentPlanSlug = normalizeSlug(user?.plan?.slug ?? 'free');
 
     const isCurrentPremium = isAuthenticated && currentPlanSlug === 'premium';
+
+    const checkIsCurrentPlan = (plan) => {
+        if (!isAuthenticated) return false;
+
+        return currentPlanSlug === normalizeSlug(plan.slug);
+    };
 
     const [pricing, setPricing] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -73,8 +93,8 @@ function Pricing() {
             setIsLoading(true);
 
             try {
-                // const result = await getPricing();
-                const result = PRICING_RESPONSE;
+                const result = await getPricing();
+                // const result = PRICING_RESPONSE;
 
                 if (!result?.success) {
                     throw new Error(
@@ -86,7 +106,8 @@ function Pricing() {
                     throw new Error('Dữ liệu bảng giá không hợp lệ');
                 }
 
-                const activePlans = result.data.filter((plan) => plan.is_active);
+                const activePlans = result.data.filter((plan) => plan.is_active === true);
+
                 if (!cancelled) {
                     setPricing(activePlans);
                 }
@@ -133,7 +154,7 @@ function Pricing() {
                                 key={plan.id}
                                 plan={plan}
                                 isAuthenticated={isAuthenticated}
-                                isCurrentPlan={isAuthenticated && currentPlanSlug === plan.slug}
+                                isCurrentPlan={checkIsCurrentPlan(plan)}
                                 isCurrentPremium={isCurrentPremium}
                             />
                         ))
