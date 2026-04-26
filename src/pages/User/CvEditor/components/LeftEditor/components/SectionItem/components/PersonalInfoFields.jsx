@@ -3,6 +3,7 @@ import classNames from 'classnames/bind';
 import { FiUploadCloud } from 'react-icons/fi';
 import { FaRegUserCircle } from 'react-icons/fa';
 import styles from '../SectionItem.module.scss';
+import { getFieldLabel, uniqueFieldKeys } from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -80,7 +81,9 @@ function AvatarUploader({ value, onChange }) {
                     </div>
                 ) : (
                     <div className={cx('avatarPlaceholder')}>
-                        <FaRegUserCircle className={cx('avatarPlaceholderIcon')} />
+                        <FaRegUserCircle
+                            className={cx('avatarPlaceholderIcon')}
+                        />
                     </div>
                 )}
 
@@ -107,10 +110,20 @@ function AvatarUploader({ value, onChange }) {
     );
 }
 
-function PersonalInfoFields({ data = {}, onChangeField, sectionKey }) {
+const BASE_PROFILE_FIELDS = new Set(['full_name', 'headline', 'avatar_url']);
+
+function PersonalInfoFields({
+    data = {},
+    onChangeField,
+    sectionKey,
+    section = {},
+}) {
     const handleChangeAvatar = (nextValue) => {
         onChangeField?.(sectionKey, 'avatar_url', nextValue);
     };
+    const extraFieldKeys = uniqueFieldKeys(section?.fields).filter(
+        (fieldKey) => !BASE_PROFILE_FIELDS.has(fieldKey),
+    );
 
     return (
         <div className={cx('fieldsGrid')}>
@@ -140,6 +153,21 @@ function PersonalInfoFields({ data = {}, onChangeField, sectionKey }) {
                     onChange={handleChangeAvatar}
                 />
             </FieldGroup>
+
+            {extraFieldKeys.map((fieldKey) => (
+                <FieldGroup key={fieldKey} label={getFieldLabel(fieldKey)}>
+                    <BaseInput
+                        value={data?.[fieldKey]}
+                        onChange={(e) =>
+                            onChangeField?.(
+                                sectionKey,
+                                fieldKey,
+                                e.target.value,
+                            )
+                        }
+                    />
+                </FieldGroup>
+            ))}
         </div>
     );
 }

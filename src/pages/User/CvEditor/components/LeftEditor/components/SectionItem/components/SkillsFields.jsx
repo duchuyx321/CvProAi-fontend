@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
+import { uniqueFieldKeys } from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -58,14 +59,56 @@ function BaseInput({ value, onChange, type = 'text', disabled = false }) {
     );
 }
 
+function BaseTextarea({ value, onChange }) {
+    return (
+        <textarea
+            className={cx('textarea')}
+            value={value || ''}
+            onChange={onChange}
+        />
+    );
+}
+
+function normalizeVariant(value = '') {
+    return String(value).trim().toLowerCase();
+}
+
+function getSkillDisplay(section = {}) {
+    const display = section?.options?.skill?.display;
+    const variant = normalizeVariant(section?.variant);
+
+    if (display) return String(display).toUpperCase();
+    if (variant.includes('progress')) return 'PROGRESS_BAR';
+    if (variant.includes('card') || variant.includes('text'))
+        return 'CARD_TEXT';
+    if (variant.includes('tag')) return 'TAG';
+    if (variant.includes('two_column')) return 'TWO_COLUMN_BULLET';
+    return 'BULLET';
+}
+
+function clampLevel(value, maxLevel) {
+    const numericValue = Number(value);
+
+    if (Number.isNaN(numericValue)) return 0;
+    if (numericValue < 0) return 0;
+    if (numericValue > maxLevel) return maxLevel;
+
+    return numericValue;
+}
+
 function SkillsFields({
     data = [],
     onChangeArrayField,
     onChangeObjectInArray,
     onAddSectionItem,
+    section = {},
     sectionKey,
 }) {
     const items = Array.isArray(data) ? data : [];
+    const fieldKeys = uniqueFieldKeys(section?.fields);
+    const display = getSkillDisplay(section);
+    const skillOptions = section?.options?.skill || {};
+    const maxLevel = Number(skillOptions?.maxLevel || 100) || 100;
 
     const handleAdd = () => {
         onAddSectionItem?.(sectionKey);
@@ -78,46 +121,128 @@ function SkillsFields({
         );
     };
 
+    const hasConfiguredField = (fieldKey) => fieldKeys.includes(fieldKey);
+
     return (
         <div className={cx('arraySection')}>
-            {!items.length && <ArrayEmptyState message="Chưa có kỹ năng nào." />}
+            {!items.length && (
+                <ArrayEmptyState message="Chưa có kỹ năng nào." />
+            )}
 
-            {items.map((item, index) => (
-                <ItemCard key={`${sectionKey}-${index}`}>
-                    <FieldGroup label="Tên kỹ năng">
-                        <BaseInput
-                            value={item?.name}
-                            onChange={(e) =>
-                                onChangeObjectInArray?.(
-                                    sectionKey,
-                                    index,
-                                    'name',
-                                    e.target.value,
-                                )
-                            }
+            {items.map((item, index) => {
+                const showLevel =
+                    display === 'PROGRESS_BAR' ||
+                    hasConfiguredField('level') ||
+                    item?.level !== undefined;
+                const showDescription =
+                    display === 'CARD_TEXT' ||
+                    hasConfiguredField('description') ||
+                    skillOptions?.showDescription ||
+                    item?.description !== undefined;
+                const level = clampLevel(item?.level ?? 0, maxLevel);
+
+                return (
+                    <ItemCard key={`${sectionKey}-${index}`}>
+                        <FieldGroup label="Tên kỹ năng">
+                            <BaseInput
+                                value={item?.name}
+                                onChange={(e) =>
+                                    onChangeObjectInArray?.(
+                                        sectionKey,
+                                        index,
+                                        'name',
+                                        e.target.value,
+                                    )
+                                }
+                            />
+                        </FieldGroup>
+
+                        {showLevel && (
+                            <FieldGroup label="Cấp độ kỹ năng">
+                                <div className={cx('rangeField')}>
+                                    <input
+                                        className={cx('rangeInput')}
+                                        type="range"
+                                        min="0"
+                                        max={maxLevel}
+                                        step="1"
+                                        value={level}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                'level',
+                                                clampLevel(
+                                                    e.target.value,
+                                                    maxLevel,
+                                                ),
+                                            )
+                                        }
+                                    />
+                                    <input
+                                        className={cx('levelInput')}
+                                        type="number"
+                                        min="0"
+                                        max={maxLevel}
+                                        value={level}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                'level',
+                                                clampLevel(
+                                                    e.target.value,
+                                                    maxLevel,
+                                                ),
+                                            )
+                                        }
+                                    />
+                                    <span className={cx('levelSuffix')}>
+                                        / {maxLevel}
+                                    </span>
+                                </div>
+                            </FieldGroup>
+                        )}
+
+                        {showDescription && (
+                            <FieldGroup label="Mô tả" fullWidth>
+                                <BaseTextarea
+                                    value={item?.description}
+                                    onChange={(e) =>
+                                        onChangeObjectInArray?.(
+                                            sectionKey,
+                                            index,
+                                            'description',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </FieldGroup>
+                        )}
+
+                        {hasConfiguredField('category') && (
+                            <FieldGroup label="Nhóm kỹ năng">
+                                <BaseInput
+                                    value={item?.category}
+                                    onChange={(e) =>
+                                        onChangeObjectInArray?.(
+                                            sectionKey,
+                                            index,
+                                            'category',
+                                            e.target.value,
+                                        )
+                                    }
+                                />
+                            </FieldGroup>
+                        )}
+
+                        <ItemActions
+                            removeLabel="Xóa kỹ năng"
+                            onRemove={() => handleRemove(index)}
                         />
-                    </FieldGroup>
-
-                    {/* <FieldGroup label="Mô tả">
-                        <BaseInput
-                            value={item?.description}
-                            onChange={(e) =>
-                                onChangeObjectInArray?.(
-                                    sectionKey,
-                                    index,
-                                    'description',
-                                    e.target.value,
-                                )
-                            }
-                        />
-                    </FieldGroup> */}
-
-                    <ItemActions
-                        removeLabel="Xóa kỹ năng"
-                        onRemove={() => handleRemove(index)}
-                    />
-                </ItemCard>
-            ))}
+                    </ItemCard>
+                );
+            })}
 
             <AddItemButton onClick={handleAdd}>+ Thêm kỹ năng</AddItemButton>
         </div>

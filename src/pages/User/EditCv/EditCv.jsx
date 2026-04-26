@@ -8,6 +8,10 @@ import { getCvDetailBySlug } from '~/services/cv-teamplate.service';
 import { normalizeCvDetailForEditor } from '~/utils/cv-editor.bootstrap';
 import { validateTemplateConfig } from '~/utils/cv-section.schema';
 import { buildEditSubmitPreview } from '~/utils/cv-submit-preview.utils';
+import {
+    getApiMessage,
+    unwrapApiResponse,
+} from '~/utils/api-response.utils';
 
 import useCvEditorState from '../CvEditor/hooks/useCvEditorState';
 function EditCv() {
@@ -47,10 +51,11 @@ function EditCv() {
                 const result = await getCvDetailBySlug(slug);
 
                 if (!result?.success) {
-                    throw new Error(result?.message || 'Không thể tải CV');
+                    throw new Error(getApiMessage(result, 'Không thể tải CV'));
                 }
 
-                const nextCvData = normalizeCvDetailForEditor(result?.data);
+                const cv = unwrapApiResponse(result);
+                const nextCvData = normalizeCvDetailForEditor(cv);
                 const validation = validateTemplateConfig(nextCvData?.config);
 
                 if (!validation?.isValid) {

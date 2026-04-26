@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import styles from './StructureTab.module.scss';
 
@@ -10,6 +10,9 @@ function StructureTab({
     onChangeConfig,
 }) {
     const containerRef = useRef(null);
+    const dragStateRef = useRef(null);
+    const [dragState, setDragState] = useState(null);
+    const [dropIndicator, setDropIndicator] = useState(null);
 
     const layoutBody = templateConfig?.layout?.body || {};
     const layoutType = (layoutBody?.layout || 'STACK').toUpperCase();
@@ -17,31 +20,22 @@ function StructureTab({
     const zones = templateConfig?.zones || {};
     const sections = templateConfig?.sections || {};
 
-    const sectionMetaMap = useMemo(() => {
-        const map = {};
+    const sectionMetaMap = {};
 
-        sectionList.forEach((item) => {
-            map[item.zoneKey || item.key] = item.title;
-        });
+    sectionList.forEach((item) => {
+        sectionMetaMap[item.zoneKey || item.key] = item.title;
+    });
 
-        Object.keys(sections).forEach((key) => {
-            if (!map[key]) {
-                map[key] = sections?.[key]?.title || key;
-            }
-        });
+    Object.keys(sections).forEach((key) => {
+        if (!sectionMetaMap[key]) {
+            sectionMetaMap[key] = sections?.[key]?.title || key;
+        }
+    });
 
-        return map;
-    }, [sectionList, sections]);
-
-    const allSectionKeys = useMemo(() => {
-        const fromList = sectionList.map((item) => item.zoneKey || item.key);
-        const fromConfig = Object.keys(sections);
-        return [...new Set([...fromList, ...fromConfig])];
-    }, [sectionList, sections]);
-
-    const usedSectionKeys = useMemo(() => {
-        return Object.values(zones).flat().filter(Boolean);
-    }, [zones]);
+    const fromList = sectionList.map((item) => item.zoneKey || item.key);
+    const fromConfig = Object.keys(sections);
+    const allSectionKeys = [...new Set([...fromList, ...fromConfig])];
+    const usedSectionKeys = Object.values(zones).flat().filter(Boolean);
 
     const unusedSectionKeys = allSectionKeys.filter(
         (key) => !usedSectionKeys.includes(key),
@@ -64,21 +58,48 @@ function StructureTab({
         });
     };
 
-    const handleDragStart = (e, sectionKey) => {
-        e.dataTransfer.setData('sectionKey', sectionKey);
+    const cloneZones = () => {
+        return Object.entries(zones || {}).reduce((result, [zoneId, items]) => {
+            result[zoneId] = Array.isArray(items) ? [...items] : [];
+            return result;
+        }, {});
     };
 
-    const handleDragOver = (e) => {
-        e.preventDefault();
+    const clampIndex = (value, max) => {
+        const numericValue = Number(value);
+        if (Number.isNaN(numericValue)) return max;
+        if (numericValue < 0) return 0;
+        if (numericValue > max) return max;
+        return numericValue;
     };
 
-    const handleDrop = (e, targetZoneId) => {
-        e.preventDefault();
+    const getDragPayload = (event) => {
+        const payload = dragStateRef.current;
+        if (payload?.sectionKey) return payload;
 
-        const sectionKey = e.dataTransfer.getData('sectionKey');
+        try {
+            return JSON.parse(event.dataTransfer.getData('application/json'));
+        } catch {
+            return {
+                sectionKey: event.dataTransfer.getData('sectionKey'),
+                sourceZoneId: '',
+                sourceIndex: -1,
+            };
+        }
+    };
+
+    const moveSection = (
+        sectionKey,
+        targetZoneId,
+        targetIndex,
+        payload = {},
+    ) => {
         if (!sectionKey) return;
 
-        const nextZones = { ...zones };
+        const nextZones = cloneZones();
+        const isUnusedTarget = targetZoneId === 'unused';
+        const sourceZoneId = payload?.sourceZoneId;
+        const sourceIndex = payload?.sourceIndex;
 
         Object.keys(nextZones).forEach((zoneId) => {
             nextZones[zoneId] = (nextZones[zoneId] || []).filter(
@@ -86,14 +107,104 @@ function StructureTab({
             );
         });
 
-        if (targetZoneId !== 'unused') {
-            nextZones[targetZoneId] = [
-                ...(nextZones[targetZoneId] || []),
-                sectionKey,
-            ];
+        if (!isUnusedTarget) {
+            const zoneItemsBeforeRemove = zones?.[targetZoneId] || [];
+            const sameZone = sourceZoneId === targetZoneId;
+            const adjustedIndex =
+                sameZone && sourceIndex >= 0 && sourceIndex < targetIndex
+                    ? targetIndex - 1
+                    : targetIndex;
+            const nextZoneItems = nextZones[targetZoneId] || [];
+            const insertIndex = clampIndex(adjustedIndex, nextZoneItems.length);
+
+            if (!Array.isArray(zoneItemsBeforeRemove)) return;
+
+            nextZoneItems.splice(insertIndex, 0, sectionKey);
+            nextZones[targetZoneId] = nextZoneItems;
         }
 
         updateStructure(nextZones);
+    };
+
+    const clearDragState = () => {
+        dragStateRef.current = null;
+        setDragState(null);
+        setDropIndicator(null);
+    };
+
+    const handleDragStart = (event, sectionKey, sourceZoneId, sourceIndex) => {
+        const payload = {
+            sectionKey,
+            sourceZoneId,
+            sourceIndex,
+        };
+
+        dragStateRef.current = payload;
+        setDragState(payload);
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('sectionKey', sectionKey);
+        event.dataTransfer.setData('application/json', JSON.stringify(payload));
+    };
+
+    const handleDragOver = (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    };
+
+    const getZoneTargetIndex = (event) => {
+        const itemNodes = Array.from(
+            event.currentTarget.querySelectorAll(
+                '[data-structure-item="true"]',
+            ),
+        );
+
+        const nextIndex = itemNodes.findIndex((itemNode) => {
+            const rect = itemNode.getBoundingClientRect();
+            return event.clientY < rect.top + rect.height / 2;
+        });
+
+        return nextIndex === -1 ? itemNodes.length : nextIndex;
+    };
+
+    const handleZoneDragOver = (event, targetZoneId) => {
+        handleDragOver(event);
+        setDropIndicator({
+            zoneId: targetZoneId,
+            index: getZoneTargetIndex(event),
+        });
+    };
+
+    const getItemTargetIndex = (event, itemIndex) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const insertAfter = event.clientY > rect.top + rect.height / 2;
+        return itemIndex + (insertAfter ? 1 : 0);
+    };
+
+    const handleItemDragOver = (event, targetZoneId, itemIndex) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'move';
+
+        setDropIndicator({
+            zoneId: targetZoneId,
+            index: getItemTargetIndex(event, itemIndex),
+        });
+    };
+
+    const handleDrop = (event, targetZoneId, targetIndex) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const payload = getDragPayload(event);
+        const sectionKey = payload?.sectionKey;
+
+        if (!sectionKey) {
+            clearDragState();
+            return;
+        }
+
+        moveSection(sectionKey, targetZoneId, targetIndex, payload);
+        clearDragState();
     };
 
     const handleMouseDown = (e, leftIdx, rightIdx) => {
@@ -135,14 +246,42 @@ function StructureTab({
         document.addEventListener('mouseup', onMouseUp);
     };
 
-    const renderDragItem = (sectionKey) => (
+    const renderDropIndicator = (zoneId, index) => {
+        if (
+            !dropIndicator ||
+            dropIndicator.zoneId !== zoneId ||
+            dropIndicator.index !== index ||
+            zoneId === 'unused'
+        ) {
+            return null;
+        }
+
+        return <div className={cx('dropIndicator')} />;
+    };
+
+    const renderDragItem = (sectionKey, zoneId, index) => (
         <div
             key={sectionKey}
-            draggable
-            onDragStart={(e) => handleDragStart(e, sectionKey)}
-            className={cx('drag-item')}
+            data-structure-item="true"
+            onDragOver={(e) => handleItemDragOver(e, zoneId, index)}
+            onDrop={(e) => {
+                const targetIndex = getItemTargetIndex(e, index);
+                handleDrop(e, zoneId, targetIndex);
+            }}
         >
-            {sectionMetaMap[sectionKey] || sectionKey}
+            {renderDropIndicator(zoneId, index)}
+            <div
+                draggable
+                onDragStart={(e) =>
+                    handleDragStart(e, sectionKey, zoneId, index)
+                }
+                onDragEnd={clearDragState}
+                className={cx('drag-item', {
+                    dragging: dragState?.sectionKey === sectionKey,
+                })}
+            >
+                {sectionMetaMap[sectionKey] || sectionKey}
+            </div>
         </div>
     );
 
@@ -154,10 +293,13 @@ function StructureTab({
                 key={column.id}
                 className={cx('column')}
                 style={{ width: `${column.width || 100}%` }}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, column.id)}
+                onDragOver={(e) => handleZoneDragOver(e, column.id)}
+                onDrop={(e) => handleDrop(e, column.id, getZoneTargetIndex(e))}
             >
-                {zoneItems.map(renderDragItem)}
+                {zoneItems.map((sectionKey, index) =>
+                    renderDragItem(sectionKey, column.id, index),
+                )}
+                {renderDropIndicator(column.id, zoneItems.length)}
                 {zoneItems.length === 0 && (
                     <div className={cx('empty-placeholder')}>
                         Thả mục vào đây
@@ -170,15 +312,21 @@ function StructureTab({
     const renderLayoutArea = () => {
         if (layoutType === 'STACK') {
             const mainColumn = columns[0] || { id: 'main_col', width: 100 };
+            const zoneItems = zones?.[mainColumn.id] || [];
 
             return (
                 <div
                     className={cx('column', 'col-full')}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, mainColumn.id)}
+                    onDragOver={(e) => handleZoneDragOver(e, mainColumn.id)}
+                    onDrop={(e) =>
+                        handleDrop(e, mainColumn.id, getZoneTargetIndex(e))
+                    }
                 >
-                    {(zones?.[mainColumn.id] || []).map(renderDragItem)}
-                    {!(zones?.[mainColumn.id] || []).length && (
+                    {zoneItems.map((sectionKey, index) =>
+                        renderDragItem(sectionKey, mainColumn.id, index),
+                    )}
+                    {renderDropIndicator(mainColumn.id, zoneItems.length)}
+                    {!zoneItems.length && (
                         <div className={cx('empty-placeholder')}>
                             Thả mục vào đây
                         </div>
@@ -211,17 +359,32 @@ function StructureTab({
             const bannerCol = columns[0] || { id: 'banner', width: 100 };
             const leftCol = columns[1] || { id: 'side_col', width: 30 };
             const rightCol = columns[2] || { id: 'main_col', width: 70 };
+            const bannerItems = zones?.[bannerCol.id] || [];
 
             return (
                 <div className={cx('banner-split-container')}>
                     <div className={cx('header-zone')}>
                         <div
                             className={cx('column', 'col-full')}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, bannerCol.id)}
+                            onDragOver={(e) =>
+                                handleZoneDragOver(e, bannerCol.id)
+                            }
+                            onDrop={(e) =>
+                                handleDrop(
+                                    e,
+                                    bannerCol.id,
+                                    getZoneTargetIndex(e),
+                                )
+                            }
                         >
-                            {(zones?.[bannerCol.id] || []).map(renderDragItem)}
-                            {!(zones?.[bannerCol.id] || []).length && (
+                            {bannerItems.map((sectionKey, index) =>
+                                renderDragItem(sectionKey, bannerCol.id, index),
+                            )}
+                            {renderDropIndicator(
+                                bannerCol.id,
+                                bannerItems.length,
+                            )}
+                            {!bannerItems.length && (
                                 <div className={cx('empty-placeholder')}>
                                     Thả mục vào đây
                                 </div>
@@ -260,11 +423,13 @@ function StructureTab({
             <div
                 className={cx('unused-area')}
                 onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, 'unused')}
+                onDrop={(e) => handleDrop(e, 'unused', 0)}
             >
                 <h4 className={cx('unused-title')}>MỤC CHƯA SỬ DỤNG</h4>
                 <div className={cx('unused-grid')}>
-                    {unusedSectionKeys.map(renderDragItem)}
+                    {unusedSectionKeys.map((sectionKey, index) =>
+                        renderDragItem(sectionKey, 'unused', index),
+                    )}
                     {unusedSectionKeys.length === 0 && (
                         <span style={{ color: '#94a3b8', fontSize: 13 }}>
                             Đã sử dụng hết các mục

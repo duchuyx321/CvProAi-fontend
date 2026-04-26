@@ -114,6 +114,10 @@ export const PATCH = async (path, option = {}) => {
     const response = await httpsRequests.patch(path, option);
     return response.data;
 };
+export const PUT = async (path, option = {}) => {
+    const response = await httpsRequests.put(path, option);
+    return response.data;
+};
 export const DELETE = async (path, option = {}) => {
     const response = await httpsRequests.delete(path, option);
     return response.data;

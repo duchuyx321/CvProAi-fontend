@@ -133,6 +133,38 @@
     resize: vertical;
 }
 
+.rangeField {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 82px auto;
+    align-items: center;
+    gap: 10px;
+}
+
+.rangeInput {
+    width: 100%;
+    accent-color: #3b82f6;
+}
+
+.levelInput {
+    width: 82px;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.4;
+    outline: none;
+}
+
+.levelSuffix {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .checkboxLabel {
     display: inline-flex;
     align-items: center;

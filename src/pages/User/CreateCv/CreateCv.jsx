@@ -8,6 +8,10 @@ import { getCvTemplateDetail } from '~/services/cv-teamplate.service';
 import { normalizeTemplateToCreateCv } from '~/utils/cv-editor.bootstrap';
 import { validateTemplateConfig } from '~/utils/cv-section.schema';
 import { buildCreateSubmitPreview } from '~/utils/cv-submit-preview.utils';
+import {
+    getApiMessage,
+    unwrapApiResponse,
+} from '~/utils/api-response.utils';
 import useCvEditorState from '../CvEditor/hooks/useCvEditorState';
 
 function CreateCv() {
@@ -31,7 +35,6 @@ function CreateCv() {
         handleResetData,
         isDirty,
         markDirtyField,
-        dirtyFields,
         originalData,
         pageRef,
         resumeData,
@@ -49,10 +52,11 @@ function CreateCv() {
                 const result = await getCvTemplateDetail(code);
 
                 if (!result?.success) {
-                    throw new Error(result?.message || 'Không thể tải CV');
+                    throw new Error(getApiMessage(result, 'Không thể tải CV'));
                 }
 
-                const nextCvData = normalizeTemplateToCreateCv(result?.data);
+                const template = unwrapApiResponse(result);
+                const nextCvData = normalizeTemplateToCreateCv(template);
                 const validation = validateTemplateConfig(nextCvData?.config);
 
                 if (!validation?.isValid) {
@@ -124,7 +128,7 @@ function CreateCv() {
                 setSubmitting(false);
             }
         },
-        [cvData, dirtyFields, originalData, setSubmitting],
+        [cvData, originalData, setSubmitting],
     );
 
     const handleSaveCv = useCallback(async () => {

@@ -3,10 +3,7 @@ import {
     defaultMockContent,
     getMockContent,
 } from '~/components/CvPreview/utils/mockContent';
-import {
-    getContentKey,
-    normalizeSectionType,
-} from './cv-section.schema';
+import { getContentKey, normalizeSectionType } from './cv-section.schema';
 
 const DEFAULT_THEME = {
     colors: {
@@ -96,6 +93,18 @@ const DEFAULT_SECTION_CONFIGS = {
         fields: ['name', 'issuer', 'description'],
         variant: 'list',
     },
+    activities: {
+        type: 'ACTIVITIES',
+        title: 'Hoạt động',
+        fields: [
+            'organization',
+            'role',
+            'start_date',
+            'end_date',
+            'description',
+        ],
+        variant: 'list',
+    },
     languages: {
         type: 'LANGUAGES',
         title: 'Ngôn ngữ',
@@ -114,6 +123,12 @@ const DEFAULT_SECTION_CONFIGS = {
         fields: ['name', 'position', 'company', 'email', 'phone'],
         variant: 'list',
     },
+    custom: {
+        type: 'CUSTOM',
+        title: 'Thông tin tùy chỉnh',
+        fields: ['content'],
+        variant: 'text_block',
+    },
 };
 
 const SECTION_KEY_BY_TYPE = {
@@ -125,10 +140,12 @@ const SECTION_KEY_BY_TYPE = {
     projects: 'projects',
     education: 'education',
     certificates: 'certificates',
+    activities: 'activities',
     additional: 'additional',
     languages: 'languages',
     awards: 'awards',
     references: 'references',
+    custom: 'custom',
 };
 
 const CONTENT_KEY_BY_RAW_KEY = {
@@ -142,13 +159,16 @@ const CONTENT_KEY_BY_RAW_KEY = {
     projects: 'PROJECTS',
     education: 'EDUCATION',
     certificates: 'CERTIFICATES',
+    activities: 'ACTIVITIES',
     additional: 'ADDITIONAL',
     languages: 'LANGUAGES',
     awards: 'AWARDS',
     references: 'REFERENCES',
+    custom: 'CUSTOM',
 };
 
-export const DEFAULT_CV_AVATAR_URL = defaultMockContent.profile_header.avatar_url;
+export const DEFAULT_CV_AVATAR_URL =
+    defaultMockContent.profile_header.avatar_url;
 
 const MINIMAL_FALLBACK_CONTENT = {
     profile_header: {
@@ -166,9 +186,11 @@ const MINIMAL_FALLBACK_CONTENT = {
     PROJECTS: [],
     ADDITIONAL: {},
     CERTIFICATES: [],
+    ACTIVITIES: [],
     LANGUAGES: [],
     AWARDS: [],
     REFERENCES: [],
+    CUSTOM: {},
 };
 
 function isPlainObject(value) {
@@ -260,23 +282,26 @@ function buildSectionAliasLookup(sections = {}) {
 }
 
 function normalizeContentShape(rawContent = {}) {
-    return Object.entries(toObject(rawContent)).reduce((result, [key, value]) => {
-        const nextKey = getCanonicalContentKey(key);
-        const previousValue = result[nextKey];
+    return Object.entries(toObject(rawContent)).reduce(
+        (result, [key, value]) => {
+            const nextKey = getCanonicalContentKey(key);
+            const previousValue = result[nextKey];
 
-        if (previousValue === undefined) {
+            if (previousValue === undefined) {
+                result[nextKey] = value;
+                return result;
+            }
+
+            if (isPlainObject(previousValue) && isPlainObject(value)) {
+                result[nextKey] = deepMerge(previousValue, value);
+                return result;
+            }
+
             result[nextKey] = value;
             return result;
-        }
-
-        if (isPlainObject(previousValue) && isPlainObject(value)) {
-            result[nextKey] = deepMerge(previousValue, value);
-            return result;
-        }
-
-        result[nextKey] = value;
-        return result;
-    }, {});
+        },
+        {},
+    );
 }
 
 function normalizeContent({
@@ -333,9 +358,11 @@ function normalizeContent({
         PROJECTS: toArray(mergedContent.PROJECTS),
         ADDITIONAL: toObject(mergedContent.ADDITIONAL),
         CERTIFICATES: toArray(mergedContent.CERTIFICATES),
+        ACTIVITIES: toArray(mergedContent.ACTIVITIES),
         LANGUAGES: toArray(mergedContent.LANGUAGES),
         AWARDS: toArray(mergedContent.AWARDS),
         REFERENCES: toArray(mergedContent.REFERENCES),
+        CUSTOM: toObject(mergedContent.CUSTOM),
     };
 }
 
@@ -343,20 +370,29 @@ function buildDefaultZones(sections = {}) {
     const leftCol = [];
     const rightCol = [];
 
-    Object.entries(toObject(sections)).forEach(([sectionKey, sectionConfig]) => {
-        const normalizedType = normalizeSectionType(sectionKey, sectionConfig);
+    Object.entries(toObject(sections)).forEach(
+        ([sectionKey, sectionConfig]) => {
+            const normalizedType = normalizeSectionType(
+                sectionKey,
+                sectionConfig,
+            );
 
-        if (
-            ['personal_info', 'contact', 'skills', 'additional', 'languages'].includes(
-                normalizedType,
-            )
-        ) {
-            leftCol.push(sectionKey);
-            return;
-        }
+            if (
+                [
+                    'personal_info',
+                    'contact',
+                    'skills',
+                    'additional',
+                    'languages',
+                ].includes(normalizedType)
+            ) {
+                leftCol.push(sectionKey);
+                return;
+            }
 
-        rightCol.push(sectionKey);
-    });
+            rightCol.push(sectionKey);
+        },
+    );
 
     return {
         left_col: leftCol,
@@ -383,7 +419,8 @@ function normalizeSections(rawSections = {}) {
                 type: safeConfig?.type || defaultConfig?.type || sectionKey,
                 title: safeConfig?.title ?? defaultConfig?.title ?? '',
                 fields:
-                    Array.isArray(safeConfig?.fields) && safeConfig.fields.length > 0
+                    Array.isArray(safeConfig?.fields) &&
+                    safeConfig.fields.length > 0
                         ? safeConfig.fields
                         : Array.isArray(previousConfig?.fields) &&
                             previousConfig.fields.length > 0
@@ -408,30 +445,36 @@ function normalizeConfig(rawConfig = {}, content = {}) {
     const sectionAliasLookup = buildSectionAliasLookup(nextSections);
     const rawZones = toObject(safeConfig?.zones);
 
-    const nextZones = Object.entries(rawZones).reduce((result, [zoneKey, value]) => {
-        const normalizedSectionKeys = toArray(value)
-            .map((sectionKey) => {
-                const normalizedKey = normalizeRawKey(sectionKey);
-                return (
-                    sectionAliasLookup[normalizedKey] ||
-                    getCanonicalSectionKey(sectionKey)
-                );
-            })
-            .filter(Boolean)
-            .filter((sectionKey, index, array) => array.indexOf(sectionKey) === index)
-            .filter((sectionKey) => {
-                if (nextSections[sectionKey]) return true;
+    const nextZones = Object.entries(rawZones).reduce(
+        (result, [zoneKey, value]) => {
+            const normalizedSectionKeys = toArray(value)
+                .map((sectionKey) => {
+                    const normalizedKey = normalizeRawKey(sectionKey);
+                    return (
+                        sectionAliasLookup[normalizedKey] ||
+                        getCanonicalSectionKey(sectionKey)
+                    );
+                })
+                .filter(Boolean)
+                .filter(
+                    (sectionKey, index, array) =>
+                        array.indexOf(sectionKey) === index,
+                )
+                .filter((sectionKey) => {
+                    if (nextSections[sectionKey]) return true;
 
-                const defaultConfig = getDefaultSectionConfig(sectionKey);
-                if (!defaultConfig) return false;
+                    const defaultConfig = getDefaultSectionConfig(sectionKey);
+                    if (!defaultConfig) return false;
 
-                nextSections[sectionKey] = defaultConfig;
-                return true;
-            });
+                    nextSections[sectionKey] = defaultConfig;
+                    return true;
+                });
 
-        result[zoneKey] = normalizedSectionKeys;
-        return result;
-    }, {});
+            result[zoneKey] = normalizedSectionKeys;
+            return result;
+        },
+        {},
+    );
 
     Object.keys(content || {}).forEach((contentKey) => {
         const canonicalSectionKey =
@@ -465,10 +508,9 @@ export function normalizeCvData(source = {}, options = {}) {
     const configFromApi = toObject(safeSource?.config);
     const customConfig = toObject(safeSource?.custom_config);
     const templateConfig = toObject(template?.config);
-    const mergedConfig =
-        hasObjectValues(configFromApi)
-            ? configFromApi
-            : deepMerge(templateConfig, customConfig);
+    const mergedConfig = hasObjectValues(configFromApi)
+        ? configFromApi
+        : deepMerge(templateConfig, customConfig);
     const templateCode =
         safeSource?.template_code ||
         safeSource?.code ||

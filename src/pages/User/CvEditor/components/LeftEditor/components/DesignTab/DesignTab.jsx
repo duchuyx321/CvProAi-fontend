@@ -1,23 +1,136 @@
 import classNames from 'classnames/bind';
-import { FiType, FiDroplet, FiMaximize, FiLayout } from 'react-icons/fi';
+import { FiDroplet, FiImage, FiMaximize, FiType } from 'react-icons/fi';
 import styles from './DesignTab.module.scss';
 
 const cx = classNames.bind(styles);
 
-const PRESET_COLORS = ['#f24df5', '#0f172a', '#059669', '#7c3aed'];
-const FONTS = ['Inter', 'Roboto', 'Times New Roman', 'Calibri', 'Arial', 'Merriweather'];
+const FONTS = [
+    'Inter',
+    'Roboto',
+    'Times New Roman',
+    'Calibri',
+    'Arial',
+    'Merriweather',
+];
+
+const COLOR_CONTROLS = [
+    { key: 'primary', label: 'Primary', fallback: '#2563eb' },
+    { key: 'accent', label: 'Accent', fallback: '#eaf2fb' },
+    { key: 'text', label: 'Text', fallback: '#1f2937' },
+    { key: 'background', label: 'Background', fallback: '#ffffff' },
+    { key: 'surface', label: 'Surface', fallback: '#ffffff' },
+    { key: 'muted', label: 'Muted', fallback: '#6b7280' },
+    { key: 'border', label: 'Border', fallback: '#dbe2ea' },
+    { key: 'icon', label: 'Icon', fallback: '#2563eb' },
+];
+
+const FONT_SIZE_CONTROLS = [
+    { key: 'name', label: 'Tên', min: 24, max: 54, fallback: 38 },
+    { key: 'headline', label: 'Headline', min: 12, max: 28, fallback: 18 },
+    {
+        key: 'sectionTitle',
+        label: 'Tiêu đề mục',
+        min: 12,
+        max: 30,
+        fallback: 20,
+    },
+    { key: 'body', label: 'Nội dung', min: 10, max: 20, fallback: 14 },
+    { key: 'small', label: 'Chữ nhỏ', min: 9, max: 18, fallback: 13 },
+];
+
+const SPACING_CONTROLS = [
+    {
+        key: 'itemGap',
+        label: 'Khoảng cách item',
+        min: 4,
+        max: 32,
+        fallback: 12,
+    },
+    {
+        key: 'sectionGap',
+        label: 'Khoảng cách section',
+        min: 8,
+        max: 48,
+        fallback: 24,
+    },
+    {
+        key: 'pagePaddingX',
+        label: 'Padding ngang',
+        min: 0,
+        max: 48,
+        fallback: 12,
+    },
+    {
+        key: 'pagePaddingY',
+        label: 'Padding dọc',
+        min: 0,
+        max: 48,
+        fallback: 12,
+    },
+    {
+        key: 'bulletGap',
+        label: 'Khoảng cách bullet',
+        min: 2,
+        max: 24,
+        fallback: 8,
+    },
+];
+
+function getNumber(value, fallback) {
+    const numericValue = Number(value);
+    return Number.isNaN(numericValue) ? fallback : numericValue;
+}
+
+function getAvatarSectionKey(sections = {}) {
+    const entries = Object.entries(sections);
+    const sectionWithAvatar = entries.find(
+        ([, section]) => section?.options?.avatar,
+    );
+
+    if (sectionWithAvatar) return sectionWithAvatar[0];
+
+    const profileSection = entries.find(([, section]) => {
+        const type = String(section?.type || '').toLowerCase();
+        return type === 'profile_header' || type === 'profile';
+    });
+
+    return profileSection?.[0] || '';
+}
+
+function SliderControl({ label, value, min, max, suffix = 'px', onChange }) {
+    return (
+        <div className={cx('slider-container')}>
+            <div className={cx('slider-info')}>
+                <span>{label}</span>
+                <span className={cx('badge')}>
+                    {value}
+                    {suffix}
+                </span>
+            </div>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step="1"
+                value={value}
+                onChange={(event) => onChange(Number(event.target.value))}
+            />
+        </div>
+    );
+}
 
 function DesignTab({ templateConfig = {}, onChangeConfig }) {
     const theme = templateConfig?.theme || {};
     const colors = theme?.colors || {};
     const spacing = theme?.spacing || {};
-
-    const primaryColor = colors?.primary || '#2563eb';
-    const fontFamily = theme?.fontFamily || 'Inter';
-    const fontSize = theme?.fontSize || 12;
-    const itemGap = spacing?.itemGap ?? 12;
-    const sectionGap = spacing?.sectionGap ?? 24;
-    const avatarShape = theme?.avatar_shape || 'square';
+    const fontSize =
+        theme?.fontSize && typeof theme.fontSize === 'object'
+            ? theme.fontSize
+            : { body: theme?.fontSize };
+    const sections = templateConfig?.sections || {};
+    const avatarSectionKey = getAvatarSectionKey(sections);
+    const avatarSection = sections?.[avatarSectionKey] || {};
+    const avatarOptions = avatarSection?.options?.avatar || {};
 
     const updateTheme = (patch) => {
         onChangeConfig?.({
@@ -36,133 +149,194 @@ function DesignTab({ templateConfig = {}, onChangeConfig }) {
         });
     };
 
+    const updateAvatarOptions = (patch) => {
+        if (!avatarSectionKey) return;
 
-    const getSliderStyle = (val, min, max) => {
-        const pct = ((val - min) / (max - min)) * 100;
-        return {
-            background: `linear-gradient(to right, ${primaryColor} ${pct}%, #e2e8f0 ${pct}%)`
-        };
+        onChangeConfig?.({
+            ...templateConfig,
+            sections: {
+                ...sections,
+                [avatarSectionKey]: {
+                    ...avatarSection,
+                    options: {
+                        ...(avatarSection?.options || {}),
+                        avatar: {
+                            ...avatarOptions,
+                            ...patch,
+                        },
+                    },
+                },
+            },
+        });
     };
 
     return (
         <div className={cx('wrapper')}>
-           
             <div className={cx('section')}>
                 <div className={cx('section-header')}>
                     <FiType className={cx('icon')} />
                     <h3>Phông chữ</h3>
                 </div>
                 <div className={cx('input-group')}>
-                    <select value={fontFamily} onChange={(e) => updateTheme({ fontFamily: e.target.value })}>
-                        {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                    <select
+                        value={theme?.fontFamily || 'Inter'}
+                        onChange={(event) =>
+                            updateTheme({ fontFamily: event.target.value })
+                        }
+                    >
+                        {FONTS.map((font) => (
+                            <option key={font} value={font}>
+                                {font}
+                            </option>
+                        ))}
                     </select>
+                </div>
+
+                <div className={cx('controlStack')}>
+                    {FONT_SIZE_CONTROLS.map((control) => (
+                        <SliderControl
+                            key={control.key}
+                            label={control.label}
+                            min={control.min}
+                            max={control.max}
+                            value={getNumber(
+                                fontSize?.[control.key],
+                                control.fallback,
+                            )}
+                            onChange={(value) =>
+                                updateNestedTheme('fontSize', {
+                                    [control.key]: value,
+                                })
+                            }
+                        />
+                    ))}
                 </div>
             </div>
 
-            
             <div className={cx('section')}>
                 <div className={cx('section-header')}>
                     <FiDroplet className={cx('icon')} />
-                    <h3>Màu chủ đạo</h3>
+                    <h3>Màu sắc</h3>
                 </div>
-                <div className={cx('color-grid')}>
-                    {PRESET_COLORS.map(color => (
-                        <button
-                            key={color}
-                            className={cx('color-btn', { active: primaryColor === color })}
-                            style={{ backgroundColor: color }}
-                            onClick={() => updateNestedTheme('colors', { primary: color })}
-                        />
+                <div className={cx('color-list')}>
+                    {COLOR_CONTROLS.map((control) => (
+                        <label className={cx('color-row')} key={control.key}>
+                            <span>{control.label}</span>
+                            <input
+                                type="color"
+                                value={
+                                    colors?.[control.key] || control.fallback
+                                }
+                                onChange={(event) =>
+                                    updateNestedTheme('colors', {
+                                        [control.key]: event.target.value,
+                                    })
+                                }
+                            />
+                        </label>
                     ))}
-                    <div className={cx('custom-color-btn')}>
-                        <input 
-                            type="color" 
-                            value={primaryColor} 
-                            onChange={(e) => updateNestedTheme('colors', { primary: e.target.value })} 
-                        />
-                        <div className={cx('rainbow-ring')}></div>
-                        <div className={cx('inner-color')} style={{ backgroundColor: primaryColor }}></div>
-                    </div>
                 </div>
             </div>
 
-            
-            <div className={cx('section')}>
-                <div className={cx('section-header')}>
-                    <FiMaximize className={cx('icon')} />
-                    <h3>Kích thước chữ</h3>
-                </div>
-                <div className={cx('slider-container')}>
-                    <div className={cx('slider-info')}>
-                        <span>FONT SIZE</span>
-                        <span className={cx('badge')}>{fontSize}px</span>
-                    </div>
-                    <input 
-                        type="range" min="10" max="16" step="1" 
-                        value={fontSize} 
-                        style={getSliderStyle(fontSize, 10, 16)}
-                        onChange={(e) => updateTheme({ fontSize: Number(e.target.value) })}
-                    />
-                    <div className={cx('slider-labels')}>
-                        <span>Nhỏ</span>
-                        <span>Vừa</span>
-                        <span>Lớn</span>
-                    </div>
-                </div>
-            </div>
-
-            
             <div className={cx('section')}>
                 <div className={cx('section-header')}>
                     <FiMaximize className={cx('icon')} />
                     <h3>Khoảng cách</h3>
                 </div>
-                <div className={cx('slider-container')}>
-                    <div className={cx('slider-info')}>
-                        <span>KHOẢNG CÁCH ITEM</span>
-                        <span className={cx('badge')}>{itemGap}px</span>
-                    </div>
-                    <input 
-                        type="range" min="8" max="24" 
-                        value={itemGap} 
-                        style={getSliderStyle(itemGap, 8, 24)}
-                        onChange={(e) => updateNestedTheme('spacing', { itemGap: Number(e.target.value) })}
-                    />
-                </div>
-                <div className={cx('slider-container')}>
-                    <div className={cx('slider-info')}>
-                        <span>KHOẢNG CÁCH SECTION</span>
-                        <span className={cx('badge')}>{sectionGap}px</span>
-                    </div>
-                    <input 
-                        type="range" min="12" max="40" 
-                        value={sectionGap} 
-                        style={getSliderStyle(sectionGap, 12, 40)}
-                        onChange={(e) => updateNestedTheme('spacing', { sectionGap: Number(e.target.value) })}
-                    />
+                <div className={cx('controlStack')}>
+                    {SPACING_CONTROLS.map((control) => (
+                        <SliderControl
+                            key={control.key}
+                            label={control.label}
+                            min={control.min}
+                            max={control.max}
+                            value={getNumber(
+                                spacing?.[control.key],
+                                control.fallback,
+                            )}
+                            onChange={(value) =>
+                                updateNestedTheme('spacing', {
+                                    [control.key]: value,
+                                })
+                            }
+                        />
+                    ))}
                 </div>
             </div>
 
-            
-            <div className={cx('section')}>
-                <div className={cx('section-header')}>
-                    <FiLayout className={cx('icon')} />
-                    <h3>Định dạng</h3>
-                </div>
-                <div className={cx('format-row')}>
-                    <span>Bo góc ảnh đại diện</span>
-                    <div className={cx('segmented-control')}>
-                        <button 
-                            className={cx({ active: avatarShape === 'square' })}
-                            onClick={() => updateTheme({ avatar_shape: 'square' })}
-                        >Vuông</button>
-                        <button 
-                            className={cx({ active: avatarShape === 'circle' })}
-                            onClick={() => updateTheme({ avatar_shape: 'circle' })}
-                        >Tròn</button>
+            {avatarSectionKey && (
+                <div className={cx('section')}>
+                    <div className={cx('section-header')}>
+                        <FiImage className={cx('icon')} />
+                        <h3>Ảnh đại diện</h3>
+                    </div>
+
+                    <div className={cx('format-row')}>
+                        <span>Hình dạng</span>
+                        <div className={cx('segmented-control')}>
+                            {['square', 'rounded', 'circle'].map((shape) => (
+                                <button
+                                    key={shape}
+                                    type="button"
+                                    className={cx({
+                                        active:
+                                            (avatarOptions?.shape ||
+                                                'square') === shape,
+                                    })}
+                                    onClick={() =>
+                                        updateAvatarOptions({ shape })
+                                    }
+                                >
+                                    {shape === 'square'
+                                        ? 'Vuông'
+                                        : shape === 'rounded'
+                                          ? 'Bo góc'
+                                          : 'Tròn'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className={cx('controlStack')}>
+                        <SliderControl
+                            label="Chiều rộng"
+                            min={48}
+                            max={180}
+                            value={getNumber(avatarOptions?.width, 96)}
+                            onChange={(value) =>
+                                updateAvatarOptions({ width: value })
+                            }
+                        />
+                        <SliderControl
+                            label="Chiều cao"
+                            min={48}
+                            max={180}
+                            value={getNumber(
+                                avatarOptions?.height,
+                                avatarOptions?.width || 96,
+                            )}
+                            onChange={(value) =>
+                                updateAvatarOptions({ height: value })
+                            }
+                        />
+                    </div>
+
+                    <div className={cx('input-group')}>
+                        <label className={cx('selectLabel')}>Object fit</label>
+                        <select
+                            value={avatarOptions?.objectFit || 'cover'}
+                            onChange={(event) =>
+                                updateAvatarOptions({
+                                    objectFit: event.target.value,
+                                })
+                            }
+                        >
+                            <option value="cover">Cover</option>
+                            <option value="contain">Contain</option>
+                        </select>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }

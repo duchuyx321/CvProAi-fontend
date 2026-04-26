@@ -1,6 +1,11 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
 import RichTextEditor from '~/components/RichTextEditor';
+import {
+    getFieldLabel,
+    isLongTextField,
+    uniqueFieldKeys,
+} from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -59,14 +64,32 @@ function BaseInput({ value, onChange, type = 'text', disabled = false }) {
     );
 }
 
+const BASE_CERTIFICATE_FIELDS = new Set([
+    'name',
+    'issuer',
+    'issue_date',
+    'description',
+]);
+
+function getExtraFieldKeys(section = {}, items = []) {
+    return [
+        ...new Set([
+            ...uniqueFieldKeys(section?.fields),
+            ...items.flatMap((item) => Object.keys(item || {})),
+        ]),
+    ].filter((fieldKey) => fieldKey && !BASE_CERTIFICATE_FIELDS.has(fieldKey));
+}
+
 function CertificatesFields({
     data = [],
     onChangeArrayField,
     onChangeObjectInArray,
     onAddSectionItem,
     sectionKey,
+    section = {},
 }) {
     const items = Array.isArray(data) ? data : [];
+    const extraFieldKeys = getExtraFieldKeys(section, items);
 
     const handleAdd = () => {
         onAddSectionItem?.(sectionKey);
@@ -81,7 +104,9 @@ function CertificatesFields({
 
     return (
         <div className={cx('arraySection')}>
-            {!items.length && <ArrayEmptyState message="Chưa có chứng chỉ nào." />}
+            {!items.length && (
+                <ArrayEmptyState message="Chưa có chứng chỉ nào." />
+            )}
 
             {items.map((item, index) => (
                 <ItemCard key={`${sectionKey}-${index}`}>
@@ -143,6 +168,41 @@ function CertificatesFields({
                                 minHeight={160}
                             />
                         </FieldGroup>
+
+                        {extraFieldKeys.map((fieldKey) => (
+                            <FieldGroup
+                                key={fieldKey}
+                                label={getFieldLabel(fieldKey)}
+                                fullWidth={isLongTextField(fieldKey)}
+                            >
+                                {isLongTextField(fieldKey) ? (
+                                    <textarea
+                                        className={cx('textarea')}
+                                        value={item?.[fieldKey] || ''}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                ) : (
+                                    <BaseInput
+                                        value={item?.[fieldKey]}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                )}
+                            </FieldGroup>
+                        ))}
                     </div>
 
                     <ItemActions
