@@ -14,6 +14,7 @@ import Dashboard from '~/pages/User/Dashboard';
 import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
+import TrashCvs from '~/pages/User/TrashCvs';
 import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
@@ -117,6 +118,11 @@ const PublicRouter = [
     {
         path: config.router.myCvs,
         component: MyCvs,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.trashCvs,
+        component: TrashCvs,
         layout: DefaultLayout,
     },
     {

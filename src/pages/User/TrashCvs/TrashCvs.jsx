@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import {
     FiAlertCircle,
+    FiArrowLeft,
     FiChevronDown,
     FiChevronLeft,
     FiChevronRight,
     FiLoader,
-    FiPlusCircle,
     FiSearch,
     FiTrash2,
+    FiRotateCcw,
 } from 'react-icons/fi';
-import { LuFileText } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,27 +18,24 @@ import Button from '~/components/Button';
 import Modal from '~/components/Modal';
 import { config } from '~/config';
 import useDebounce from '~/hooks/useDebounce';
-import { getMyCvs, softDeleteMyCv } from '~/services/my-cv.service';
-import CardItemCV from './components/CardItemCV';
-import styles from './MyCvs.module.scss';
+import CardItemCV from '../MyCvs/components/CardItemCV';
+import {
+    forceDeleteMyCv,
+    getTrashCvs,
+    restoreMyCv,
+} from '~/services/trash-cv.service';
+import styles from './TrashCvs.module.scss';
 
 const cx = classNames.bind(styles);
 
 const PAGE_SIZE = 4;
-const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'Sửa gần đây', 'A -> Z', 'Z -> A'];
+const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'A -> Z', 'Z -> A'];
 
 const getSortParam = (value) => {
     if (value === 'Cũ nhất') {
         return {
             sort_by: 'created_at',
             sort_order: 'ASC',
-        };
-    }
-
-    if (value === 'Sửa gần đây') {
-        return {
-            sort_by: 'updated_at',
-            sort_order: 'DESC',
         };
     }
 
@@ -77,16 +74,16 @@ const formatDateTime = (value) => {
     }).format(date);
 };
 
-const mapCvItem = (cv) => ({
+const mapTrashItem = (cv) => ({
     id: cv?.id ?? null,
     name: cv?.title || cv?.name || 'CV chưa đặt tên',
     template:
         cv?.template_name || cv?.templateName || cv?.template || 'CV Template',
-    updatedAt: formatDateTime(cv?.updatedAt || cv?.createdAt || ''),
+    deletedAt: formatDateTime(
+        cv?.deletedAt || cv?.updatedAt || cv?.createdAt || '',
+    ),
     updatedAtRaw: cv?.updatedAt || '',
     createdAtRaw: cv?.createdAt || '',
-    status: cv?.status === 'DRAFT' ? 'BẢN NHÁP' : 'HOÀN THIỆN',
-    statusCode: cv?.status === 'DRAFT' ? 'draft' : 'done',
     image:
         cv?.preview_url ||
         cv?.thumbnail ||
@@ -94,7 +91,7 @@ const mapCvItem = (cv) => ({
     slug: cv?.slug || '',
 });
 
-function MyCvs() {
+function TrashCvs() {
     const navigate = useNavigate();
 
     const [keyword, setKeyword] = useState('');
@@ -103,13 +100,15 @@ function MyCvs() {
     const [currentPage, setCurrentPage] = useState(1);
     const [sortValue, setSortValue] = useState('Mới nhất');
     const [isOpenSort, setIsOpenSort] = useState(false);
-    const [deleteItem, setDeleteItem] = useState(null);
 
-    const [cvList, setCvList] = useState([]);
+    const [trashList, setTrashList] = useState([]);
     const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
     const [searching, setSearching] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+
+    const [restoreItem, setRestoreItem] = useState(null);
+    const [deleteForeverItem, setDeleteForeverItem] = useState(null);
 
     const sortRef = useRef(null);
 
@@ -127,7 +126,7 @@ function MyCvs() {
         };
     }, []);
 
-    const fetchMyCvs = async ({
+    const fetchTrashCvs = async ({
         page = currentPage,
         keywordValue = debouncedKeyword,
         sort = sortValue,
@@ -145,7 +144,7 @@ function MyCvs() {
                 setLoading(true);
             }
 
-            // const res = await getMyCvs({
+            // const res = await getTrashCvs({
             //     page,
             //     limit: PAGE_SIZE,
             //     search: keywordValue.trim(),
@@ -176,9 +175,11 @@ function MyCvs() {
 }
             if (!res?.success) {
                 const message =
-                    res?.message || res?.messsage || 'Không tải được danh sách CV';
+                    res?.message ||
+                    res?.messsage ||
+                    'Không tải được danh sách thùng rác';
 
-                setCvList([]);
+                setTrashList([]);
                 setTotalItems(0);
                 setErrorMessage(message);
 
@@ -195,16 +196,16 @@ function MyCvs() {
                 res?.total ||
                 rawItems.length;
 
-            setCvList(rawItems.map(mapCvItem));
+            setTrashList(rawItems.map(mapTrashItem));
             setTotalItems(total);
             setErrorMessage('');
         } catch {
-            setCvList([]);
+            setTrashList([]);
             setTotalItems(0);
-            setErrorMessage('Có lỗi xảy ra khi tải danh sách CV');
+            setErrorMessage('Có lỗi xảy ra khi tải thùng rác');
 
             if (!silent) {
-                toast.error('Có lỗi xảy ra khi tải danh sách CV');
+                toast.error('Có lỗi xảy ra khi tải thùng rác');
             }
         } finally {
             setLoading(false);
@@ -220,7 +221,7 @@ function MyCvs() {
     }, [debouncedKeyword]);
 
     useEffect(() => {
-        fetchMyCvs({
+        fetchTrashCvs({
             page: currentPage,
             keywordValue: debouncedKeyword,
             sort: sortValue,
@@ -229,7 +230,7 @@ function MyCvs() {
     }, [currentPage, sortValue, debouncedKeyword]);
 
     const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-    const currentList = cvList;
+    const currentList = trashList;
 
     const isEmpty = !loading && !errorMessage && currentList.length === 0;
     const isSearchingEmpty = isEmpty && debouncedKeyword.trim().length > 0;
@@ -242,31 +243,25 @@ function MyCvs() {
         setKeyword(event.target.value);
     };
 
-    const handleClearSearch = () => {
-        setKeyword('');
+    const handleRestore = (cv) => {
+        setRestoreItem(cv);
     };
 
-    const handleCreateCv = () => {
-        navigate(config.router.createCv.replace(':code', 'modern'));
-    };
-
-    const handleAskDelete = (cv) => {
-        setDeleteItem(cv);
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!deleteItem) return;
+    const handleConfirmRestore = async () => {
+        if (!restoreItem) return;
 
         try {
-            const res = await softDeleteMyCv(deleteItem.id);
+            const res = await restoreMyCv(restoreItem.id);
 
             if (!res?.success) {
-                toast.error(res?.message || res?.messsage || 'Xóa CV thất bại');
+                toast.error(
+                    res?.message || res?.messsage || 'Khôi phục CV thất bại',
+                );
                 return;
             }
 
-            toast.success(`Đã chuyển "${deleteItem.name}" vào thùng rác`);
-            setDeleteItem(null);
+            toast.success(`Đã khôi phục "${restoreItem.name}"`);
+            setRestoreItem(null);
 
             const nextPage =
                 currentList.length === 1 && currentPage > 1
@@ -276,19 +271,54 @@ function MyCvs() {
             if (nextPage !== currentPage) {
                 setCurrentPage(nextPage);
             } else {
-                await fetchMyCvs({
+                await fetchTrashCvs({
                     page: nextPage,
                     keywordValue: debouncedKeyword,
                     sort: sortValue,
                 });
             }
         } catch {
-            toast.error('Có lỗi xảy ra khi xóa CV');
+            toast.error('Có lỗi xảy ra khi khôi phục CV');
         }
     };
 
-    const handleOpenTrash = () => {
-        navigate(config.router.trashCvs);
+    const handleAskDeleteForever = (cv) => {
+        setDeleteForeverItem(cv);
+    };
+
+    const handleConfirmDeleteForever = async () => {
+        if (!deleteForeverItem) return;
+
+        try {
+            const res = await forceDeleteMyCv(deleteForeverItem.id);
+
+            if (!res?.success) {
+                toast.error(
+                    res?.message || res?.messsage || 'Xóa vĩnh viễn thất bại',
+                );
+                return;
+            }
+
+            toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
+            setDeleteForeverItem(null);
+
+            const nextPage =
+                currentList.length === 1 && currentPage > 1
+                    ? currentPage - 1
+                    : currentPage;
+
+            if (nextPage !== currentPage) {
+                setCurrentPage(nextPage);
+            } else {
+                await fetchTrashCvs({
+                    page: nextPage,
+                    keywordValue: debouncedKeyword,
+                    sort: sortValue,
+                });
+            }
+        } catch {
+            toast.error('Có lỗi xảy ra khi xóa vĩnh viễn CV');
+        }
     };
 
     const handlePrevPage = () => {
@@ -340,12 +370,33 @@ function MyCvs() {
         });
     };
 
-    const deleteFooter = (
+    const restoreFooter = (
         <div className={cx('modalActions')}>
             <Button
                 type="button"
                 className={cx('modalCancelBtn')}
-                onClick={() => setDeleteItem(null)}
+                onClick={() => setRestoreItem(null)}
+            >
+                Hủy
+            </Button>
+
+            <Button
+                primary
+                type="button"
+                className={cx('modalRestoreBtn')}
+                onClick={handleConfirmRestore}
+            >
+                Khôi phục
+            </Button>
+        </div>
+    );
+
+    const modalFooter = (
+        <div className={cx('modalActions')}>
+            <Button
+                type="button"
+                className={cx('modalCancelBtn')}
+                onClick={() => setDeleteForeverItem(null)}
             >
                 Hủy
             </Button>
@@ -354,9 +405,9 @@ function MyCvs() {
                 primary
                 type="button"
                 className={cx('modalDeleteBtn')}
-                onClick={handleConfirmDelete}
+                onClick={handleConfirmDeleteForever}
             >
-                Xóa CV
+                Xóa vĩnh viễn
             </Button>
         </div>
     );
@@ -364,7 +415,9 @@ function MyCvs() {
     if (loading) {
         return (
             <div className={cx('wrapper')}>
-                <div className={cx('loading')}>Đang tải danh sách CV...</div>
+                <div className={cx('loading')}>
+                    Đang tải danh sách thùng rác...
+                </div>
             </div>
         );
     }
@@ -373,12 +426,26 @@ function MyCvs() {
         <>
             <div className={cx('wrapper')}>
                 <div className={cx('header')}>
-                    <h1 className={cx('title')}>CV của tôi</h1>
-                    <p className={cx('desc')}>
-                        Quản lý và tối ưu hóa các bản CV chuyên nghiệp của bạn
-                        <br />
-                        để gây ấn tượng với nhà tuyển dụng.
-                    </p>
+                    <div className={cx('heading')}>
+                        <div className={cx('titleRow')}>
+                            <h1 className={cx('title')}>Thùng rác</h1>
+                            <span className={cx('countBadge')}>{totalItems}</span>
+                        </div>
+
+                        <p className={cx('desc')}>
+                            Các CV đã xóa được lưu tạm tại đây trước khi bị xóa
+                            vĩnh viễn.
+                        </p>
+                    </div>
+
+                    <Button
+                        type="button"
+                        className={cx('backBtn')}
+                        onClick={() => navigate(config.router.myCvs)}
+                    >
+                        <FiArrowLeft />
+                        <span>CV của tôi</span>
+                    </Button>
                 </div>
 
                 <div className={cx('toolbar')}>
@@ -391,7 +458,7 @@ function MyCvs() {
 
                         <input
                             type="text"
-                            placeholder="Tìm kiếm CV..."
+                            placeholder="Tìm kiếm CV trong thùng rác..."
                             className={cx('searchInput')}
                             value={keyword}
                             onChange={handleSearch}
@@ -434,25 +501,6 @@ function MyCvs() {
                             </div>
                         )}
                     </div>
-
-                    <button
-                        type="button"
-                        className={cx('trashBtn')}
-                        onClick={handleOpenTrash}
-                    >
-                        <FiTrash2 />
-                        <span>Thùng rác</span>
-                    </button>
-
-                    <Button
-                        primary
-                        type="button"
-                        className={cx('createBtn')}
-                        onClick={handleCreateCv}
-                    >
-                        <FiPlusCircle />
-                        <span>Tạo CV mới</span>
-                    </Button>
                 </div>
 
                 {errorMessage ? (
@@ -461,14 +509,14 @@ function MyCvs() {
                             <FiAlertCircle />
                         </div>
                         <h3 className={cx('stateTitle')}>
-                            Không thể tải dữ liệu
+                            Không thể tải thùng rác
                         </h3>
                         <p className={cx('stateText')}>{errorMessage}</p>
                         <Button
                             type="button"
                             className={cx('stateBtn')}
                             onClick={() =>
-                                fetchMyCvs({
+                                fetchTrashCvs({
                                     page: currentPage,
                                     keywordValue: debouncedKeyword,
                                     sort: sortValue,
@@ -484,7 +532,7 @@ function MyCvs() {
                             <FiSearch />
                         </div>
                         <h3 className={cx('stateTitle')}>
-                            Không tìm thấy CV phù hợp
+                            Không tìm thấy CV trong thùng rác
                         </h3>
                         <p className={cx('stateText')}>
                             Không có kết quả nào khớp với từ khóa "
@@ -493,31 +541,29 @@ function MyCvs() {
                         <Button
                             type="button"
                             className={cx('stateBtn')}
-                            onClick={handleClearSearch}
+                            onClick={() => setKeyword('')}
                         >
                             Xóa tìm kiếm
                         </Button>
                     </div>
                 ) : isDefaultEmpty ? (
-                    <div className={cx('stateCard')}>
-                        <div className={cx('stateIcon')}>
-                            <LuFileText />
+                    <div className={cx('emptyState')}>
+                        <div className={cx('emptyIcon')}>
+                            <FiTrash2 />
                         </div>
-                        <h3 className={cx('stateTitle')}>
-                            Bạn chưa có CV nào
+                        <h3 className={cx('emptyTitle')}>
+                            Thùng rác đang trống
                         </h3>
-                        <p className={cx('stateText')}>
-                            Hãy tạo CV đầu tiên để bắt đầu xây dựng hồ sơ
-                            chuyên nghiệp của bạn.
+                        <p className={cx('emptyText')}>
+                            Các CV bạn xóa sẽ xuất hiện tại đây để có thể khôi
+                            phục khi cần.
                         </p>
                         <Button
-                            primary
                             type="button"
-                            className={cx('stateBtn')}
-                            onClick={handleCreateCv}
+                            className={cx('emptyBackBtn')}
+                            onClick={() => navigate(config.router.myCvs)}
                         >
-                            <FiPlusCircle />
-                            <span>Tạo CV mới</span>
+                            Quay lại CV của tôi
                         </Button>
                     </div>
                 ) : (
@@ -527,7 +573,9 @@ function MyCvs() {
                                 <CardItemCV
                                     key={cv.id}
                                     data={cv}
-                                    onDelete={handleAskDelete}
+                                    disableLink
+                                    onRestore={handleRestore}
+                                    onDeleteForever={handleAskDeleteForever}
                                 />
                             ))}
                         </div>
@@ -565,15 +613,34 @@ function MyCvs() {
             </div>
 
             <Modal
-                isOpen={!!deleteItem}
-                onClose={() => setDeleteItem(null)}
-                title="Xác nhận xóa CV"
+                isOpen={!!restoreItem}
+                onClose={() => setRestoreItem(null)}
+                title="Xác nhận khôi phục CV"
                 description={
-                    deleteItem
-                        ? `Bạn có chắc muốn xóa "${deleteItem.name}" không? Hành động này không thể hoàn tác.`
+                    restoreItem
+                        ? `Bạn có chắc muốn khôi phục "${restoreItem.name}" không? CV sẽ quay lại danh sách CV của tôi.`
                         : ''
                 }
-                footer={deleteFooter}
+                footer={restoreFooter}
+                size="sm"
+            >
+                <div className={cx('modalBody')}>
+                    <div className={cx('restoreIcon')}>
+                        <FiRotateCcw />
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={!!deleteForeverItem}
+                onClose={() => setDeleteForeverItem(null)}
+                title="Xóa vĩnh viễn CV"
+                description={
+                    deleteForeverItem
+                        ? `Bạn có chắc muốn xóa vĩnh viễn "${deleteForeverItem.name}" không? Hành động này không thể hoàn tác.`
+                        : ''
+                }
+                footer={modalFooter}
                 size="sm"
             >
                 <div className={cx('modalBody')}>
@@ -586,4 +653,4 @@ function MyCvs() {
     );
 }
 
-export default MyCvs;
+export default TrashCvs;

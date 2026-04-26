@@ -22,6 +22,7 @@ export const router = {
     editCv: '/edit-cv/:slug',
 
     myCvs: '/my-cvs',
+    trashCvs: '/trash-cvs',
     aiAnalysis: '/ai-analysis',
     aiAnalysisResult_route: '/ai-analysis/result/',
     aiAnalysisResult: '/ai-analysis/result/:aiRunId',
