@@ -12,7 +12,10 @@ export default function buildPreviewData({ template, cv }) {
             config: cv?.config || template?.config || {},
             content: cv?.content || template?.content || {},
             template_content:
-                cv?.template_content || template?.content || cv?.template?.content || {},
+                cv?.template_content ||
+                template?.content ||
+                cv?.template?.content ||
+                {},
         },
         {
             seedContent:

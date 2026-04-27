@@ -14,19 +14,19 @@ const FONTS = [
 ];
 
 const COLOR_CONTROLS = [
-    { key: 'primary', label: 'Primary', fallback: '#2563eb' },
-    { key: 'accent', label: 'Accent', fallback: '#eaf2fb' },
-    { key: 'text', label: 'Text', fallback: '#1f2937' },
-    { key: 'background', label: 'Background', fallback: '#ffffff' },
-    { key: 'surface', label: 'Surface', fallback: '#ffffff' },
-    { key: 'muted', label: 'Muted', fallback: '#6b7280' },
-    { key: 'border', label: 'Border', fallback: '#dbe2ea' },
-    { key: 'icon', label: 'Icon', fallback: '#2563eb' },
+    { key: 'primary', label: 'Màu chính', fallback: '#2563eb' },
+    { key: 'accent', label: 'Màu nhấn', fallback: '#eaf2fb' },
+    { key: 'text', label: 'Màu chữ', fallback: '#1f2937' },
+    { key: 'background', label: 'Màu nền', fallback: '#ffffff' },
+    { key: 'surface', label: 'Màu nền phụ', fallback: '#ffffff' },
+    { key: 'muted', label: 'Màu chữ mờ', fallback: '#6b7280' },
+    { key: 'border', label: 'Màu viền', fallback: '#dbe2ea' },
+    { key: 'icon', label: 'Màu icon', fallback: '#2563eb' },
 ];
 
 const FONT_SIZE_CONTROLS = [
-    { key: 'name', label: 'Tên', min: 24, max: 54, fallback: 38 },
-    { key: 'headline', label: 'Headline', min: 12, max: 28, fallback: 18 },
+    { key: 'name', label: 'Tên ứng viên', min: 24, max: 54, fallback: 38 },
+    { key: 'headline', label: 'Vị trí ứng tuyển', min: 12, max: 28, fallback: 18 },
     {
         key: 'sectionTitle',
         label: 'Tiêu đề mục',
@@ -322,17 +322,17 @@ function DesignTab({ templateConfig = {}, onChangeConfig }) {
                     </div>
 
                     <div className={cx('input-group')}>
-                        <label className={cx('selectLabel')}>Object fit</label>
+                        <label className={cx('selectLabel')}>Cách hiển thị ảnh</label>
                         <select
-                            value={avatarOptions?.objectFit || 'cover'}
+                            value={avatarOptions?.objectFit || 'contain'}
                             onChange={(event) =>
                                 updateAvatarOptions({
                                     objectFit: event.target.value,
                                 })
                             }
                         >
-                            <option value="cover">Cover</option>
-                            <option value="contain">Contain</option>
+                            <option value="cover">Cắt vừa khung</option>
+                            <option value="contain">Hiển thị toàn bộ</option>
                         </select>
                     </div>
                 </div>

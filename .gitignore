@@ -17,6 +17,9 @@ md
 
 # Editor directories and files
 .vscode/*
+.vscode
+.claude/*
+.claude
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -27,3 +30,4 @@ md
 *.sw?
 .codex
 .prettierrc
+*.md

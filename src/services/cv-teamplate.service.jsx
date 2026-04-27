@@ -4,6 +4,7 @@ const MAU_01 = {
     success: true,
     messsage: 'Lấy dữ liệu CV thành công.',
     data: {
+        id: '17cc03f6-fa48-4b14-b582-d58eefa8dd50',
         code: 'CV_MODERN_02',
         name: 'Mẫu CV chuyên nghiệp 02',
         is_premium: false,
@@ -548,6 +549,7 @@ const MAU_02 = {
     success: true,
     messsage: 'Lấy dữ liệu CV thành công.',
     data: {
+        id: 'ed744150-dbeb-43cc-bbfc-aa16e4725687',
         code: 'CV_TRANSLATOR_BANNER_01',
         name: 'Mẫu CV phiên dịch viên chuyên nghiệp',
         is_premium: false,
@@ -1087,6 +1089,7 @@ const MAU_03 = {
     success: true,
     messsage: 'Lấy dữ liệu CV thành công.',
     data: {
+        id: '29713ded-64c6-4af0-b11a-1323f3a51eb3',
         code: 'CV_DEVELOPER_SIDEBAR_BLUE_01',
         name: 'Mẫu CV Developer Sidebar Blue',
         is_premium: false,
@@ -1563,6 +1566,42 @@ const MAU_03 = {
         },
     },
 };
+
+export const buildCreateCvFormData = ({ payload, avatarFile, previewFile }) => {
+    const formData = new FormData();
+
+    formData.append('template_id', payload.template_id || '');
+    formData.append('title', payload.title || '');
+    formData.append('language', payload.language || 'vi');
+    formData.append('status', payload.status || 'DRAFT');
+    formData.append('visibility', payload.visibility || 'PRIVATE');
+
+    // eslint-disable-next-line no-unused-vars
+    const { avatar_url, ...nest } = payload.content || {};
+    if (nest && Object.keys(nest).length > 0) {
+        formData.append('content', JSON.stringify(nest || {}));
+    }
+    if (
+        payload?.custom_config &&
+        Object.keys(payload?.custom_config).length > 0
+    ) {
+        formData.append(
+            'custom_config',
+            JSON.stringify(payload.custom_config || {}),
+        );
+    }
+
+    if (avatarFile instanceof File) {
+        formData.append('avatar', avatarFile);
+    }
+
+    if (previewFile instanceof File) {
+        // Phải là thumbnail vì BE đang check name: 'thumbnail'
+        formData.append('thumbnail', previewFile);
+    }
+
+    return formData;
+};
 export const getCvTemplates = async (limit = 8, page = 1) => {
     try {
         const result = await Response.GET(
@@ -1582,7 +1621,7 @@ export const getCvTemplateDetail = async (code) => {
 
     try {
         // const result = await Response.GET(`cv-templates/code/${code}`);
-        const result = MAU_02;
+        const result = MAU_01;
         if (!result?.success) {
             return {
                 success: false,
@@ -1604,7 +1643,7 @@ export const getCvDetailBySlug = async (slug) => {
     }
 
     try {
-        const result = await Response.GET(`cvs/slug/${slug}`);
+        const result = await Response.GET(`cvs/me/${slug}`);
         return result;
     } catch (error) {
         console.log(error);
@@ -1614,25 +1653,28 @@ export const getCvDetailBySlug = async (slug) => {
 
 export const createCv = async (data) => {
     try {
-        const result = await Response.POST('cvs', data);
+        const result = await Response.POST('cvs/add', data);
         return result;
     } catch (error) {
-        console.log(error);
-        throw error;
+        console.log({ error });
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
     }
 };
 
-export const updateCvBySlug = async (slug, data) => {
-    if (!slug) {
+export const updateCvBySlug = async (id, data) => {
+    if (!id) {
         throw new Error('Thiếu slug CV');
     }
 
     try {
-        const result = await Response.PUT(`cvs/slug/${slug}`, data);
+        const result = await Response.PUT(`cvs/edit/${id}`, data);
         return result;
     } catch (error) {
-        console.log(error);
-        throw error;
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
     }
 };
 export const downloadCvPdfBySlug = async (slug) => {

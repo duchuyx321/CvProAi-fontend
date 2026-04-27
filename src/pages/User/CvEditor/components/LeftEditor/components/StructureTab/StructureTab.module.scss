@@ -41,12 +41,39 @@ $primary: #3b82f6;
 .banner-split-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
     flex: 1;
 
     .header-zone {
-        padding-bottom: 12px;
-        border-bottom: 2px dashed #cbd5e1;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .banner-resize-handle {
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: ns-resize;
+        user-select: none;
+        flex-shrink: 0;
+
+        &::before {
+            content: '';
+            width: 48px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+            transition: background 0.2s ease;
+        }
+
+        &:hover::before {
+            background: #94a3b8;
+        }
+
+        &:active::before {
+            background: #64748b;
+        }
     }
 }
 

@@ -20,6 +20,23 @@ function StructureTab({
     const zones = templateConfig?.zones || {};
     const sections = templateConfig?.sections || {};
 
+    // Banner height config for BANNER_SPLIT layout
+    // Get real banner height from config (used for preview/export)
+    const profileSection = sections?.profile;
+    const profileContainerStyle = profileSection?.style?.container;
+    // 1. Ưu tiên layoutBody.bannerHeight
+    // 2. profileContainerStyle.height
+    // 3. Fallback 245
+    const realBannerHeight = layoutBody?.bannerHeight || profileContainerStyle?.height || 245;
+
+    // Min/max height for resize (200..360)
+    const MIN_BANNER_HEIGHT = 200;
+    const MAX_BANNER_HEIGHT = 360;
+
+    // Structural scale for display in StructureTab (smaller than real)
+    const STRUCTURE_SCALE = 0.45;
+    const structureBannerHeight = Math.round(realBannerHeight * STRUCTURE_SCALE);
+
     const sectionMetaMap = {};
 
     sectionList.forEach((item) => {
@@ -41,18 +58,35 @@ function StructureTab({
         (key) => !usedSectionKeys.includes(key),
     );
 
-    const updateStructure = (nextZones, nextColumns = columns) => {
+    const updateStructure = (nextZones, nextColumns = columns, nextRealBannerHeight = realBannerHeight) => {
         if (!onChangeConfig) return;
+
+        // Always sync bannerHeight to sections.profile.style.container.height (real height for preview)
+        const nextSections = {
+            ...sections,
+            profile: {
+                ...sections.profile,
+                style: {
+                    ...sections.profile?.style,
+                    container: {
+                        ...sections.profile?.style?.container,
+                        height: nextRealBannerHeight,
+                    },
+                },
+            },
+        };
 
         onChangeConfig({
             ...templateConfig,
             zones: nextZones,
+            sections: nextSections,
             layout: {
                 ...(templateConfig?.layout || {}),
                 body: {
                     ...layoutBody,
                     layout: layoutType,
                     columns: nextColumns,
+                    bannerHeight: nextRealBannerHeight,
                 },
             },
         });
@@ -246,6 +280,31 @@ function StructureTab({
         document.addEventListener('mouseup', onMouseUp);
     };
 
+    const handleBannerResize = (e) => {
+        e.preventDefault();
+
+        const startY = e.clientY;
+        const startHeight = realBannerHeight;
+
+        const onMouseMove = (moveEvent) => {
+            const deltaY = moveEvent.clientY - startY;
+            let newHeight = startHeight + deltaY;
+
+            if (newHeight < MIN_BANNER_HEIGHT) newHeight = MIN_BANNER_HEIGHT;
+            if (newHeight > MAX_BANNER_HEIGHT) newHeight = MAX_BANNER_HEIGHT;
+
+            updateStructure(zones, columns, newHeight);
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
     const renderDropIndicator = (zoneId, index) => {
         if (
             !dropIndicator ||
@@ -356,48 +415,70 @@ function StructureTab({
         }
 
         if (layoutType === 'BANNER_SPLIT') {
-            const bannerCol = columns[0] || { id: 'banner', width: 100 };
-            const leftCol = columns[1] || { id: 'side_col', width: 30 };
-            const rightCol = columns[2] || { id: 'main_col', width: 70 };
-            const bannerItems = zones?.[bannerCol.id] || [];
+            // For BANNER_SPLIT: banner zone is separate from columns
+            // Check if zones.banner exists in config
+            const hasBannerZone = zones && Array.isArray(zones.banner);
+            const bannerZoneId = hasBannerZone ? 'banner' : null;
+
+            const leftCol = columns[0] || { id: 'side_col', width: 30 };
+            const rightCol = columns[1] || { id: 'main_col', width: 70 };
+            const bannerItems = bannerZoneId ? zones?.[bannerZoneId] || [] : [];
 
             return (
                 <div className={cx('banner-split-container')}>
-                    <div className={cx('header-zone')}>
-                        <div
-                            className={cx('column', 'col-full')}
-                            onDragOver={(e) =>
-                                handleZoneDragOver(e, bannerCol.id)
-                            }
-                            onDrop={(e) =>
-                                handleDrop(
-                                    e,
-                                    bannerCol.id,
-                                    getZoneTargetIndex(e),
-                                )
-                            }
-                        >
-                            {bannerItems.map((sectionKey, index) =>
-                                renderDragItem(sectionKey, bannerCol.id, index),
-                            )}
-                            {renderDropIndicator(
-                                bannerCol.id,
-                                bannerItems.length,
-                            )}
-                            {!bannerItems.length && (
-                                <div className={cx('empty-placeholder')}>
-                                    Thả mục vào đây
+                    {bannerZoneId && (
+                        <>
+                            <div className={cx('header-zone')}>
+                                <div
+                                    className={cx('column', 'col-full')}
+                                    style={{
+                                        minHeight: structureBannerHeight,
+                                    }}
+                                    onDragOver={(e) =>
+                                        handleZoneDragOver(e, bannerZoneId)
+                                    }
+                                    onDrop={(e) =>
+                                        handleDrop(
+                                            e,
+                                            bannerZoneId,
+                                            getZoneTargetIndex(e),
+                                        )
+                                    }
+                                >
+                                    {bannerItems.map((sectionKey, index) =>
+                                        renderDragItem(
+                                            sectionKey,
+                                            bannerZoneId,
+                                            index,
+                                        ),
+                                    )}
+                                    {renderDropIndicator(
+                                        bannerZoneId,
+                                        bannerItems.length,
+                                    )}
+                                    {bannerItems.length === 0 && (
+                                        <div
+                                            className={cx('empty-placeholder')}
+                                        >
+                                            Thả mục vào đây
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
+
+                            <div
+                                className={cx('banner-resize-handle')}
+                                onMouseDown={handleBannerResize}
+                            />
+                        </>
+                    )}
 
                     <div className={cx('split-container')} ref={containerRef}>
                         {renderZoneColumn(leftCol)}
 
                         <div
                             className={cx('divider')}
-                            onMouseDown={(e) => handleMouseDown(e, 1, 2)}
+                            onMouseDown={(e) => handleMouseDown(e, 0, 1)}
                         >
                             <div className={cx('handle')}></div>
                         </div>

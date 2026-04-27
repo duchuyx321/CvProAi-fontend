@@ -46,6 +46,10 @@ function LayoutRenderer({ config, content, theme }) {
     const columns = getBodyColumns(config);
     const props = { config, content, theme, layoutType };
 
+    // Get profile container height for banner minHeight
+    const profileSection = config?.sections?.profile;
+    const profileContainerHeight = profileSection?.style?.container?.height;
+
     if (layoutType === 'SPLIT') {
         return (
             <div
@@ -64,6 +68,11 @@ function LayoutRenderer({ config, content, theme }) {
     }
 
     if (layoutType === 'BANNER_SPLIT') {
+        // Banner style with minHeight from profile container height
+        const bannerStyle = profileContainerHeight
+            ? { minHeight: profileContainerHeight }
+            : {};
+
         return (
             <div className={cx('layoutBanner')}>
                 <ZoneRenderer
@@ -73,6 +82,7 @@ function LayoutRenderer({ config, content, theme }) {
                     theme={theme}
                     layoutType={layoutType}
                     className="zoneBanner"
+                    style={bannerStyle}
                 />
                 <div
                     className={cx('layoutSplit', 'layoutBannerBody')}
