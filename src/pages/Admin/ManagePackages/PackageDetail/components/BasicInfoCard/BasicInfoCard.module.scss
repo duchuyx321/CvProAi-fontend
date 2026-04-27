@@ -62,7 +62,9 @@
         color: #0f172a;
         font-size: 14px;
         font-weight: 500;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
     }
 
     input,
@@ -148,7 +150,9 @@
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     background: #eef2ff;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .statusToggleCardPaused {
@@ -170,6 +174,7 @@
     position: relative;
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
     width: 46px;
     height: 26px;
     padding: 0;
@@ -178,7 +183,6 @@
     background: #cbd5e1;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    flex-shrink: 0;
 
     &:disabled {
         cursor: not-allowed;

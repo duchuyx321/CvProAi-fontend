@@ -12,48 +12,65 @@ function BasicInfoCard({
 }) {
     const isActive = formData.status === 'ACTIVE';
 
+    const renderError = (field) => {
+        if (isReadOnly || !errors[field]) {
+            return null;
+        }
+
+        return <span className={cx('error')}>{errors[field]}</span>;
+    };
+
+    const handleChange = (field) => (event) => {
+        onChangeField(field, event.target.value);
+    };
+
+    const handleToggleStatus = () => {
+        if (isReadOnly) {
+            return;
+        }
+
+        onChangeField('status', isActive ? 'PAUSED' : 'ACTIVE');
+    };
+
     return (
         <section className={cx('wrapper')}>
             <div className={cx('header')}>
                 <span className={cx('icon')}>
                     <MdInfoOutline />
                 </span>
+
                 <h3 className={cx('title')}>Thông tin cơ bản</h3>
             </div>
 
             <div className={cx('form')}>
                 <label className={cx('field')}>
                     <span className={cx('label')}>Tên gói dịch vụ</span>
+
                     <input
                         type="text"
                         value={formData.name}
                         placeholder="Nhập tên gói dịch vụ"
-                        onChange={(event) =>
-                            onChangeField('name', event.target.value)
-                        }
+                        onChange={handleChange('name')}
                         disabled={isReadOnly}
                     />
-                    {!isReadOnly && errors.name ? (
-                        <span className={cx('error')}>{errors.name}</span>
-                    ) : null}
+
+                    {renderError('name')}
                 </label>
 
                 <div className={cx('row')}>
                     <label className={cx('field')}>
                         <span className={cx('label')}>Giá tiền (VND)</span>
+
                         <input
                             type="text"
                             inputMode="numeric"
                             value={formData.price}
                             placeholder="0"
-                            onChange={(event) =>
-                                onChangeField('price', event.target.value)
-                            }
+                            onChange={handleChange('price')}
                             disabled={isReadOnly}
                         />
-                        {!isReadOnly && errors.price ? (
-                            <span className={cx('error')}>{errors.price}</span>
-                        ) : null}
+
+                        {renderError('price')}
                     </label>
 
                     <label className={cx('field')}>
@@ -62,45 +79,33 @@ function BasicInfoCard({
                         <span className={cx('selectWrap')}>
                             <select
                                 value={formData.durationUnit}
-                                onChange={(event) =>
-                                    onChangeField(
-                                        'durationUnit',
-                                        event.target.value
-                                    )
-                                }
+                                onChange={handleChange('durationUnit')}
                                 disabled={isReadOnly}
                             >
                                 <option value="month">Hàng tháng</option>
                                 <option value="year">Hàng năm</option>
                                 <option value="permanent">Vĩnh viễn</option>
                             </select>
+
                             <MdKeyboardArrowDown />
                         </span>
 
-                        {!isReadOnly && errors.durationUnit ? (
-                            <span className={cx('error')}>
-                                {errors.durationUnit}
-                            </span>
-                        ) : null}
+                        {renderError('durationUnit')}
                     </label>
                 </div>
 
                 <label className={cx('field')}>
                     <span className={cx('label')}>Mô tả ngắn</span>
+
                     <textarea
                         rows="4"
                         value={formData.description}
                         placeholder="Nhập mô tả ngắn cho gói dịch vụ"
-                        onChange={(event) =>
-                            onChangeField('description', event.target.value)
-                        }
+                        onChange={handleChange('description')}
                         disabled={isReadOnly}
                     />
-                    {!isReadOnly && errors.description ? (
-                        <span className={cx('error')}>
-                            {errors.description}
-                        </span>
-                    ) : null}
+
+                    {renderError('description')}
                 </label>
 
                 <div className={cx('statusSection')}>
@@ -121,13 +126,7 @@ function BasicInfoCard({
                             className={cx('switch', {
                                 switchActive: isActive,
                             })}
-                            onClick={() =>
-                                !isReadOnly &&
-                                onChangeField(
-                                    'status',
-                                    isActive ? 'PAUSED' : 'ACTIVE'
-                                )
-                            }
+                            onClick={handleToggleStatus}
                             disabled={isReadOnly}
                             aria-label="Bật tắt trạng thái hoạt động"
                         >

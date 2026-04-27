@@ -9,14 +9,22 @@ import {
     MdOutlineFileDownload,
     MdSearch,
 } from 'react-icons/md';
+import Button from '~/components/Button';
 import styles from './ActionBar.module.scss';
 
 const cx = classNames.bind(styles);
 
 const STATUS_OPTIONS = [
-    { value: 'ALL', label: 'Trạng thái: Tất cả' },
-    { value: 'ACTIVE', label: 'Trạng thái: Hoạt động' },
-    { value: 'PAUSED', label: 'Trạng thái: Tạm ngưng' },
+    { value: 'ALL', label: 'Tất cả trạng thái' },
+    { value: 'ACTIVE', label: 'Đang hoạt động' },
+    { value: 'PAUSED', label: 'Tạm ngưng' },
+];
+
+const DATE_PRESET_OPTIONS = [
+    { value: 'all', label: 'Tất cả' },
+    { value: '7days', label: '7 ngày gần đây' },
+    { value: '30days', label: '30 ngày gần đây' },
+    { value: 'custom', label: 'Tùy chọn' },
 ];
 
 function formatDisplayDate(value) {
@@ -128,6 +136,16 @@ function ActionBar({
         };
     }, [isDatePopoverOpen, isStatusPopoverOpen]);
 
+    const handleToggleStatusPopover = () => {
+        setIsStatusPopoverOpen((previousState) => !previousState);
+        setIsDatePopoverOpen(false);
+    };
+
+    const handleToggleDatePopover = () => {
+        setIsDatePopoverOpen((previousState) => !previousState);
+        setIsStatusPopoverOpen(false);
+    };
+
     const handleSelectPreset = (preset) => {
         setDateError('');
 
@@ -144,6 +162,7 @@ function ActionBar({
             createdFrom: '',
             createdTo: '',
         });
+
         setIsDatePopoverOpen(false);
     };
 
@@ -168,6 +187,16 @@ function ActionBar({
         });
 
         setIsDatePopoverOpen(false);
+    };
+
+    const handleCancelCustomRange = () => {
+        setIsDatePopoverOpen(false);
+        setDateError('');
+        setDraftDateFilter({
+            createdPreset: filters.createdPreset,
+            createdFrom: filters.createdFrom,
+            createdTo: filters.createdTo,
+        });
     };
 
     const handleClearDateFilter = (event) => {
@@ -195,30 +224,26 @@ function ActionBar({
 
     return (
         <div className={cx('wrapper')}>
-            <div className={cx('topRow')}>
-                <div className={cx('filters')}>
-                    <div className={cx('statusFieldWrap')} ref={statusPopoverRef}>
+            <div className={cx('toolbar')}>
+                <div className={cx('filterGroup')}>
+                    <div className={cx('fieldWrap')} ref={statusPopoverRef}>
                         <button
                             type="button"
-                            className={cx('statusField', {
-                                statusFieldActive: filters.status !== 'ALL',
+                            className={cx('filterButton', {
+                                filterButtonActive: filters.status !== 'ALL',
                             })}
-                            onClick={() =>
-                                setIsStatusPopoverOpen(
-                                    (previousState) => !previousState
-                                )
-                            }
+                            onClick={handleToggleStatusPopover}
                             aria-label="Lọc theo trạng thái"
                         >
-                            <span className={cx('statusLabel')}>
+                            <span className={cx('filterText')}>
                                 {activeStatusOption.label}
                             </span>
-                            <MdKeyboardArrowDown className={cx('statusArrow')} />
+                            <MdKeyboardArrowDown className={cx('arrowIcon')} />
                         </button>
 
                         {isStatusPopoverOpen ? (
-                            <div className={cx('statusPopover')}>
-                                <div className={cx('statusOptionList')}>
+                            <div className={cx('popover', 'statusPopover')}>
+                                <div className={cx('optionList')}>
                                     {STATUS_OPTIONS.map((item) => {
                                         const isActive =
                                             item.value === filters.status;
@@ -227,21 +252,19 @@ function ActionBar({
                                             <button
                                                 key={item.value}
                                                 type="button"
-                                                className={cx('statusOption', {
-                                                    statusOptionActive: isActive,
+                                                className={cx('optionItem', {
+                                                    optionItemActive: isActive,
                                                 })}
                                                 onClick={() =>
                                                     handleSelectStatus(item.value)
                                                 }
                                             >
-                                                <span className={cx('statusOptionText')}>
-                                                    {item.label}
-                                                </span>
+                                                <span>{item.label}</span>
 
                                                 {isActive ? (
                                                     <MdCheck
                                                         className={cx(
-                                                            'statusOptionIcon'
+                                                            'optionIcon'
                                                         )}
                                                     />
                                                 ) : null}
@@ -253,36 +276,32 @@ function ActionBar({
                         ) : null}
                     </div>
 
-                    <div className={cx('dateFieldWrap')} ref={datePopoverRef}>
+                    <div className={cx('fieldWrap')} ref={datePopoverRef}>
                         <button
                             type="button"
-                            className={cx('dateField', {
-                                dateFieldActive: hasActiveDateFilter,
+                            className={cx('filterButton', 'dateButton', {
+                                filterButtonActive: hasActiveDateFilter,
                             })}
-                            onClick={() =>
-                                setIsDatePopoverOpen(
-                                    (previousState) => !previousState
-                                )
-                            }
+                            onClick={handleToggleDatePopover}
                             aria-label="Lọc theo ngày tạo gói"
                         >
                             <MdOutlineCalendarMonth className={cx('dateIcon')} />
 
                             <span
-                                className={cx('dateLabel', {
-                                    dateLabelPlaceholder: !hasActiveDateFilter,
+                                className={cx('filterText', {
+                                    filterTextMuted: !hasActiveDateFilter,
                                 })}
                             >
                                 {getDateFilterLabel(filters)}
                             </span>
 
-                            <MdKeyboardArrowDown className={cx('dateArrow')} />
+                            <MdKeyboardArrowDown className={cx('arrowIcon')} />
                         </button>
 
                         {hasActiveDateFilter ? (
                             <button
                                 type="button"
-                                className={cx('clearDateBtn')}
+                                className={cx('clearDateButton')}
                                 onClick={handleClearDateFilter}
                                 aria-label="Xóa bộ lọc ngày tạo gói"
                             >
@@ -291,82 +310,51 @@ function ActionBar({
                         ) : null}
 
                         {isDatePopoverOpen ? (
-                            <div className={cx('datePopover')}>
-                                <div className={cx('popoverSection')}>
+                            <div className={cx('popover', 'datePopover')}>
+                                <div className={cx('popoverHeader')}>
                                     <p className={cx('popoverTitle')}>
                                         Lọc theo ngày tạo gói
                                     </p>
+                                    <p className={cx('popoverDescription')}>
+                                        Chọn nhanh hoặc nhập khoảng ngày tùy chỉnh.
+                                    </p>
+                                </div>
 
-                                    <div className={cx('presetList')}>
-                                        <button
-                                            type="button"
-                                            className={cx('presetBtn', {
-                                                presetBtnActive:
-                                                    filters.createdPreset ===
-                                                        'all' &&
-                                                    !filters.createdFrom &&
-                                                    !filters.createdTo,
-                                            })}
-                                            onClick={() => handleSelectPreset('all')}
-                                        >
-                                            Tất cả
-                                        </button>
+                                <div className={cx('presetList')}>
+                                    {DATE_PRESET_OPTIONS.map((item) => {
+                                        const isActive =
+                                            item.value === 'custom'
+                                                ? draftDateFilter.createdPreset ===
+                                                  'custom'
+                                                : filters.createdPreset ===
+                                                      item.value &&
+                                                  !filters.createdFrom &&
+                                                  !filters.createdTo;
 
-                                        <button
-                                            type="button"
-                                            className={cx('presetBtn', {
-                                                presetBtnActive:
-                                                    filters.createdPreset ===
-                                                    '7days',
-                                            })}
-                                            onClick={() =>
-                                                handleSelectPreset('7days')
-                                            }
-                                        >
-                                            7 ngày gần đây
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className={cx('presetBtn', {
-                                                presetBtnActive:
-                                                    filters.createdPreset ===
-                                                    '30days',
-                                            })}
-                                            onClick={() =>
-                                                handleSelectPreset('30days')
-                                            }
-                                        >
-                                            30 ngày gần đây
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className={cx('presetBtn', {
-                                                presetBtnActive:
-                                                    draftDateFilter.createdPreset ===
-                                                    'custom',
-                                            })}
-                                            onClick={() =>
-                                                handleSelectPreset('custom')
-                                            }
-                                        >
-                                            Tùy chọn
-                                        </button>
-                                    </div>
+                                        return (
+                                            <button
+                                                key={item.value}
+                                                type="button"
+                                                className={cx('presetButton', {
+                                                    presetButtonActive: isActive,
+                                                })}
+                                                onClick={() =>
+                                                    handleSelectPreset(item.value)
+                                                }
+                                            >
+                                                {item.label}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {draftDateFilter.createdPreset === 'custom' ? (
                                     <div className={cx('customDateSection')}>
                                         <div className={cx('dateRangeGrid')}>
-                                            <label className={cx('dateInputGroup')}>
-                                                <span
-                                                    className={cx(
-                                                        'dateInputLabel'
-                                                    )}
-                                                >
-                                                    Từ ngày
-                                                </span>
+                                            <label
+                                                className={cx('dateInputGroup')}
+                                            >
+                                                <span>Từ ngày</span>
                                                 <input
                                                     type="date"
                                                     value={
@@ -384,18 +372,13 @@ function ActionBar({
                                                             })
                                                         )
                                                     }
-                                                    className={cx('dateInput')}
                                                 />
                                             </label>
 
-                                            <label className={cx('dateInputGroup')}>
-                                                <span
-                                                    className={cx(
-                                                        'dateInputLabel'
-                                                    )}
-                                                >
-                                                    Đến ngày
-                                                </span>
+                                            <label
+                                                className={cx('dateInputGroup')}
+                                            >
+                                                <span>Đến ngày</span>
                                                 <input
                                                     type="date"
                                                     value={
@@ -413,7 +396,6 @@ function ActionBar({
                                                             })
                                                         )
                                                     }
-                                                    className={cx('dateInput')}
                                                 />
                                             </label>
                                         </div>
@@ -424,37 +406,24 @@ function ActionBar({
                                             </p>
                                         ) : (
                                             <p className={cx('dateHint')}>
-                                                Chọn khoảng thời gian tạo gói từ
-                                                ngày này đến ngày này.
+                                                Có thể chọn một trong hai mốc ngày
+                                                hoặc cả hai.
                                             </p>
                                         )}
 
                                         <div className={cx('popoverActions')}>
                                             <button
                                                 type="button"
-                                                className={cx('textBtn')}
-                                                onClick={() => {
-                                                    setIsDatePopoverOpen(false);
-                                                    setDateError('');
-                                                    setDraftDateFilter({
-                                                        createdPreset:
-                                                            filters.createdPreset,
-                                                        createdFrom:
-                                                            filters.createdFrom,
-                                                        createdTo:
-                                                            filters.createdTo,
-                                                    });
-                                                }}
+                                                className={cx('textButton')}
+                                                onClick={handleCancelCustomRange}
                                             >
                                                 Hủy
                                             </button>
 
                                             <button
                                                 type="button"
-                                                className={cx('applyBtn')}
-                                                onClick={
-                                                    handleApplyCustomRange
-                                                }
+                                                className={cx('applyButton')}
+                                                onClick={handleApplyCustomRange}
                                             >
                                                 Áp dụng
                                             </button>
@@ -466,24 +435,24 @@ function ActionBar({
                     </div>
                 </div>
 
-                <div className={cx('actions')}>
-                    <button
-                        type="button"
-                        className={cx('btn', 'btnGhost')}
+                <div className={cx('actionGroup')}>
+                    <Button
+                        outlineText
+                        className={cx('actionButton')}
+                        leftIcon={<MdOutlineFileDownload />}
                         onClick={onExport}
                     >
-                        <MdOutlineFileDownload />
                         Xuất danh sách
-                    </button>
+                    </Button>
 
-                    <button
-                        type="button"
-                        className={cx('btn', 'btnPrimary')}
+                    <Button
+                        primary
+                        className={cx('actionButton')}
+                        leftIcon={<MdAdd />}
                         onClick={onOpenCreate}
                     >
-                        <MdAdd />
                         Thêm gói dịch vụ
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -491,7 +460,7 @@ function ActionBar({
                 <MdSearch />
                 <input
                     type="text"
-                    placeholder="Tìm kiếm gói dịch vụ..."
+                    placeholder="Tìm kiếm theo mã hoặc tên gói..."
                     value={searchValue}
                     onChange={(event) => onChangeSearch(event.target.value)}
                 />

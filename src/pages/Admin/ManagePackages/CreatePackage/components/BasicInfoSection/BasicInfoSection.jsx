@@ -10,6 +10,24 @@ function BasicInfoSection({
     disabled = false,
     onChangeField,
 }) {
+    const isActive = formData.status === 'ACTIVE';
+
+    const renderError = (field) => {
+        if (!errors[field]) {
+            return null;
+        }
+
+        return <small className={cx('error')}>{errors[field]}</small>;
+    };
+
+    const handleChange = (field) => (event) => {
+        onChangeField(field, event.target.value);
+    };
+
+    const handleToggleStatus = () => {
+        onChangeField('status', isActive ? 'PAUSED' : 'ACTIVE');
+    };
+
     return (
         <section className={cx('card')}>
             <div className={cx('sectionTitle')}>
@@ -20,24 +38,25 @@ function BasicInfoSection({
             <div className={cx('fieldGroup')}>
                 <label className={cx('field')}>
                     <span className={cx('label')}>Tên gói dịch vụ</span>
+
                     <input
                         data-field="name"
-                        className={cx('control', { hasError: Boolean(errors.name) })}
+                        className={cx('control', {
+                            hasError: Boolean(errors.name),
+                        })}
                         type="text"
                         value={formData.name}
                         disabled={disabled}
                         placeholder="Ví dụ: Gói Chuyên Nghiệp (Pro)"
-                        onChange={(event) =>
-                            onChangeField('name', event.target.value)
-                        }
+                        onChange={handleChange('name')}
                     />
-                    {errors.name ? (
-                        <small className={cx('error')}>{errors.name}</small>
-                    ) : null}
+
+                    {renderError('name')}
                 </label>
 
                 <label className={cx('field')}>
                     <span className={cx('label')}>Mô tả gói</span>
+
                     <textarea
                         data-field="description"
                         className={cx('control', 'textarea', {
@@ -47,39 +66,35 @@ function BasicInfoSection({
                         value={formData.description}
                         disabled={disabled}
                         placeholder="Nhập mô tả ngắn gọn về giá trị của gói dịch vụ này..."
-                        onChange={(event) =>
-                            onChangeField('description', event.target.value)
-                        }
+                        onChange={handleChange('description')}
                     />
-                    {errors.description ? (
-                        <small className={cx('error')}>
-                            {errors.description}
-                        </small>
-                    ) : null}
+
+                    {renderError('description')}
                 </label>
 
                 <div className={cx('rowTwo')}>
                     <label className={cx('field')}>
                         <span className={cx('label')}>Giá tiền</span>
+
                         <input
                             data-field="price"
-                            className={cx('control', { hasError: Boolean(errors.price) })}
+                            className={cx('control', {
+                                hasError: Boolean(errors.price),
+                            })}
                             type="text"
                             inputMode="numeric"
                             value={formData.price}
                             disabled={disabled}
                             placeholder="0.00"
-                            onChange={(event) =>
-                                onChangeField('price', event.target.value)
-                            }
+                            onChange={handleChange('price')}
                         />
-                        {errors.price ? (
-                            <small className={cx('error')}>{errors.price}</small>
-                        ) : null}
+
+                        {renderError('price')}
                     </label>
 
                     <label className={cx('field')}>
                         <span className={cx('label')}>Đơn vị tiền tệ</span>
+
                         <span className={cx('selectWrap')}>
                             <select
                                 data-field="currency"
@@ -88,24 +103,23 @@ function BasicInfoSection({
                                 })}
                                 value={formData.currency}
                                 disabled={disabled}
-                                onChange={(event) =>
-                                    onChangeField('currency', event.target.value)
-                                }
+                                onChange={handleChange('currency')}
                             >
                                 <option value="VND">VND</option>
                                 <option value="USD">USD</option>
                             </select>
+
                             <MdKeyboardArrowDown className={cx('selectIcon')} />
                         </span>
-                        {errors.currency ? (
-                            <small className={cx('error')}>{errors.currency}</small>
-                        ) : null}
+
+                        {renderError('currency')}
                     </label>
                 </div>
 
                 <div className={cx('rowTwo')}>
                     <label className={cx('field')}>
                         <span className={cx('label')}>Chu kỳ thanh toán</span>
+
                         <span className={cx('selectWrap')}>
                             <select
                                 data-field="durationUnit"
@@ -114,21 +128,17 @@ function BasicInfoSection({
                                 })}
                                 value={formData.durationUnit}
                                 disabled={disabled}
-                                onChange={(event) =>
-                                    onChangeField('durationUnit', event.target.value)
-                                }
+                                onChange={handleChange('durationUnit')}
                             >
                                 <option value="year">Hàng năm</option>
                                 <option value="month">Hàng tháng</option>
                                 <option value="permanent">Vĩnh viễn</option>
                             </select>
+
                             <MdKeyboardArrowDown className={cx('selectIcon')} />
                         </span>
-                        {errors.durationUnit ? (
-                            <small className={cx('error')}>
-                                {errors.durationUnit}
-                            </small>
-                        ) : null}
+
+                        {renderError('durationUnit')}
                     </label>
 
                     <div className={cx('field')}>
@@ -136,27 +146,18 @@ function BasicInfoSection({
 
                         <div className={cx('statusField')}>
                             <span className={cx('statusText')}>
-                                {formData.status === 'ACTIVE'
-                                    ? 'Trạng thái hoạt động'
-                                    : 'Tạm ngưng'}
+                                {isActive ? 'Trạng thái hoạt động' : 'Tạm ngưng'}
                             </span>
 
                             <button
                                 type="button"
                                 className={cx('toggle', {
-                                    checked: formData.status === 'ACTIVE',
+                                    checked: isActive,
                                 })}
-                                onClick={() =>
-                                    onChangeField(
-                                        'status',
-                                        formData.status === 'ACTIVE'
-                                            ? 'PAUSED'
-                                            : 'ACTIVE'
-                                    )
-                                }
+                                onClick={handleToggleStatus}
                                 disabled={disabled}
                                 role="switch"
-                                aria-checked={formData.status === 'ACTIVE'}
+                                aria-checked={isActive}
                                 aria-label="Trạng thái hoạt động"
                             >
                                 <span className={cx('knob')} />

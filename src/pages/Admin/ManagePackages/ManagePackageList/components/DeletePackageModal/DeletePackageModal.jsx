@@ -1,6 +1,8 @@
 import classNames from 'classnames/bind';
 import { useEffect, useState } from 'react';
-import { MdClose, MdDeleteOutline } from 'react-icons/md';
+import { MdDeleteOutline, MdErrorOutline, MdWarningAmber } from 'react-icons/md';
+import Button from '~/components/Button';
+import Modal from '~/components/Modal';
 import styles from './DeletePackageModal.module.scss';
 
 const cx = classNames.bind(styles);
@@ -21,13 +23,6 @@ function DeletePackageModal({
     }, [open]);
 
     const packageName = packageItem?.name || 'Gói dịch vụ';
-
-    const handleOverlayClick = (event) => {
-        if (event.target === event.currentTarget && !submitting) {
-            setIsConfirmStep(false);
-            onClose?.();
-        }
-    };
 
     const handleClose = () => {
         if (submitting) {
@@ -51,65 +46,30 @@ function DeletePackageModal({
         onConfirm?.();
     };
 
-    if (!open) {
-        return null;
-    }
-
     return (
-        <div
-            className={cx('overlay')}
-            onMouseDown={handleOverlayClick}
-            role="presentation"
-        >
-            <div
-                className={cx('modal')}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="delete-package-title"
-            >
-                <button
-                    type="button"
-                    className={cx('closeBtn')}
-                    onClick={handleClose}
-                    disabled={submitting}
-                    aria-label="Đóng modal"
-                >
-                    <MdClose />
-                </button>
+        <Modal
+            isOpen={open}
+            onClose={handleClose}
+            title="Xóa gói dịch vụ"
+            description="Vui lòng kiểm tra kỹ trước khi xác nhận."
+            size="sm"
+            closeOnOverlayClick={!submitting}
+            closeOnEsc={!submitting}
+            footer={
+                <div className={cx('footerActions')}>
+                    <Button
+                        outlineText
+                        className={cx('compactButton')}
+                        onClick={handleClose}
+                        disabled={submitting}
+                    >
+                        Quay lại
+                    </Button>
 
-                <div className={cx('iconBox')}>
-                    <MdDeleteOutline />
-                </div>
-
-                <div className={cx('content')}>
-                    <h2 id="delete-package-title" className={cx('title')}>
-                        Xóa gói dịch vụ
-                    </h2>
-
-                    <p className={cx('subTitle')}>HÀNH ĐỘNG NGUY HIỂM</p>
-
-                    <p className={cx('description')}>
-                        Cảnh báo: Bạn đang thực hiện xóa vĩnh viễn{' '}
-                        <strong>"{packageName}"</strong>.
-                    </p>
-
-                    <div className={cx('warningBox')}>
-                        Hành động này không thể hoàn tác. Tất cả cấu hình liên quan
-                        đến gói này sẽ bị gỡ bỏ khỏi hệ thống ngay lập tức.
-                    </div>
-
-                    {isConfirmStep ? (
-                        <div className={cx('confirmHint')}>
-                            Bạn sắp xóa vĩnh viễn gói này. Bấm thêm lần nữa để xác nhận.
-                        </div>
-                    ) : null}
-                </div>
-
-                <div className={cx('actions')}>
-                    <button
-                        type="button"
-                        className={cx('btn', 'btnDanger', {
-                            btnDangerConfirm: isConfirmStep,
+                    <Button
+                        primary
+                        className={cx('compactButton', 'dangerButton', {
+                            dangerButtonConfirm: isConfirmStep,
                         })}
                         onClick={handleDeleteClick}
                         disabled={submitting}
@@ -117,21 +77,53 @@ function DeletePackageModal({
                         {submitting
                             ? 'Đang xử lý...'
                             : isConfirmStep
-                              ? 'Bấm lần nữa để xác nhận'
+                              ? 'Xác nhận xóa'
                               : 'Xóa vĩnh viễn'}
-                    </button>
+                    </Button>
+                </div>
+            }
+        >
+            <div className={cx('content')}>
+                <div className={cx('hero')}>
+                    <div className={cx('iconRing')}>
+                        <span className={cx('iconBox')}>
+                            <MdDeleteOutline />
+                        </span>
+                    </div>
 
-                    <button
-                        type="button"
-                        className={cx('btn', 'btnGhost')}
-                        onClick={handleClose}
-                        disabled={submitting}
-                    >
-                        Quay lại
-                    </button>
+                    <div className={cx('heroText')}>
+                        <p className={cx('eyebrow')}>
+                            <MdErrorOutline />
+                            Hành động nguy hiểm
+                        </p>
+
+                        <p className={cx('message')}>
+                            Bạn đang chuẩn bị xóa vĩnh viễn gói{' '}
+                            <strong>{packageName}</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div className={cx('warningBox')}>
+                    <MdWarningAmber />
+                    <span>
+                        Hành động này không thể hoàn tác. Tất cả cấu hình liên quan
+                        đến gói này sẽ bị gỡ bỏ khỏi hệ thống.
+                    </span>
+                </div>
+
+                <div
+                    className={cx('confirmHint', {
+                        confirmHintVisible: isConfirmStep,
+                    })}
+                >
+                    <span className={cx('confirmDot')} />
+                    <span>
+                        Bấm <strong>Xác nhận xóa</strong> thêm một lần nữa để hoàn tất.
+                    </span>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }
 

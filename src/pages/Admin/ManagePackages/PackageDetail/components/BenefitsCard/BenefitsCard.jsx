@@ -25,30 +25,12 @@ const LIMIT_ITEMS = [
 ];
 
 const FEATURE_ITEMS = [
-    {
-        key: 'premiumCv',
-        label: 'Dùng template premium',
-    },
-    {
-        key: 'removeWatermark',
-        label: 'Xuất CV không watermark',
-    },
-    {
-        key: 'customDomain',
-        label: 'Tên miền tùy chỉnh',
-    },
-    {
-        key: 'support247',
-        label: 'Hỗ trợ 24/7',
-    },
-    {
-        key: 'allowAiAddon',
-        label: 'Cho phép mua thêm AI add-on',
-    },
-    {
-        key: 'fullAiAnalysis',
-        label: 'Xem full phân tích AI',
-    },
+    { key: 'premiumCv', label: 'Dùng template premium' },
+    { key: 'removeWatermark', label: 'Xuất CV không watermark' },
+    { key: 'customDomain', label: 'Tên miền tùy chỉnh' },
+    { key: 'support247', label: 'Hỗ trợ 24/7' },
+    { key: 'allowAiAddon', label: 'Cho phép mua thêm AI add-on' },
+    { key: 'fullAiAnalysis', label: 'Xem full phân tích AI' },
 ];
 
 function FeatureToggle({ label, checked, onToggle, disabled = false }) {
@@ -82,12 +64,27 @@ function BenefitsCard({
     onToggleField,
     isReadOnly = false,
 }) {
+    const hasLimitError = errors.maxCv || errors.aiLimit;
+
+    const handleChangeLimit = (field) => (event) => {
+        onChangeField(field, event.target.value);
+    };
+
+    const handleToggleFeature = (field) => {
+        if (isReadOnly) {
+            return;
+        }
+
+        onToggleField(field);
+    };
+
     return (
         <section className={cx('wrapper')}>
             <div className={cx('header')}>
                 <span className={cx('icon')}>
                     <MdInsights />
                 </span>
+
                 <h3 className={cx('title')}>Quyền lợi &amp; Tính năng</h3>
             </div>
 
@@ -111,9 +108,7 @@ function BenefitsCard({
                                     type="text"
                                     inputMode="numeric"
                                     value={formData[key]}
-                                    onChange={(event) =>
-                                        onChangeField(key, event.target.value)
-                                    }
+                                    onChange={handleChangeLimit(key)}
                                     disabled={isReadOnly}
                                 />
                             </div>
@@ -121,7 +116,7 @@ function BenefitsCard({
                     ))}
                 </div>
 
-                {!isReadOnly && (errors.maxCv || errors.aiLimit) ? (
+                {!isReadOnly && hasLimitError ? (
                     <div className={cx('errorGroup')}>
                         {errors.maxCv ? (
                             <span className={cx('error')}>{errors.maxCv}</span>
@@ -139,9 +134,7 @@ function BenefitsCard({
                             key={item.key}
                             label={item.label}
                             checked={Boolean(formData[item.key])}
-                            onToggle={() =>
-                                !isReadOnly && onToggleField(item.key)
-                            }
+                            onToggle={() => handleToggleFeature(item.key)}
                             disabled={isReadOnly}
                         />
                     ))}

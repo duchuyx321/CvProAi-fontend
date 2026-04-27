@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { MdAutorenew, MdOutlineSave } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import Button from '~/components/Button';
 import { config } from '~/config';
 import { createPackage } from '~/services/managePackageService';
 import { BasicInfoSection, UsageSettingsSection } from './components';
@@ -104,7 +105,7 @@ function CreatePackage() {
     const [submitError, setSubmitError] = useState('');
 
     const handleChangeField = useCallback((field, value) => {
-        setFormData((prev) => {
+        setFormData((previousState) => {
             if (
                 field === 'price' ||
                 field === 'maxCv' ||
@@ -112,24 +113,24 @@ function CreatePackage() {
                 field === 'durationValue'
             ) {
                 return {
-                    ...prev,
+                    ...previousState,
                     [field]: sanitizeDigits(value),
                 };
             }
 
             return {
-                ...prev,
+                ...previousState,
                 [field]: value,
             };
         });
 
-        setErrors((prev) => {
-            if (!prev[field]) {
-                return prev;
+        setErrors((previousState) => {
+            if (!previousState[field]) {
+                return previousState;
             }
 
             return {
-                ...prev,
+                ...previousState,
                 [field]: '',
             };
         });
@@ -138,9 +139,9 @@ function CreatePackage() {
     }, []);
 
     const handleToggleField = useCallback((field) => {
-        setFormData((prev) => ({
-            ...prev,
-            [field]: !prev[field],
+        setFormData((previousState) => ({
+            ...previousState,
+            [field]: !previousState[field],
         }));
 
         setSubmitError('');
@@ -284,11 +285,11 @@ function CreatePackage() {
     return (
         <div className={cx('wrapper')}>
             <div className={cx('heading')}>
-    <h1 className={cx('title')}>Thêm gói dịch vụ mới</h1>
-    <p className={cx('description')}>
-        Thiết lập các thông số và tính năng cho gói dịch vụ dành cho người dùng.
-    </p>
-</div>
+                <h1 className={cx('title')}>Thêm gói dịch vụ mới</h1>
+                <p className={cx('description')}>
+                    Thiết lập các thông số và tính năng cho gói dịch vụ dành cho người dùng.
+                </p>
+            </div>
 
             <form className={cx('form')} onSubmit={handleSubmit} noValidate>
                 <div className={cx('contentGrid')}>
@@ -318,27 +319,28 @@ function CreatePackage() {
                     </div>
 
                     <div className={cx('actionGroup')}>
-                        <button
-                            type="button"
-                            className={cx('btn', 'btnGhost')}
+                        <Button
+                            outlineText
                             onClick={handleBack}
                             disabled={submitting}
                         >
                             Hủy
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                            primary
                             type="submit"
-                            className={cx('btn', 'btnPrimary')}
+                            leftIcon={
+                                submitting ? (
+                                    <MdAutorenew className={cx('loadingIcon')} />
+                                ) : (
+                                    <MdOutlineSave />
+                                )
+                            }
                             disabled={submitting}
                         >
-                            {submitting ? (
-                                <MdAutorenew className={cx('loadingIcon')} />
-                            ) : (
-                                <MdOutlineSave />
-                            )}
                             {submitting ? 'Đang lưu...' : 'Lưu gói dịch vụ'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </form>
