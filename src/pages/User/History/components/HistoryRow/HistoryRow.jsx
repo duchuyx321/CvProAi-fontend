@@ -7,6 +7,7 @@ import {
     mapBillingCycleToLabel,
     mapPaymentMethod,
     mapPaymentStatus,
+    mapPaymentStatusVariant,
 } from '~/utils/billing.utils';
 
 const cx = classNames.bind(styles);
@@ -49,20 +50,9 @@ function getOrderSubTitle(item = {}) {
 function HistoryRow({ item = {} }) {
     const statusText = mapPaymentStatus(item.status);
 
-    const paymentMethodText = mapPaymentMethod(
-        item.metadata?.payment_method,
-        item.provider,
-    );
+    const statusVariant = mapPaymentStatusVariant(item.status);
 
-    const isSuccess = item.status === 'PAID';
-
-    const isFailed = item.status === 'FAILED';
-    const isPending = item.status === 'PENDING';
-
-    const isCanceled =
-        item.status === 'CANCELED' ||
-        item.status === 'CANCELLED' ||
-        item.status === 'REFUNDED';
+    const paymentMethodText = mapPaymentMethod();
 
     const displayDate = item.paid_at ?? item.created_at;
 
@@ -94,9 +84,10 @@ function HistoryRow({ item = {} }) {
             <div className={cx('cell', 'status')}>
                 <span
                     className={cx('statusBadge', {
-                        success: isSuccess,
-                        failed: isFailed || isCanceled,
-                        pending: isPending,
+                        success: statusVariant === 'success',
+                        failed: statusVariant === 'failed',
+                        pending: statusVariant === 'pending',
+                        refunded: statusVariant === 'refunded',
                     })}
                 >
                     {statusText}

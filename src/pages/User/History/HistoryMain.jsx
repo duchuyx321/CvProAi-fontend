@@ -28,9 +28,8 @@ export const HISTORY_MOCKS = {
                 provider_transaction_id: 'SEPAY_TXN_83921',
                 description: 'Thanh toán gói Premium 1 tháng',
                 metadata: {
-                    payment_method: 'BANK_TRANSFER',
-                    bank_code: 'MB',
                     reference_code: 'CVPROAI83921',
+                    bank_code: 'MB',
                 },
                 paid_at: '2026-05-15T08:30:00.000Z',
                 created_at: '2026-05-15T08:25:00.000Z',
@@ -57,9 +56,8 @@ export const HISTORY_MOCKS = {
                 provider_transaction_id: 'SEPAY_TXN_72810',
                 description: 'Thanh toán gói Premium 1 tháng',
                 metadata: {
-                    payment_method: 'BANK_TRANSFER',
-                    bank_code: 'VCB',
                     reference_code: 'CVPROAI72810',
+                    bank_code: 'VCB',
                 },
                 paid_at: '2026-04-15T08:30:00.000Z',
                 created_at: '2026-04-15T08:25:00.000Z',
@@ -86,9 +84,8 @@ export const HISTORY_MOCKS = {
                 provider_transaction_id: null,
                 description: 'Thanh toán gói Premium 1 tháng thất bại',
                 metadata: {
-                    payment_method: 'BANK_TRANSFER',
-                    bank_code: 'TPB',
                     reference_code: 'CVPROAI72805',
+                    bank_code: 'TPB',
                     failure_reason: 'Không nhận được xác nhận thanh toán',
                 },
                 paid_at: null,
@@ -116,9 +113,8 @@ export const HISTORY_MOCKS = {
                 provider_transaction_id: 'SEPAY_TXN_70112',
                 description: 'Mua thêm 10 lượt phân tích AI',
                 metadata: {
-                    payment_method: 'BANK_TRANSFER',
-                    bank_code: 'ACB',
                     reference_code: 'CVPROAI70112',
+                    bank_code: 'ACB',
                 },
                 paid_at: '2026-03-15T09:10:00.000Z',
                 created_at: '2026-03-15T09:05:00.000Z',
@@ -131,11 +127,39 @@ export const HISTORY_MOCKS = {
                     runs: 10,
                 },
             },
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90005',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-90001',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'CANCELLED',
+                provider: 'SEPAY',
+                provider_transaction_id: null,
+                description: 'Đơn thanh toán gói Premium đã hủy',
+                metadata: {
+                    reference_code: 'CVPROAI90001',
+                    bank_code: 'MB',
+                },
+                paid_at: null,
+                created_at: '2026-05-16T08:25:00.000Z',
+                updated_at: '2026-05-16T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
+            },
         ],
         pagination: {
             page: 1,
             limit: 10,
-            total_items: 4,
+            total_items: 5,
             total_pages: 1,
         },
     },
@@ -148,7 +172,7 @@ function HistoryMain() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        let cancelled = false; 
+        let cancelled = false;
 
         const fetchHistory = async () => {
             setIsLoading(true);

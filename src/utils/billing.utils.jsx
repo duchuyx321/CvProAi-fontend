@@ -1,4 +1,4 @@
-export function formatPrice(price, currency) {
+export function formatPrice(price, currency = 'VND') {
     const amount = Number(price ?? 0);
 
     if (!Number.isFinite(amount)) {
@@ -61,45 +61,78 @@ export function formatDateTime(dateString) {
 }
 
 export function mapPaymentStatus(status) {
-    const normalizedStatus = String(status ?? '').trim().toUpperCase();
+    const normalizedStatus = normalizeStatus(status);
 
     const statusMap = {
         PENDING: 'Đang xử lý',
         PAID: 'Đã thanh toán',
         FAILED: 'Thất bại',
-        // CANCELED: 'Đã hủy',
         CANCELLED: 'Đã hủy',
         REFUNDED: 'Đã hoàn tiền',
-
-        SUCCESS: 'Thành công',
-
-        EXPIRED: 'Đã hết hạn',
     };
 
     return statusMap[normalizedStatus] ?? 'Không xác định';
 }
 
-export function mapPaymentMethod(method, provider) {
-    const normalizedMethod = String(method ?? '').trim().toUpperCase();
-    const normalizedProvider = String(provider ?? '').trim().toUpperCase();
+export function mapPaymentStatusVariant(status) {
+    const normalizedStatus = normalizeStatus(status);
 
-    const methodMap = {
-        SEPAY: 'SePay',
-        BANK_TRANSFER: 'Chuyển khoản',
-        CASH: 'Tiền mặt',
-        MOMO: 'MoMo',
-        VNPAY: 'VNPay',
+    if (normalizedStatus === 'PAID') {
+        return 'success';
+    }
+
+    if (normalizedStatus === 'FAILED' || normalizedStatus === 'CANCELLED') {
+        return 'failed';
+    }
+
+    if (normalizedStatus === 'PENDING') {
+        return 'pending';
+    }
+
+    if (normalizedStatus === 'REFUNDED') {
+        return 'refunded';
+    }
+
+    return 'default';
+}
+
+export function mapPaymentMethod() {
+    return 'SePay';
+}
+
+export function mapAiRunStatus(status) {
+    const normalizedStatus = normalizeStatus(status);
+
+    const statusMap = {
+        QUEUED: 'Đang chờ xử lý',
+        RUNNING: 'Đang phân tích',
+        SUCCESS: 'Hoàn tất',
+        FAILED: 'Thất bại',
     };
 
-    if (methodMap[normalizedMethod]) {
-        return methodMap[normalizedMethod];
+    return statusMap[normalizedStatus] ?? 'Không xác định';
+}
+
+export function mapAiRunStatusVariant(status) {
+    const normalizedStatus = normalizeStatus(status);
+
+    if (normalizedStatus === 'SUCCESS') {
+        return 'success';
     }
 
-    if (normalizedProvider === 'SEPAY') {
-        return 'SePay';
+    if (normalizedStatus === 'FAILED') {
+        return 'failed';
     }
 
-    return provider ?? method ?? '—';
+    if (normalizedStatus === 'RUNNING') {
+        return 'running';
+    }
+
+    if (normalizedStatus === 'QUEUED') {
+        return 'pending';
+    }
+
+    return 'default';
 }
 
 export function buildPlanBenefits(plan = {}) {
@@ -196,13 +229,10 @@ export function getQuotaPercent(used = 0, limit = 0) {
 }
 
 export function getPlanStatusLabel(subscription = {}) {
-    const normalizedStatus = String(subscription.status ?? '')
-        .trim()
-        .toUpperCase();
+    const normalizedStatus = normalizeStatus(subscription.status);
 
     const statusMap = {
         ACTIVE: 'Đang hoạt động',
-        CANCELED: 'Đã hủy',
         CANCELLED: 'Đã hủy',
         EXPIRED: 'Đã hết hạn',
         PAST_DUE: 'Quá hạn thanh toán',
@@ -212,9 +242,7 @@ export function getPlanStatusLabel(subscription = {}) {
 }
 
 export function getPlanStatusVariant(subscription = {}) {
-    const normalizedStatus = String(subscription.status ?? '')
-        .trim()
-        .toUpperCase();
+    const normalizedStatus = normalizeStatus(subscription.status);
 
     if (normalizedStatus === 'ACTIVE') {
         return 'active';
@@ -224,15 +252,15 @@ export function getPlanStatusVariant(subscription = {}) {
         return 'warning';
     }
 
-    if (
-        normalizedStatus === 'CANCELED' ||
-        normalizedStatus === 'CANCELLED' ||
-        normalizedStatus === 'EXPIRED'
-    ) {
+    if (normalizedStatus === 'CANCELLED' || normalizedStatus === 'EXPIRED') {
         return 'inactive';
     }
 
     return 'default';
+}
+
+function normalizeStatus(status) {
+    return String(status ?? '').trim().toUpperCase();
 }
 
 function toSafeNumber(value = 0) {
