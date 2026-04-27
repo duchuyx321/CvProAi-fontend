@@ -4,16 +4,20 @@ import { toast } from 'react-toastify';
 
 import CvEditor from '~/pages/User/CvEditor';
 import { config } from '~/config';
-import { getCvDetailBySlug } from '~/services/cv-teamplate.service';
+import {
+    buildUpdateCvFormData,
+    downloadCvPdfBySlug,
+    getCvDetailBySlug,
+    updateCvBySlug,
+} from '~/services/cv-teamplate.service';
 import { normalizeCvDetailForEditor } from '~/utils/cv-editor.bootstrap';
 import { validateTemplateConfig } from '~/utils/cv-section.schema';
 import { buildEditSubmitPreview } from '~/utils/cv-submit-preview.utils';
-import {
-    getApiMessage,
-    unwrapApiResponse,
-} from '~/utils/api-response.utils';
+import { getApiMessage, unwrapApiResponse } from '~/utils/api-response.utils';
+import { captureCvPreviewFile } from '~/utils/cv-capture.utils';
 
 import useCvEditorState from '../CvEditor/hooks/useCvEditorState';
+
 function EditCv() {
     const { slug } = useParams();
     const navigate = useNavigate();
@@ -23,6 +27,7 @@ function EditCv() {
     const {
         cvData,
         dirtyFields,
+        fileMap,
         handleChangeArrayField,
         handleChangeConfig,
         handleChangeCvName,
@@ -124,7 +129,29 @@ function EditCv() {
                     return;
                 }
 
-                console.log(preview.payload);
+                const avatarFile =
+                    fileMap['content.profile_header.avatar_url'] || null;
+
+                const previewFile = await captureCvPreviewFile(
+                    pageRef?.current,
+                    trimmedName,
+                );
+
+                const formData = buildUpdateCvFormData({
+                    payload: preview.payload,
+                    avatarFile,
+                    previewFile,
+                });
+
+                const response = await updateCvBySlug(cvData?.id, formData);
+
+                if (!response?.success) {
+                    throw new Error(
+                        response?.message ||
+                            'Cập nhật CV thất bại, vui lòng thử lại',
+                    );
+                }
+
                 syncPersistedData(nextCvData);
                 toast.success('Cập nhật CV thành công.');
             } catch (error) {
@@ -133,7 +160,15 @@ function EditCv() {
                 setSubmitting(false);
             }
         },
-        [cvData, dirtyFields, originalData, setSubmitting, syncPersistedData],
+        [
+            cvData,
+            dirtyFields,
+            fileMap,
+            originalData,
+            pageRef,
+            setSubmitting,
+            syncPersistedData,
+        ],
     );
 
     const handleSaveCv = useCallback(async () => {
@@ -154,6 +189,65 @@ function EditCv() {
         await submitUpdateCv(currentName);
     }, [cvData?.name, isDirty, submitUpdateCv, submitting]);
 
+    const handeDownloadPdfClick = async () => {
+        const { htmlText, cssText } = handleDownloadPdf();
+        const exportPromise = fetchApi(htmlText, cssText);
+        await toast.promise(exportPromise, {
+            pending: 'Đang tải xuống...',
+            success: {
+                render() {
+                    return 'Tải xuống thành công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
+    };
+    const fetchApi = async (htmlText, cssText) => {
+        const result = await downloadCvPdfBySlug(cvData.id, htmlText, cssText);
+        if (!result?.success) {
+            throw new Error(
+                result?.message ||
+                    'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.',
+            );
+        }
+
+        console.log({ result });
+        const buffers = result?.data?.stream?._readableState?.buffer || [];
+        if (!Array.isArray(buffers) || buffers.length === 0) {
+            throw new Error(
+                'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.',
+            );
+        }
+        const uint8Arrays = buffers.map((item) => {
+            return new Uint8Array(item.data);
+        });
+
+        const blob = new Blob(uint8Arrays, {
+            type: 'application/pdf',
+        });
+
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${cvData?.title || 'cv'}.pdf`;
+
+        document.body.appendChild(link);
+        link.click();
+
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        return true;
+    };
+
     return (
         <CvEditor
             loading={loading}
@@ -169,7 +263,7 @@ function EditCv() {
             onChangeConfig={handleChangeConfig}
             onResetData={handleResetData}
             onSaveCv={handleSaveCv}
-            onDownloadPdf={handleDownloadPdf}
+            onDownloadPdf={handeDownloadPdfClick}
             onGeneratePreview={handleGeneratePreview}
             onChangeCvName={handleChangeCvName}
             pageRef={pageRef}

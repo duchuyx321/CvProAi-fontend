@@ -16,6 +16,7 @@ function useCvEditorState() {
     const [previewImage, setPreviewImage] = useState('');
     const [originalData, setOriginalData] = useState(null);
     const [dirtyFields, setDirtyFields] = useState({});
+    const [fileMap, setFileMap] = useState({});
 
     const pageRef = useRef(null);
 
@@ -30,6 +31,7 @@ function useCvEditorState() {
         setCvData(nextCvData);
         setOriginalData(JSON.parse(JSON.stringify(nextCvData || {})));
         setDirtyFields({});
+        setFileMap({});
     }, []);
 
     const markDirtyField = useCallback((path) => {
@@ -57,7 +59,7 @@ function useCvEditorState() {
     }, []);
 
     const handleChangeField = useCallback(
-        (sectionKey, field, value) => {
+        (sectionKey, field, value, file) => {
             const sectionConfig = cvData?.config?.sections?.[sectionKey] || {};
             const normalizedType = normalizeSectionType(
                 sectionKey,
@@ -79,6 +81,13 @@ function useCvEditorState() {
                 ...prevValue,
                 [field]: value,
             }));
+
+            if (file instanceof File) {
+                setFileMap((prev) => ({
+                    ...prev,
+                    [`content.${contentKey}.${field}`]: file,
+                }));
+            }
         },
         [cvData?.config?.sections, markDirtyField, updateContentKey],
     );
@@ -243,10 +252,7 @@ function useCvEditorState() {
 
         const cssText = getAllCssText();
 
-        console.log('HTML Preview:', htmlText);
-        console.log('CSS Preview:', cssText);
-
-        toast.info('Đã lấy HTML/CSS để chuẩn bị export PDF');
+        return { htmlText, cssText };
     }, []);
 
     const handleResetData = useCallback(() => {
@@ -287,6 +293,7 @@ function useCvEditorState() {
     return {
         cvData,
         dirtyFields,
+        fileMap,
         handleChangeArrayField,
         handleChangeConfig,
         handleChangeCvName,

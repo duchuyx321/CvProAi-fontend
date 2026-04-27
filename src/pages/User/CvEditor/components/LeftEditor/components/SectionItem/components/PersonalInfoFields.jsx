@@ -118,8 +118,8 @@ function PersonalInfoFields({
     sectionKey,
     section = {},
 }) {
-    const handleChangeAvatar = (nextValue) => {
-        onChangeField?.(sectionKey, 'avatar_url', nextValue);
+    const handleChangeAvatar = (previewUrl, file) => {
+        onChangeField?.(sectionKey, 'avatar_url', previewUrl, file);
     };
     const extraFieldKeys = uniqueFieldKeys(section?.fields).filter(
         (fieldKey) => !BASE_PROFILE_FIELDS.has(fieldKey),
