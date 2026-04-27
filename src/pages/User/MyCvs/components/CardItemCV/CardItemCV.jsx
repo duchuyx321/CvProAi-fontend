@@ -77,10 +77,12 @@ function CardItemCV({
                 )}
 
                 <div className={cx('meta')}>
-                    <span className={cx('metaItem')}>
-                        <LuFileText />
-                        {data?.template}
-                    </span>
+                    {data?.template ? (
+                        <span className={cx('metaItem')}>
+                            <LuFileText />
+                            {data.template}
+                        </span>
+                    ) : null}
 
                     <span className={cx('metaItem')}>
                         <IoTimeOutline />

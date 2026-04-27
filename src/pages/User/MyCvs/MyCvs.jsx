@@ -78,20 +78,15 @@ const formatDateTime = (value) => {
 };
 
 const mapCvItem = (cv) => ({
-    id: cv?.id ?? null,
-    name: cv?.title || cv?.name || 'CV chưa đặt tên',
-    template:
-        cv?.template_name || cv?.templateName || cv?.template || 'CV Template',
-    updatedAt: formatDateTime(cv?.updatedAt || cv?.createdAt || ''),
-    updatedAtRaw: cv?.updatedAt || '',
-    createdAtRaw: cv?.createdAt || '',
-    status: cv?.status === 'DRAFT' ? 'BẢN NHÁP' : 'HOÀN THIỆN',
-    statusCode: cv?.status === 'DRAFT' ? 'draft' : 'done',
+    id: cv.id,
+    name: cv.title,
+    updatedAt: formatDateTime(cv.updatedAt || cv.createdAt),
+    status: cv.status === 'DRAFT' ? 'BẢN NHÁP' : 'HOÀN THIỆN',
+    statusCode: cv.status === 'DRAFT' ? 'draft' : 'done',
     image:
-        cv?.preview_url ||
-        cv?.thumbnail ||
+        cv.preview_url ||
         'https://via.placeholder.com/400x520/334155/ffffff?text=CV',
-    slug: cv?.slug || '',
+    slug: cv.slug,
 });
 
 function MyCvs() {
@@ -145,35 +140,14 @@ function MyCvs() {
                 setLoading(true);
             }
 
-            // const res = await getMyCvs({
-            //     page,
-            //     limit: PAGE_SIZE,
-            //     search: keywordValue.trim(),
-            //     sort_by: sortParams.sort_by,
-            //     sort_order: sortParams.sort_order,
-            // });
+            const res = await getMyCvs({
+                page,
+                limit: PAGE_SIZE,
+                search: keywordValue.trim(),
+                sort_by: sortParams.sort_by,
+                sort_order: sortParams.sort_order,
+            });
 
-            const res = {
-    "success": true,
-    "messsage": "Lấy danh sách CV thành công",
-    "data": [
-        {
-            "id": "8d416d05-abab-4fed-a868-249e994bec4d",
-            "user_id": "c0ca274b-2722-4755-99bb-9e249b3d3dce",
-            "template_id": "29713ded-64c6-4af0-b11a-1323f3a51eb3",
-            "title": "CV Backend Developer Intern - Lê Đức Huy",
-            "language": "vi",
-            "preview_url": "http://res.cloudinary.com/djzsbcrk9/image/upload/v1775665562/cvproai/lbglt6pqbmazd9thj3jf.webp",
-            "status": "DRAFT",
-            "visibility": "PRIVATE",
-            "slug": "cv-backend-developer-intern-le-duc-huy",
-            "createdAt": "2026-04-08T15:40:37.727Z",
-            "updatedAt": "2026-04-08T17:05:23.219Z"
-        }
-    ],
-    "date": "11:12:27 21/4/2026",
-    "path": "/api/v1/cvs/me?limit=8&page=1"
-}
             if (!res?.success) {
                 const message =
                     res?.message || res?.messsage || 'Không tải được danh sách CV';
@@ -247,7 +221,7 @@ function MyCvs() {
     };
 
     const handleCreateCv = () => {
-        navigate(config.router.createCv.replace(':code', 'modern'));
+        navigate(config.router.cvTemplates);
     };
 
     const handleAskDelete = (cv) => {

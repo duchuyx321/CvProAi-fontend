@@ -1,7 +1,6 @@
 .wrapper {
     width: 100%;
     padding: 34px 22px 24px;
-    // background: #f7f6fc;
     min-height: 100%;
 }
 
@@ -26,7 +25,7 @@
 
 .toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 180px 140px 170px;
+    grid-template-columns: minmax(0, 1fr) 220px 140px 170px;
     gap: 12px;
     align-items: center;
     margin-bottom: 28px;
@@ -64,6 +63,9 @@
 
 .sortDropdown {
     position: relative;
+    width: 220px;
+    min-width: 220px;
+    flex-shrink: 0;
 }
 
 .sortWrap {
@@ -74,9 +76,9 @@
     border: none;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     padding: 0 14px;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
 }
 
@@ -84,18 +86,26 @@
     font-size: 1.35rem;
     font-weight: 600;
     color: #4b5563;
+    flex-shrink: 0;
 }
 
 .sortValue {
+    flex: 1;
+    min-width: 0;
     font-size: 1.35rem;
     font-weight: 700;
     color: #4f46e5;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sortArrow {
     font-size: 1.45rem;
     color: #6b7280;
     transition: transform 0.2s ease;
+    flex-shrink: 0;
 }
 
 .sortArrow.open {
@@ -372,7 +382,7 @@
     }
 
     .toolbar {
-        grid-template-columns: minmax(0, 1fr) 180px 140px;
+        grid-template-columns: minmax(0, 1fr) 220px 140px;
     }
 
     .createBtn {
@@ -387,6 +397,11 @@
 
     .toolbar {
         grid-template-columns: 1fr;
+    }
+
+    .sortDropdown {
+        width: 100%;
+        min-width: 100%;
     }
 
     .grid {
