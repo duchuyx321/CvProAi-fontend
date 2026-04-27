@@ -10,7 +10,9 @@ import TemplateInfoPanel from './components/TemplateInfoPanel';
 import styles from './CvTemplateDetail.module.scss';
 import CvPreview from '~/components/CvPreview/CvPreview';
 import { useAuth } from '~/context/AuthContext';
-import { unwrapApiResponse } from '~/utils/api-response.utils';
+import { getApiMessage, unwrapApiResponse } from '~/utils/api-response.utils';
+import { normalizeTemplateToCreateCv } from '~/utils/cv-editor.bootstrap';
+import { validateTemplateConfig } from '~/utils/cv-section.schema';
 
 const cx = classNames.bind(styles);
 
@@ -29,8 +31,23 @@ function CvTemplateDetail() {
                 setLoading(true);
 
                 const result = await getCvTemplateDetail(code);
+                setLoading(true);
 
-                setTemplateDetail(unwrapApiResponse(result));
+                if (!result?.success) {
+                    throw new Error(getApiMessage(result, 'Không thể tải CV'));
+                }
+
+                const template = unwrapApiResponse(result);
+                const nextCvData = normalizeTemplateToCreateCv(template);
+                const validation = validateTemplateConfig(nextCvData?.config);
+
+                if (!validation?.isValid) {
+                    throw new Error(
+                        validation?.message || 'Cấu hình CV không hợp lệ',
+                    );
+                }
+
+                setTemplateDetail(nextCvData);
             } catch (error) {
                 toast.error(
                     error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
@@ -99,6 +116,7 @@ function CvTemplateDetail() {
                                     templateDetail?.code ||
                                     'DEV_01',
                                 name: templateDetail?.title,
+                                content: templateDetail?.template_content,
                                 config: templateDetail?.config,
                             }}
                         />
