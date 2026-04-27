@@ -63,8 +63,8 @@ function Dashboard() {
 
     const aiUsageText =
         Number(dashboardData?.ai_limit) > 0
-            ? `${dashboardData.ai_use}/${dashboardData.ai_limit}`
-            : `${dashboardData.ai_use}`;
+            ? `${dashboardData?.ai_use}/${dashboardData?.ai_limit}`
+            : `${dashboardData?.ai_use}`;
 
     const renderCvRows = (items = []) => {
         if (!items.length) {

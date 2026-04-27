@@ -7,15 +7,35 @@ import {
     FaArrowRight,
     FaReceipt,
     FaSpinner,
+    FaTimesCircle,
+    FaClock,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 import styles from './PaymentSuccess.module.scss';
 import { config } from '~/config';
 import { useAuth } from '~/context/AuthContext';
-// import { getPaymentOrderDetails } from '~/services/payment.service';
+import { getPaymentOrderDetails } from '~/services/payment.service';
 
 const cx = classNames.bind(styles);
+
+const normalizePaymentState = (status) => {
+    const normalizedStatus = String(status || '').toUpperCase();
+
+    if (['PAID', 'SUCCESS', 'COMPLETED'].includes(normalizedStatus)) {
+        return 'success';
+    }
+
+    if (
+        ['FAILED', 'CANCELED', 'CANCELLED', 'EXPIRED', 'REFUNDED'].includes(
+            normalizedStatus,
+        )
+    ) {
+        return 'failed';
+    }
+
+    return 'pending';
+};
 
 const parseCustomDate = (value) => {
     const raw = String(value || '').trim();
@@ -56,10 +76,47 @@ const toSafeNumber = (value, fallback = 0) => {
 function PaymentSuccess() {
     const { orderId } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    useAuth();
 
     const [loading, setLoading] = useState(true);
     const [orderData, setOrderData] = useState(null);
+    const [paymentState, setPaymentState] = useState('pending');
+
+    const paymentStateConfig = {
+        success: {
+            badge: 'Thanh toán thành công',
+            title: 'Thanh toán đã hoàn tất',
+            subtitle:
+                'Gói Premium của bạn đã được kích hoạt. Bạn có thể sử dụng ngay các tính năng nâng cao của CvProAI.',
+            receiptStatus: 'Đã thanh toán',
+            buttonText: 'Trải nghiệm Premium',
+            supportText:
+                'Biên lai giao dịch đã được gửi đến email của bạn. Cảm ơn bạn đã tin tưởng và lựa chọn dịch vụ của chúng tôi!',
+        },
+        pending: {
+            badge: 'Chờ thanh toán',
+            title: 'Giao dịch đang chờ xác nhận',
+            subtitle:
+                'Hệ thống chưa nhận được xác nhận thanh toán. Nếu bạn đã chuyển khoản, vui lòng chờ trong giây lát để SePay cập nhật giao dịch.',
+            receiptStatus: 'Chờ thanh toán',
+            buttonText: 'Quay lại trang thanh toán',
+            supportText:
+                'Nếu bạn đã thanh toán nhưng trạng thái chưa cập nhật, vui lòng chờ thêm hoặc liên hệ hỗ trợ.',
+        },
+        failed: {
+            badge: 'Thanh toán thất bại',
+            title: 'Giao dịch chưa hoàn tất',
+            subtitle:
+                'Giao dịch của bạn đã thất bại, bị hủy hoặc hết hạn. Vui lòng thử thanh toán lại.',
+            receiptStatus: 'Thất bại',
+            buttonText: 'Thử thanh toán lại',
+            supportText:
+                'Nếu bạn đã bị trừ tiền nhưng giao dịch thất bại, vui lòng liên hệ đội ngũ CSKH của CvProAI.',
+        },
+    };
+
+    const currentView =
+        paymentStateConfig[paymentState] || paymentStateConfig.pending;
 
     useEffect(() => {
         let isActive = true;
@@ -78,49 +135,48 @@ function PaymentSuccess() {
 
                 if (!res?.success) {
                     throw new Error(
-                        res?.message || 'Không thể xác thực giao dịch',
+                        res?.message ||
+                            res?.messsage ||
+                            'Không thể kiểm tra giao dịch.',
                     );
                 }
 
                 const verifiedOrder = res?.data || null;
+
                 if (!verifiedOrder) {
                     throw new Error('Giao dịch không tồn tại.');
                 }
 
-                const status = String(
-                    verifiedOrder?.status || '',
-                ).toUpperCase();
-
-                if (status === 'FAILED' || status === 'EXPIRED') {
-                    throw new Error(
-                        status === 'EXPIRED'
-                            ? 'Mã giao dịch đã hết hạn.'
-                            : 'Giao dịch đã thất bại.',
-                    );
-                }
-
-                if (status === 'PENDING') {
-                    throw new Error(
-                        'Giao dịch đang được xử lý. Vui lòng quay lại trang thanh toán.',
-                    );
-                }
+                const currentPaymentState = normalizePaymentState(
+                    verifiedOrder?.status,
+                );
 
                 if (isActive) {
+                    setPaymentState(currentPaymentState);
                     setOrderData({
                         ...verifiedOrder,
                         orderId:
                             verifiedOrder?.orderId ||
                             verifiedOrder?.orderCode ||
+                            verifiedOrder?.order_code ||
                             orderId,
                     });
                 }
             } catch (error) {
                 if (isActive) {
+                    setPaymentState('failed');
+                    setOrderData({
+                        orderId,
+                        status: 'FAILED',
+                        errorMessage:
+                            error?.message ||
+                            'Có lỗi xảy ra khi kiểm tra giao dịch.',
+                    });
+
                     toast.error(
                         error?.message ||
                             'Có lỗi xảy ra khi kiểm tra giao dịch.',
                     );
-                    navigate(config.router.upgradePremium, { replace: true });
                 }
             } finally {
                 if (isActive) {
@@ -157,18 +213,46 @@ function PaymentSuccess() {
         }
 
         const planName =
-            orderData?.packageName || orderData?.plan?.name || '--';
-        const addOnName = orderData?.addOn?.name || '';
+            orderData?.packageName ||
+            orderData?.plan?.name ||
+            orderData?.plan_name ||
+            '--';
+
+        const addOnName =
+            orderData?.addOn?.name ||
+            orderData?.addon?.name ||
+            orderData?.addon_package?.name ||
+            '';
+
         const packageName = addOnName ? `${planName} + ${addOnName}` : planName;
 
-        const baseAmount = toSafeNumber(orderData?.amount, 0);
+        const baseAmount = toSafeNumber(
+            orderData?.amount ??
+                orderData?.amount_cents ??
+                orderData?.total_amount,
+            0,
+        );
+
         const fallbackAmount =
             toSafeNumber(orderData?.plan?.price, 0) +
-            toSafeNumber(orderData?.addOn?.price, 0);
+            toSafeNumber(
+                orderData?.addOn?.price ||
+                    orderData?.addon?.price ||
+                    orderData?.addon_package?.price,
+                0,
+            );
+
         const amount = baseAmount > 0 ? baseAmount : fallbackAmount;
 
         const paidAt =
-            orderData?.paidAt || orderData?.date || orderData?.updatedAt;
+            orderData?.paidAt ||
+            orderData?.paid_at ||
+            orderData?.date ||
+            orderData?.updatedAt ||
+            orderData?.updated_at ||
+            orderData?.createdAt ||
+            orderData?.created_at;
+
         const orderCode =
             orderData?.orderCode ||
             orderData?.order_code ||
@@ -178,7 +262,7 @@ function PaymentSuccess() {
         return {
             packageName,
             amount,
-            method: orderData?.method || 'SePay',
+            method: orderData?.method || orderData?.provider || 'SePay',
             paidAt,
             orderCode,
         };
@@ -205,21 +289,25 @@ function PaymentSuccess() {
             <div className={cx('card')}>
                 <div className={cx('hero')}>
                     <div className={cx('icon-wrap')}>
-                        <FaCheckCircle className={cx('icon-success')} />
+                        {paymentState === 'success' && (
+                            <FaCheckCircle className={cx('icon-success')} />
+                        )}
+
+                        {paymentState === 'pending' && (
+                            <FaClock className={cx('icon-pending')} />
+                        )}
+
+                        {paymentState === 'failed' && (
+                            <FaTimesCircle className={cx('icon-failed')} />
+                        )}
                     </div>
 
-                    <span className={cx('status-badge')}>
-                        Kích hoạt Premium thành công
+                    <span className={cx('status-badge', paymentState)}>
+                        {currentView.badge}
                     </span>
-                    <h1 className={cx('title')}>Thanh toán đã hoàn tất</h1>
+                    <h1 className={cx('title')}>{currentView.title}</h1>
 
-                    <p className={cx('subtitle')}>
-                        Biên lai giao dịch đã được gửi đến email{' '}
-                        <strong>{user?.email || 'của bạn'}</strong>. Bạn có thể
-                        sử dụng ngay tất cả các tính năng Premium của CVPro AI.
-                        Cảm ơn bạn đã tin tưởng và lựa chọn dịch vụ của chúng
-                        tôi!
-                    </p>
+                    <p className={cx('subtitle')}>{currentView.subtitle}</p>
 
                     <div className={cx('quick-info')}>
                         <div className={cx('info-chip')}>
@@ -266,8 +354,14 @@ function PaymentSuccess() {
 
                         <div className={cx('row')}>
                             <span className={cx('label')}>Trạng thái</span>
-                            <span className={cx('value', 'highlight')}>
-                                Đã thanh toán
+                            <span
+                                className={cx(
+                                    'value',
+                                    'highlight',
+                                    paymentState,
+                                )}
+                            >
+                                {currentView.receiptStatus}
                             </span>
                         </div>
 
@@ -289,21 +383,25 @@ function PaymentSuccess() {
 
                     <button
                         type="button"
-                        className={cx('btn-primary')}
-                        onClick={() =>
+                        className={cx('btn-primary', paymentState)}
+                        onClick={() => {
+                            if (paymentState === 'success') {
+                                navigate(config.router.upgradePremium, {
+                                    replace: true,
+                                });
+                                return;
+                            }
+
                             navigate(config.router.upgradePremium, {
                                 replace: true,
-                            })
-                        }
+                            });
+                        }}
                     >
-                        Trải nghiệm Premium <FaArrowRight />
+                        {currentView.buttonText} <FaArrowRight />
                     </button>
                 </div>
 
-                <p className={cx('support-note')}>
-                    Cần hỗ trợ giao dịch? Liên hệ đội ngũ CSKH của CVPro AI
-                    trong mục trợ giúp.
-                </p>
+                <p className={cx('support-note')}>{currentView.supportText}</p>
             </div>
         </div>
     );

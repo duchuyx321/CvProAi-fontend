@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
 import styles from './Payment.module.scss';
 import { config } from '~/config';
-import { getDetailCheckout } from '~/services/payment.service';
+import { checkStatus, getDetailCheckout } from '~/services/payment.service';
 import { GUIDE_STEPS } from './Payment.constants';
 import { normalizeOrderForUi } from './Payment.utils';
 
@@ -72,15 +72,84 @@ function Payment() {
             isMounted = false;
         };
     }, [payment_id]);
+    useEffect(() => {
+        const safePaymentId = String(payment_id || '').trim();
 
+        if (!safePaymentId) return;
+
+        let isMounted = true;
+        let intervalId = null;
+
+        const checkPaymentStatus = async () => {
+            try {
+                const result = await checkStatus(safePaymentId);
+
+                if (!isMounted) return;
+
+                if (!result?.success || !result?.data) {
+                    return;
+                }
+
+                const status = String(result.data?.status || '').toUpperCase();
+
+                setResultCheckout((prev) => ({
+                    ...prev,
+                    status,
+                    ...result.data,
+                }));
+
+                if (status === 'PAID') {
+                    clearInterval(intervalId);
+
+                    toast.success(
+                        'Thanh toán thành công. Tài khoản đã được kích hoạt.',
+                    );
+
+                    setTimeout(() => {
+                        navigate(config.router.upgradePremium, {
+                            replace: true,
+                        });
+                    }, 1200);
+                }
+
+                if (
+                    status === 'FAILED' ||
+                    status === 'CANCELED' ||
+                    status === 'REFUNDED'
+                ) {
+                    clearInterval(intervalId);
+                    toast.error('Thanh toán thất bại hoặc đã bị hủy.');
+                }
+            } catch (error) {
+                console.log('CHECK PAYMENT STATUS ERROR:', error);
+            }
+        };
+
+        checkPaymentStatus();
+
+        intervalId = setInterval(() => {
+            checkPaymentStatus();
+        }, 3000);
+
+        return () => {
+            isMounted = false;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [payment_id, navigate]);
     const checkoutForRender = useMemo(() => {
         const normalized = normalizeOrderForUi(resultCheckout || {});
-        const safeAmount = Number(normalized?.amount || resultCheckout?.amount_cents || 0);
+        const safeAmount = Number(
+            normalized?.amount || resultCheckout?.amount_cents || 0,
+        );
 
         return {
             ...resultCheckout,
             ...normalized,
-            amount_cents: Number.isFinite(safeAmount) && safeAmount > 0 ? safeAmount : 0,
+            amount_cents:
+                Number.isFinite(safeAmount) && safeAmount > 0 ? safeAmount : 0,
             qrCode: resultCheckout?.qrCode || normalized?.qrCodeUrl || '',
             bank: resultCheckout?.bank || normalized?.bankName || '',
             acc:

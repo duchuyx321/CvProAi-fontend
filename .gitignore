@@ -26,3 +26,6 @@ dist-ssr
 *.sw?
 .codex
 .prettierrc
+*.md
+md
+.claude

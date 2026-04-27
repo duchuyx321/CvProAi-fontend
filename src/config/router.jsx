@@ -32,7 +32,7 @@ export const router = {
     history: '/history',
     payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
-    upgradeOptions: '/upgrade-options/:packageId',
+    upgradeOptions: '/upgrade-options/:slug',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
