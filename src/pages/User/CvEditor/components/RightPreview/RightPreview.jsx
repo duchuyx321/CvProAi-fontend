@@ -29,6 +29,7 @@ function RightPreview({ templateDetail = {}, pageRef = null }) {
                                 templateDetail?.code ||
                                 'DEV_01',
                             name: templateDetail?.title,
+                            content: templateDetail?.template_content,
                             config: templateDetail?.config,
                         }}
                         pageRef={pageRef}

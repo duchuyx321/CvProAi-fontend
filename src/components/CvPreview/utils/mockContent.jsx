@@ -1,28 +1,21 @@
+import images from '~/assets';
+
 export const defaultMockContent = {
     profile_header: {
-        full_name: 'Lê Đức Huy',
-        headline: 'Backend Developer Intern',
-        avatar_url:
-            'http://res.cloudinary.com/djzsbcrk9/image/upload/v1775665562/cvproai/gk3gemyc8ydzzvcm4epa.jpg',
-        summary:
-            'Sinh viên định hướng Backend Developer, yêu thích API, database và xây dựng sản phẩm web thực tế.',
+        full_name: 'Nhập Tên Của Bạn',
+        headline: 'Nhập Chức Danh Của Bạn',
+        avatar_url: images.NoImage,
+        summary: 'Nhập Mục Tiêu Nghề Nghiệp',
     },
 
     CONTACT: {
-        email: 'duchuy08t@gmail.com',
-        phone: '0901 234 567',
-        address: 'Đà Nẵng, Việt Nam',
-        website: 'github.com/duchuy08t',
+        email: 'Nhập emal',
+        phone: 'Nhập Số Điện Thoại',
+        address: 'Nhập Địa Chỉ',
+        website: 'Nhập Link Trang Web',
     },
 
-    SKILLS: [
-        { name: 'Node.js', level: 85 },
-        { name: 'ExpressJS', level: 80 },
-        { name: 'NestJS', level: 72 },
-        { name: 'MySQL', level: 78 },
-        { name: 'MongoDB', level: 70 },
-        { name: 'ReactJS', level: 65 },
-    ],
+    SKILLS: [{ name: 'Nhập Kỹ Năng', level: 85 }],
 
     EXPERIENCE: [
         {
@@ -42,8 +35,8 @@ export const defaultMockContent = {
 
     EDUCATION: [
         {
-            school: 'Đại học Duy Tân',
-            degree: 'Công nghệ thông tin',
+            school: 'Trường Đại Học',
+            degree: 'Khoa',
             start_date: '2022',
             end_date: '2026',
             description:
@@ -70,16 +63,16 @@ export const mockContentByTemplateCode = {
         ...defaultMockContent,
         profile_header: {
             ...defaultMockContent.profile_header,
-            full_name: 'Lê Đức Huy',
-            headline: 'Backend Developer',
+            full_name: 'Nhập Tên Của Bạn',
+            headline: 'Nhập Chức Danh Của Bạn',
         },
     },
     CV_MODERN_02: {
         ...defaultMockContent,
         profile_header: {
             ...defaultMockContent.profile_header,
-            full_name: 'Lê Đức Huy',
-            headline: 'Backend Developer Intern',
+            full_name: 'Nhập Tên Của Bạn',
+            headline: 'Nhập Chức Danh Của Bạn',
         },
     },
 };

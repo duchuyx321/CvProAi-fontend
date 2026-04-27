@@ -9,49 +9,61 @@ import {
     SkillsSection,
 } from './SectionBlocks';
 
-function SectionBody({ section, data, content, layoutType }) {
+function renderSectionBody({ section, data, content, layoutType }) {
     switch (section?.type) {
         case 'profile_header':
-            return (
-                <ProfileSection
-                    section={section}
-                    data={data}
-                    content={content}
-                    layoutType={layoutType}
-                />
-            );
+            return ProfileSection({
+                section,
+                data,
+                content,
+                layoutType,
+            });
 
         case 'CONTACT':
-            return (
-                <ContactSection
-                    section={section}
-                    data={data}
-                    content={content}
-                />
-            );
+            return ContactSection({
+                section,
+                data,
+                content,
+            });
 
         case 'SUMMARY':
-            return <RichText value={data} />;
+            return RichText({ value: data });
 
         case 'SKILLS':
-            return <SkillsSection section={section} data={data} />;
+            return SkillsSection({ section, data });
 
         case 'EDUCATION':
-            return <EducationSection data={data} />;
+            return EducationSection({ data });
 
         case 'EXPERIENCE':
-            return <ExperienceSection data={data} />;
+            return ExperienceSection({ data });
 
         default:
             return Array.isArray(data) ? (
-                <ArraySection section={section} data={data} content={content} />
+                ArraySection({
+                    section,
+                    data,
+                    content,
+                })
             ) : (
-                <ObjectSection
-                    section={section}
-                    data={data}
-                    content={content}
-                />
+                ObjectSection({
+                    section,
+                    data,
+                    content,
+                })
             );
+    }
+}
+
+function SectionBody(props) {
+    try {
+        return renderSectionBody(props);
+    } catch (error) {
+        console.error('CvPreview section render failed', {
+            sectionType: props?.section?.type,
+            error,
+        });
+        return null;
     }
 }
 

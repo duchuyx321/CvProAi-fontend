@@ -1,6 +1,11 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
 import RichTextEditor from '~/components/RichTextEditor';
+import {
+    getFieldLabel,
+    isLongTextField,
+    uniqueFieldKeys,
+} from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -59,14 +64,34 @@ function BaseInput({ value, onChange, type = 'text', disabled = false }) {
     );
 }
 
+const BASE_PROJECT_FIELDS = new Set([
+    'name',
+    'role',
+    'start_date',
+    'end_date',
+    'technologies',
+    'description',
+]);
+
+function getExtraFieldKeys(section = {}, items = []) {
+    return [
+        ...new Set([
+            ...uniqueFieldKeys(section?.fields),
+            ...items.flatMap((item) => Object.keys(item || {})),
+        ]),
+    ].filter((fieldKey) => fieldKey && !BASE_PROJECT_FIELDS.has(fieldKey));
+}
+
 function ProjectsFields({
     data = [],
     onChangeArrayField,
     onChangeObjectInArray,
     onAddSectionItem,
     sectionKey,
+    section = {},
 }) {
     const items = Array.isArray(data) ? data : [];
+    const extraFieldKeys = getExtraFieldKeys(section, items);
 
     const handleAdd = () => {
         onAddSectionItem?.(sectionKey);
@@ -171,6 +196,41 @@ function ProjectsFields({
                                 minHeight={160}
                             />
                         </FieldGroup>
+
+                        {extraFieldKeys.map((fieldKey) => (
+                            <FieldGroup
+                                key={fieldKey}
+                                label={getFieldLabel(fieldKey)}
+                                fullWidth={isLongTextField(fieldKey)}
+                            >
+                                {isLongTextField(fieldKey) ? (
+                                    <textarea
+                                        className={cx('textarea')}
+                                        value={item?.[fieldKey] || ''}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                ) : (
+                                    <BaseInput
+                                        value={item?.[fieldKey]}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                )}
+                            </FieldGroup>
+                        ))}
                     </div>
 
                     <ItemActions

@@ -1,6 +1,11 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
 import RichTextEditor from '~/components/RichTextEditor';
+import {
+    getFieldLabel,
+    isLongTextField,
+    uniqueFieldKeys,
+} from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -59,14 +64,34 @@ function BaseInput({ value, onChange, type = 'text', disabled = false }) {
     );
 }
 
+const BASE_EXPERIENCE_FIELDS = new Set([
+    'role',
+    'company',
+    'start_date',
+    'end_date',
+    'is_current',
+    'description',
+]);
+
+function getExtraFieldKeys(section = {}, items = []) {
+    return [
+        ...new Set([
+            ...uniqueFieldKeys(section?.fields),
+            ...items.flatMap((item) => Object.keys(item || {})),
+        ]),
+    ].filter((fieldKey) => fieldKey && !BASE_EXPERIENCE_FIELDS.has(fieldKey));
+}
+
 function ExperienceFields({
     data = [],
     onChangeArrayField,
     onChangeObjectInArray,
     onAddSectionItem,
     sectionKey,
+    section = {},
 }) {
     const items = Array.isArray(data) ? data : [];
+    const extraFieldKeys = getExtraFieldKeys(section, items);
 
     const handleAdd = () => {
         onAddSectionItem?.(sectionKey);
@@ -178,6 +203,41 @@ function ExperienceFields({
                                 minHeight={160}
                             />
                         </FieldGroup>
+
+                        {extraFieldKeys.map((fieldKey) => (
+                            <FieldGroup
+                                key={fieldKey}
+                                label={getFieldLabel(fieldKey)}
+                                fullWidth={isLongTextField(fieldKey)}
+                            >
+                                {isLongTextField(fieldKey) ? (
+                                    <textarea
+                                        className={cx('textarea')}
+                                        value={item?.[fieldKey] || ''}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                ) : (
+                                    <BaseInput
+                                        value={item?.[fieldKey]}
+                                        onChange={(e) =>
+                                            onChangeObjectInArray?.(
+                                                sectionKey,
+                                                index,
+                                                fieldKey,
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                )}
+                            </FieldGroup>
+                        ))}
                     </div>
 
                     <ItemActions
@@ -187,7 +247,9 @@ function ExperienceFields({
                 </ItemCard>
             ))}
 
-            <AddItemButton onClick={handleAdd}>+ Thêm kinh nghiệm</AddItemButton>
+            <AddItemButton onClick={handleAdd}>
+                + Thêm kinh nghiệm
+            </AddItemButton>
         </div>
     );
 }

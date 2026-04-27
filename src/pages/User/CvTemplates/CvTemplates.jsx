@@ -3,6 +3,10 @@ import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
 import { getCvTemplates } from '~/services/cv-teamplate.service';
+import {
+    getApiMessage,
+    unwrapApiResponse,
+} from '~/utils/api-response.utils';
 import TemplateCard from './components/TemplateCard';
 import styles from './CvTemplates.module.scss';
 
@@ -21,11 +25,16 @@ function CvTemplates() {
 
                 if (!result?.success) {
                     throw new Error(
-                        result?.message || 'Không thể tải danh sách mẫu CV',
+                        getApiMessage(result, 'Không thể tải danh sách mẫu CV'),
                     );
                 }
 
-                setTemplateList(result?.data || []);
+                const templates = unwrapApiResponse(result, []);
+                setTemplateList(
+                    Array.isArray(templates)
+                        ? templates
+                        : templates?.items || templates?.data || [],
+                );
             } catch (error) {
                 toast.error(
                     error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
