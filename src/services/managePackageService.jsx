@@ -38,7 +38,7 @@ export const updatePackage = async (packageId, payload) => {
 
 export const togglePackageStatus = async (packageId, enabled) => {
     try {
-        const res = await Response.PATCH(`admin/packages/${packageId}/status`, {
+        const res = await Response.PATCH(`plans/update/${packageId}/status`, {
             enabled,
         });
         return res;
