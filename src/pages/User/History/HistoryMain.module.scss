@@ -41,13 +41,14 @@
 
 .tableWrapper {
     width: 100%;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .tableHeader {
     display: grid;
-    grid-template-columns: 1.05fr 1.1fr 1.35fr 0.9fr 0.9fr 1fr;
+    grid-template-columns: 0.95fr 1fr 1.35fr 0.9fr 0.9fr 1.25fr;
     gap: 10px;
+    width: 100%;
     padding: 16px 10px;
     border-bottom: 1px solid #e5e7eb;
 }
@@ -96,6 +97,16 @@
     color: #6b7280;
     font-size: 1.5rem;
     cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.2s ease,
+        color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.pageBtn:not(:disabled):hover {
+    border-color: #2563eb;
+    color: #2563eb;
 }
 
 .pageBtn:disabled {
@@ -108,4 +119,3 @@
     background: #2563eb;
     color: #fff;
 }
-

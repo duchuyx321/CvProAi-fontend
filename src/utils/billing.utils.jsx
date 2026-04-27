@@ -1,7 +1,7 @@
 export function formatPrice(price, currency) {
     const amount = Number(price ?? 0);
 
-    if (Number.isNaN(amount)) {
+    if (!Number.isFinite(amount)) {
         return '—';
     }
 
@@ -61,21 +61,27 @@ export function formatDateTime(dateString) {
 }
 
 export function mapPaymentStatus(status) {
+    const normalizedStatus = String(status ?? '').trim().toUpperCase();
+
     const statusMap = {
-        SUCCESS: 'Thành công',
-        FAILED: 'Thất bại',
         PENDING: 'Đang xử lý',
+        PAID: 'Đã thanh toán',
+        FAILED: 'Thất bại',
+        // CANCELED: 'Đã hủy',
         CANCELLED: 'Đã hủy',
+        REFUNDED: 'Đã hoàn tiền',
+
+        SUCCESS: 'Thành công',
+
         EXPIRED: 'Đã hết hạn',
     };
 
-    return statusMap[status] ?? 'Không xác định';
+    return statusMap[normalizedStatus] ?? 'Không xác định';
 }
 
 export function mapPaymentMethod(method, provider) {
-    if (provider === 'SEPAY') {
-        return 'SePay';
-    }
+    const normalizedMethod = String(method ?? '').trim().toUpperCase();
+    const normalizedProvider = String(provider ?? '').trim().toUpperCase();
 
     const methodMap = {
         SEPAY: 'SePay',
@@ -85,11 +91,31 @@ export function mapPaymentMethod(method, provider) {
         VNPAY: 'VNPay',
     };
 
-    return methodMap[method] ?? method ?? '—';
+    if (methodMap[normalizedMethod]) {
+        return methodMap[normalizedMethod];
+    }
+
+    if (normalizedProvider === 'SEPAY') {
+        return 'SePay';
+    }
+
+    return provider ?? method ?? '—';
 }
 
 export function buildPlanBenefits(plan = {}) {
     const benefits = [];
+
+    if (Number(plan.cv_limit) > 0) {
+        benefits.push(`Tạo tối đa ${plan.cv_limit} CV`);
+    }
+
+    if (Number(plan.ai_limit) > 0) {
+        benefits.push(`${plan.ai_limit} lượt phân tích AI mỗi tháng`);
+    }
+
+    if (Number(plan.export_limit) > 0) {
+        benefits.push(`${plan.export_limit} lượt xuất CV mỗi tháng`);
+    }
 
     if (plan.view_full_ai_analysis) {
         benefits.push('Xem đầy đủ phân tích AI');
@@ -101,6 +127,10 @@ export function buildPlanBenefits(plan = {}) {
 
     if (plan.premium_template) {
         benefits.push('Truy cập tất cả các mẫu thiết kế');
+    }
+
+    if (plan.allow_ai_addon_purchase) {
+        benefits.push('Được mua thêm lượt phân tích AI');
     }
 
     if (plan.priority_support) {
@@ -115,42 +145,48 @@ export function buildPlanBenefits(plan = {}) {
 }
 
 export function buildQuotaItems(plan = {}, usage = {}) {
-    const cvLimit = Number(plan.cv_limit ?? 0);
-    const exportLimit = Number(plan.export_limit ?? 0);
-    const aiLimit = Number(plan.ai_limit ?? 0);
+    const aiUsed = toSafeNumber(usage.ai_runs_used);
+    const aiLimit = toSafeNumber(usage.ai_runs_limit ?? plan.ai_limit);
 
-    const cvUsed = Number(usage.cv_used ?? 0);
-    const exportUsed = Number(usage.export_used ?? 0);
-    const aiUsed = Number(usage.ai_used ?? 0);
+    const exportsUsed = toSafeNumber(usage.exports_used);
+    const exportsLimit = toSafeNumber(usage.exports_limit ?? plan.export_limit);
 
-    return [
+    const quotaItems = [
         {
-            key: 'ai',
+            key: 'ai-runs',
             label: 'Phân tích AI',
             used: aiUsed,
             limit: aiLimit,
-            remaining: Math.max(aiLimit - aiUsed, 0),
+            remaining: getRemainingQuota(aiUsed, aiLimit),
         },
         {
-            key: 'export',
+            key: 'exports',
             label: 'Xuất file',
-            used: exportUsed,
-            limit: exportLimit,
-            remaining: Math.max(exportLimit - exportUsed, 0),
+            used: exportsUsed,
+            limit: exportsLimit,
+            remaining: getRemainingQuota(exportsUsed, exportsLimit),
         },
-        {
+    ];
+
+    if (usage.cv_used !== undefined && usage.cv_used !== null) {
+        const cvUsed = toSafeNumber(usage.cv_used);
+        const cvLimit = toSafeNumber(usage.cv_limit ?? plan.cv_limit);
+
+        quotaItems.push({
             key: 'cv',
             label: 'Tạo CV',
             used: cvUsed,
             limit: cvLimit,
-            remaining: Math.max(cvLimit - cvUsed, 0),
-        },
-    ];
+            remaining: getRemainingQuota(cvUsed, cvLimit),
+        });
+    }
+
+    return quotaItems;
 }
 
 export function getQuotaPercent(used = 0, limit = 0) {
-    const safeUsed = Number(used ?? 0);
-    const safeLimit = Number(limit ?? 0);
+    const safeUsed = toSafeNumber(used);
+    const safeLimit = toSafeNumber(limit);
 
     if (safeLimit <= 0) {
         return 0;
@@ -159,44 +195,63 @@ export function getQuotaPercent(used = 0, limit = 0) {
     return Math.min((safeUsed / safeLimit) * 100, 100);
 }
 
-export function getPlanStatusLabel(plan = {}) {
-    const isActive = plan.status === 'ACTIVE';
-    const willEndAtPeriodEnd = Boolean(plan.cancel_at_period_end);
+export function getPlanStatusLabel(subscription = {}) {
+    const normalizedStatus = String(subscription.status ?? '')
+        .trim()
+        .toUpperCase();
 
-    if (isActive && !willEndAtPeriodEnd) {
-        return 'Đang hoạt động';
-    }
+    const statusMap = {
+        ACTIVE: 'Đang hoạt động',
+        CANCELED: 'Đã hủy',
+        CANCELLED: 'Đã hủy',
+        EXPIRED: 'Đã hết hạn',
+        PAST_DUE: 'Quá hạn thanh toán',
+    };
 
-    if (isActive && willEndAtPeriodEnd) {
-        return 'Sẽ kết thúc vào cuối kỳ';
-    }
-
-    if (plan.status === 'CANCELLED') {
-        return 'Đã hủy';
-    }
-
-    if (plan.status === 'EXPIRED') {
-        return 'Đã hết hạn';
-    }
-
-    return 'Không xác định';
+    return statusMap[normalizedStatus] ?? 'Không xác định';
 }
 
-export function getPlanStatusVariant(plan = {}) {
-    const isActive = plan.status === 'ACTIVE';
-    const willEndAtPeriodEnd = Boolean(plan.cancel_at_period_end);
+export function getPlanStatusVariant(subscription = {}) {
+    const normalizedStatus = String(subscription.status ?? '')
+        .trim()
+        .toUpperCase();
 
-    if (isActive && !willEndAtPeriodEnd) {
+    if (normalizedStatus === 'ACTIVE') {
         return 'active';
     }
 
-    if (isActive && willEndAtPeriodEnd) {
-        return 'ending';
+    if (normalizedStatus === 'PAST_DUE') {
+        return 'warning';
     }
 
-    if (plan.status === 'CANCELLED' || plan.status === 'EXPIRED') {
+    if (
+        normalizedStatus === 'CANCELED' ||
+        normalizedStatus === 'CANCELLED' ||
+        normalizedStatus === 'EXPIRED'
+    ) {
         return 'inactive';
     }
 
     return 'default';
+}
+
+function toSafeNumber(value = 0) {
+    const number = Number(value ?? 0);
+
+    if (!Number.isFinite(number)) {
+        return 0;
+    }
+
+    return number;
+}
+
+function getRemainingQuota(used = 0, limit = 0) {
+    const safeUsed = toSafeNumber(used);
+    const safeLimit = toSafeNumber(limit);
+
+    if (safeLimit <= 0) {
+        return 0;
+    }
+
+    return Math.max(safeLimit - safeUsed, 0);
 }

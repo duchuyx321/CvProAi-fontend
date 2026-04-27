@@ -15,64 +15,121 @@ export const HISTORY_MOCKS = {
     data: {
         items: [
             {
-                id: 'txn_001',
-                transaction_code: '#CVP-83921',
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90001',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-83921',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'PAID',
+                provider: 'SEPAY',
+                provider_transaction_id: 'SEPAY_TXN_83921',
+                description: 'Thanh toán gói Premium 1 tháng',
+                metadata: {
+                    payment_method: 'BANK_TRANSFER',
+                    bank_code: 'MB',
+                    reference_code: 'CVPROAI83921',
+                },
                 paid_at: '2026-05-15T08:30:00.000Z',
-                plan_name: 'Gói Premium',
-                billing_cycle: 'MONTH',
-                amount: '199000',
-                currency: 'VND',
-                status: 'SUCCESS',
-                payment_method: 'SePay',
-                provider: 'SEPAY',
-                payment_channel: 'BANK_TRANSFER',
-                bank_code: 'MB',
-                reference_code: 'CVPROAI83921',
+                created_at: '2026-05-15T08:25:00.000Z',
+                updated_at: '2026-05-15T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
             },
             {
-                id: 'txn_002',
-                transaction_code: '#CVP-72810',
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90002',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-72810',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'PAID',
+                provider: 'SEPAY',
+                provider_transaction_id: 'SEPAY_TXN_72810',
+                description: 'Thanh toán gói Premium 1 tháng',
+                metadata: {
+                    payment_method: 'BANK_TRANSFER',
+                    bank_code: 'VCB',
+                    reference_code: 'CVPROAI72810',
+                },
                 paid_at: '2026-04-15T08:30:00.000Z',
-                plan_name: 'Gói Premium',
-                billing_cycle: 'MONTH',
-                amount: '199000',
-                currency: 'VND',
-                status: 'SUCCESS',
-                payment_method: 'SePay',
-                provider: 'SEPAY',
-                payment_channel: 'BANK_TRANSFER',
-                bank_code: 'VCB',
-                reference_code: 'CVPROAI72810',
+                created_at: '2026-04-15T08:25:00.000Z',
+                updated_at: '2026-04-15T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
             },
             {
-                id: 'txn_003',
-                transaction_code: '#CVP-72805',
-                paid_at: '2026-04-15T07:45:00.000Z',
-                plan_name: 'Gói Premium',
-                billing_cycle: 'MONTH',
-                amount: '199000',
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90003',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-72805',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
                 currency: 'VND',
                 status: 'FAILED',
-                payment_method: 'SePay',
                 provider: 'SEPAY',
-                payment_channel: 'BANK_TRANSFER',
-                bank_code: 'TPB',
-                reference_code: 'CVPROAI72805',
+                provider_transaction_id: null,
+                description: 'Thanh toán gói Premium 1 tháng thất bại',
+                metadata: {
+                    payment_method: 'BANK_TRANSFER',
+                    bank_code: 'TPB',
+                    reference_code: 'CVPROAI72805',
+                    failure_reason: 'Không nhận được xác nhận thanh toán',
+                },
+                paid_at: null,
+                created_at: '2026-04-15T07:45:00.000Z',
+                updated_at: '2026-04-15T07:50:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
             },
             {
-                id: 'txn_004',
-                transaction_code: '#CVP-70112',
-                paid_at: '2026-03-15T09:10:00.000Z',
-                plan_name: 'Gói Premium',
-                billing_cycle: 'MONTH',
-                amount: '199000',
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90004',
+                user_id: 'test-user-id',
+                order_type: 'AI_ADDON',
+                order_code: 'CVP-AI-70112',
+                plan_id: null,
+                addon_package_id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
+                amount_cents: '49000',
                 currency: 'VND',
-                status: 'SUCCESS',
-                payment_method: 'SePay',
+                status: 'PAID',
                 provider: 'SEPAY',
-                payment_channel: 'BANK_TRANSFER',
-                bank_code: 'ACB',
-                reference_code: 'CVPROAI70112',
+                provider_transaction_id: 'SEPAY_TXN_70112',
+                description: 'Mua thêm 10 lượt phân tích AI',
+                metadata: {
+                    payment_method: 'BANK_TRANSFER',
+                    bank_code: 'ACB',
+                    reference_code: 'CVPROAI70112',
+                },
+                paid_at: '2026-03-15T09:10:00.000Z',
+                created_at: '2026-03-15T09:05:00.000Z',
+                updated_at: '2026-03-15T09:10:00.000Z',
+                plan: null,
+                addon_package: {
+                    id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
+                    name: 'Gói 10 lượt AI',
+                    slug: 'ai-10-runs',
+                    runs: 10,
+                },
             },
         ],
         pagination: {
@@ -91,6 +148,8 @@ function HistoryMain() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let cancelled = false; 
+
         const fetchHistory = async () => {
             setIsLoading(true);
 
@@ -99,6 +158,7 @@ function HistoryMain() {
                 //     page: 1,
                 //     limit: 10,
                 // });
+
                 const result = HISTORY_MOCKS;
 
                 if (!result?.success) {
@@ -111,17 +171,29 @@ function HistoryMain() {
                     throw new Error('Dữ liệu lịch sử giao dịch không hợp lệ');
                 }
 
-                setHistoryData(result.data);
+                if (!cancelled) {
+                    setHistoryData(result.data);
+                }
             } catch (error) {
-                toast.error(
-                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
-                );
+                if (!cancelled) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau',
+                    );
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchHistory();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     if (isLoading) {
@@ -148,7 +220,7 @@ function HistoryMain() {
                 <div className={cx('header')}>
                     <h2 className={cx('title')}>Lịch sử giao dịch</h2>
                     <p className={cx('desc')}>
-                        Theo dõi các khoản thanh toán và gia hạn gói của bạn.
+                        Theo dõi các khoản thanh toán gói Premium và lượt AI mua thêm.
                     </p>
                 </div>
 
@@ -158,12 +230,12 @@ function HistoryMain() {
                     <>
                         <div className={cx('tableWrapper')}>
                             <div className={cx('tableHeader')}>
-                                <div className={cx('col', 'colCode')}>Mã GD</div>
+                                <div className={cx('col', 'colCode')}>Mã đơn</div>
                                 <div className={cx('col', 'colDate')}>
                                     Ngày thanh toán
                                 </div>
                                 <div className={cx('col', 'colPlan')}>
-                                    Gói dịch vụ
+                                    Nội dung
                                 </div>
                                 <div className={cx('col', 'colAmount')}>
                                     Số tiền

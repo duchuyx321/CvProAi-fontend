@@ -17,18 +17,19 @@ const cx = classNames.bind(styles);
 
 function PackageCard({
     plan = {},
+    subscription = {},
     usage = {},
-    isSubmitting = false,
-    onCancelPackage,
 }) {
     const benefits = buildPlanBenefits(plan);
     const quotaItems = buildQuotaItems(plan, usage);
 
-    const statusLabel = getPlanStatusLabel(plan);
-    const statusVariant = getPlanStatusVariant(plan);
+    const statusLabel = getPlanStatusLabel(subscription);
+    const statusVariant = getPlanStatusVariant(subscription);
 
-    const isActive = plan.status === 'ACTIVE';
-    const willEndAtPeriodEnd = Boolean(plan.cancel_at_period_end);
+    const isActive = subscription.status === 'ACTIVE';
+
+    const currentPeriodStart = subscription.current_period_start;
+    const currentPeriodEnd = subscription.current_period_end;
 
     return (
         <article className={cx('card')}>
@@ -40,6 +41,8 @@ function PackageCard({
                         className={cx('status', {
                             active: statusVariant === 'active',
                             ending: statusVariant === 'ending',
+                            inactive: statusVariant === 'inactive',
+                            warning: statusVariant === 'warning',
                         })}
                     >
                         {statusLabel}
@@ -48,16 +51,15 @@ function PackageCard({
 
                 <p className={cx('description')}>{plan.description}</p>
 
-                {isActive && !willEndAtPeriodEnd && (
+                {isActive && (
                     <p className={cx('subMessage')}>
-                        Gói sẽ tự động gia hạn vào {formatDate(plan.expires_at)}.
+                        Gói có hiệu lực đến ngày {formatDate(currentPeriodEnd)}.
                     </p>
                 )}
 
-                {isActive && willEndAtPeriodEnd && (
+                {!isActive && (
                     <p className={cx('subMessage', 'warningText')}>
-                        Bạn đã hủy gia hạn. Gói vẫn hoạt động đến hết ngày{' '}
-                        {formatDate(plan.expires_at)}.
+                        Gói hiện không còn hoạt động.
                     </p>
                 )}
             </div>
@@ -75,21 +77,23 @@ function PackageCard({
                 <div className={cx('metaItem')}>
                     <span className={cx('metaLabel')}>Ngày bắt đầu</span>
                     <span className={cx('metaValue')}>
-                        {formatDate(plan.started_at)}
+                        {formatDate(currentPeriodStart)}
                     </span>
                 </div>
 
                 <div className={cx('metaItem')}>
-                    <span className={cx('metaLabel')}>Gia hạn tiếp theo</span>
+                    <span className={cx('metaLabel')}>Ngày hết hạn</span>
                     <span className={cx('metaValue')}>
-                        {formatDate(plan.expires_at)}
+                        {formatDate(currentPeriodEnd)}
                     </span>
                 </div>
 
                 <div className={cx('metaItem')}>
-                    <span className={cx('metaLabel')}>Tự động gia hạn</span>
+                    <span className={cx('metaLabel')}>Chu kỳ gói</span>
                     <span className={cx('metaValue')}>
-                        {plan.auto_renew ? 'Có' : 'Không'}
+                        {plan.billing_cycle === 'MONTH'
+                            ? '1 tháng'
+                            : plan.billing_cycle || '—'}
                     </span>
                 </div>
             </div>
@@ -100,7 +104,7 @@ function PackageCard({
                 <ul className={cx('benefitList')}>
                     {benefits.map((item, index) => (
                         <li
-                            key={`${plan.slug}-${index}`}
+                            key={`${plan.id}-${index}`}
                             className={cx('benefitItem')}
                         >
                             <span className={cx('benefitIcon')}>
@@ -113,8 +117,6 @@ function PackageCard({
             </div>
 
             <div className={cx('section')}>
-                {/* <h3 className={cx('sectionTitle')}>Quota AI / Export / CV</h3> */}
-
                 <div className={cx('quotaList')}>
                     {quotaItems.map((item) => (
                         <div key={item.key} className={cx('quotaItem')}>
@@ -146,28 +148,6 @@ function PackageCard({
                     ))}
                 </div>
             </div>
-
-            {isActive && !willEndAtPeriodEnd && plan.can_cancel && (
-                <div className={cx('cancelBox')}>
-                    <div className={cx('cancelContent')}>
-                        <h3 className={cx('cancelTitle')}>Hủy gói</h3>
-                        <p className={cx('cancelDesc')}>
-                            Nếu bạn hủy, bạn vẫn sẽ được toàn quyền truy cập vào
-                            các tính năng của gói cho đến hết chu kỳ thanh toán
-                            của bạn.
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        className={cx('cancelBtn')}
-                        onClick={onCancelPackage}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? 'Đang xử lý...' : 'Hủy'}
-                    </button>
-                </div>
-            )}
         </article>
     );
 }
