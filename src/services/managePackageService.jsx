@@ -2,7 +2,7 @@ import * as Response from '~/utils/HttpsRequest';
 
 export const getPackages = async (params = {}) => {
     try {
-        const res = await Response.GET('admin/packages', params);
+        const res = await Response.GET('plans/all', params);
         return res;
     } catch (error) {
         return error?.response?.data;
@@ -11,7 +11,7 @@ export const getPackages = async (params = {}) => {
 
 export const getPackageDetail = async (packageId) => {
     try {
-        const res = await Response.GET(`admin/packages/${packageId}`);
+        const res = await Response.GET(`plans/one/${packageId}`);
         return res;
     } catch (error) {
         return error?.response?.data;
@@ -20,7 +20,7 @@ export const getPackageDetail = async (packageId) => {
 
 export const createPackage = async (payload) => {
     try {
-        const res = await Response.POST('admin/packages', payload);
+        const res = await Response.POST('plans/create', payload);
         return res;
     } catch (error) {
         return error?.response?.data;
@@ -29,7 +29,7 @@ export const createPackage = async (payload) => {
 
 export const updatePackage = async (packageId, payload) => {
     try {
-        const res = await Response.PATCH(`admin/packages/${packageId}`, payload);
+        const res = await Response.PATCH(`plans/update/${packageId}`, payload);
         return res;
     } catch (error) {
         return error?.response?.data;
@@ -49,7 +49,7 @@ export const togglePackageStatus = async (packageId, enabled) => {
 
 export const deletePackage = async (packageId) => {
     try {
-        const res = await Response.DELETE(`admin/packages/${packageId}`);
+        const res = await Response.DELETE(`plans/destroy/${packageId}`);
         return res;
     } catch (error) {
         return error?.response?.data;
