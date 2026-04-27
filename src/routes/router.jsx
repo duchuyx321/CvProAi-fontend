@@ -136,7 +136,7 @@ const PublicRouter = [
     },
     {
         path: config.router.upgradePremium,
-        component: UpgradePremium,
+        component: Pricing,
         layout: DefaultLayout,
     },
     {
