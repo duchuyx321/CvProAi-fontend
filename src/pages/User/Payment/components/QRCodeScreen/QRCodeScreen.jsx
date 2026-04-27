@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
-import { FaCheckCircle, FaCopy, FaRegClock, FaShieldAlt } from 'react-icons/fa';
+import { FaCopy, FaRegClock, FaShieldAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+
 import styles from '~/pages/User/Payment/Payment.module.scss';
 import { PAYMENT_METHOD } from '../../Payment.constants';
 
@@ -9,28 +10,81 @@ const cx = classNames.bind(styles);
 
 const EXPIRE_IN_SECONDS = 15 * 60;
 
-const normalizeAccountNumber = (value) => {
-    return String(value || '')
+const normalizeAccountNumber = (value) =>
+    String(value || '')
         .replace(/\s+/g, '')
         .replace(/(.{4})/g, '$1 ')
         .trim();
+
+const toSafeNumber = (value, fallback = 0) => {
+    const parsed = Number(String(value ?? '').replace(/,/g, '').trim());
+    return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-function QRCodeScreen({ pkg }) {
+function QRCodeScreen({
+    pkg,
+    onCancelOrder,
+    onManualCheck,
+    isManualChecking = false,
+}) {
     const [remainingSeconds, setRemainingSeconds] = useState(EXPIRE_IN_SECONDS);
 
-    const displayTimer = `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(
-        remainingSeconds % 60,
-    ).padStart(2, '0')}`;
+    const qrCodeUrl = String(pkg?.qrCode || '').trim();
 
-    const bankName = pkg?.bank || 'MB Bank (Ngân hàng Quân Đội)';
-    const accountName = pkg?.acc || 'CVPRO AI';
-    const order_code = pkg?.order_code;
+    useEffect(() => {
+        if (!qrCodeUrl) {
+            setRemainingSeconds(EXPIRE_IN_SECONDS);
+            return;
+        }
+
+        setRemainingSeconds(EXPIRE_IN_SECONDS);
+
+        const timerId = window.setInterval(() => {
+            setRemainingSeconds((prev) => {
+                if (prev <= 1) {
+                    window.clearInterval(timerId);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => {
+            window.clearInterval(timerId);
+        };
+    }, [qrCodeUrl]);
+
+    const displayTimer = useMemo(() => {
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }, [remainingSeconds]);
+
+    const bankName =
+        pkg?.bank || pkg?.bankName || 'MB Bank (Ngân hàng Quân Đội)';
+    const accountNumberRaw =
+        pkg?.acc || pkg?.accountNumber || pkg?.account_number || '';
+    const accountNumber = normalizeAccountNumber(accountNumberRaw);
+    const accountName =
+        pkg?.accountName || pkg?.account_name || pkg?.receiver_name || 'CVPRO AI';
+    const transferContent =
+        pkg?.order_code ||
+        pkg?.orderCode ||
+        pkg?.transferContent ||
+        pkg?.description ||
+        '';
+    const paymentAmount = toSafeNumber(pkg?.amount_cents ?? pkg?.amount, 0);
+    const paymentAmountLabel = `${new Intl.NumberFormat('vi-VN').format(paymentAmount)} đ`;
+    const isExpired = remainingSeconds <= 0;
 
     const copyText = async (value, label) => {
         try {
             if (!value) {
                 return;
+            }
+
+            if (!navigator?.clipboard?.writeText) {
+                throw new Error('Clipboard unavailable');
             }
 
             await navigator.clipboard.writeText(String(value));
@@ -40,48 +94,30 @@ function QRCodeScreen({ pkg }) {
         }
     };
 
-    if (!pkg?.qrCode) {
+    if (!qrCodeUrl) {
         return (
             <div className={cx('gateway-card')}>
                 <div className={cx('gateway-head')}>
                     <div className={cx('gateway-brand')}>
                         <span className={cx('brand-icon')}>P</span>
                         <div>
-                            <h3>{}</h3>
-                            <p>Xử lý qua {}</p>
+                            <h3>{PAYMENT_METHOD.hint}</h3>
+                            <p>Xử lý qua {PAYMENT_METHOD.label}</p>
                         </div>
                     </div>
-                    {/* 
                     <span className={cx('status-pill', 'idle')}>
-                        {isProcessing
-                            ? 'Đang tạo giao dịch...'
-                            : 'Sẵn sàng tạo giao dịch'}
-                    </span> */}
+                        Chưa có mã QR
+                    </span>
                 </div>
 
-                {/* <div className={cx('empty-state')}>
+                <div className={cx('empty-state')}>
                     <div className={cx('empty-qr')}></div>
-                    <h4>
-                        {isProcessing
-                            ? 'Đang khởi tạo mã QR...'
-                            : 'Không thể tạo mã QR'}
-                    </h4>
+                    <h4>Không tìm thấy mã QR</h4>
                     <p>
-                        {isProcessing
-                            ? 'Vui lòng chờ trong giây lát, hệ thống đang tự động tạo giao dịch SePay cho bạn.'
-                            : 'Vui lòng tạo lại giao dịch để nhận mã QR mới.'}
+                        Giao dịch chưa sẵn sàng hoặc đã hết hạn. Vui lòng thử
+                        tạo lại giao dịch.
                     </p>
                 </div>
-
-                {!isProcessing && (
-                    <button
-                        type="button"
-                        className={cx('btn-inline')}
-                        onClick={() => onCreateOrder({ force: true })}
-                    >
-                        Tạo lại mã QR
-                    </button>
-                )} */}
             </div>
         );
     }
@@ -99,7 +135,7 @@ function QRCodeScreen({ pkg }) {
 
                 <span className={cx('status-pill', 'pending')}>
                     <span className={cx('status-dot')}></span>
-                    Đang chờ thanh toán...
+                    {isExpired ? 'Mã QR đã hết hạn' : 'Đang chờ thanh toán...'}
                 </span>
             </div>
 
@@ -107,26 +143,12 @@ function QRCodeScreen({ pkg }) {
                 <div>
                     <div className={cx('qr-shell')}>
                         <div className={cx('qr-frame')}>
-                            <img src={pkg?.qrCode} alt="QR thanh toán SePay" />
+                            <img src={qrCodeUrl} alt="QR thanh toán SePay" />
                             <span className={cx('scan-line')}></span>
-                            <span
-                                className={cx('qr-corner', 'corner-top-left')}
-                            ></span>
-                            <span
-                                className={cx('qr-corner', 'corner-top-right')}
-                            ></span>
-                            <span
-                                className={cx(
-                                    'qr-corner',
-                                    'corner-bottom-left',
-                                )}
-                            ></span>
-                            <span
-                                className={cx(
-                                    'qr-corner',
-                                    'corner-bottom-right',
-                                )}
-                            ></span>
+                            <span className={cx('qr-corner', 'corner-top-left')}></span>
+                            <span className={cx('qr-corner', 'corner-top-right')}></span>
+                            <span className={cx('qr-corner', 'corner-bottom-left')}></span>
+                            <span className={cx('qr-corner', 'corner-bottom-right')}></span>
                         </div>
                     </div>
 
@@ -145,12 +167,15 @@ function QRCodeScreen({ pkg }) {
                     <div className={cx('info-row')}>
                         <p>Số tài khoản</p>
                         <div className={cx('copy-line')}>
-                            <strong>{accountName}</strong>
+                            <strong>{accountNumber || '--'}</strong>
                             <button
                                 type="button"
                                 onClick={() =>
                                     copyText(
-                                        accountName.replace(/\s+/g, ''),
+                                        String(accountNumberRaw || '').replace(
+                                            /\s+/g,
+                                            '',
+                                        ),
                                         'số tài khoản',
                                     )
                                 }
@@ -160,18 +185,23 @@ function QRCodeScreen({ pkg }) {
                         </div>
                     </div>
 
+                    <div className={cx('info-row')}>
+                        <p>Chủ tài khoản</p>
+                        <strong>{accountName}</strong>
+                    </div>
+
                     <div className={cx('amount-box')}>
                         <p>Số tiền</p>
-                        <strong>{pkg?.amount_cents ?? 0}</strong>
+                        <strong>{paymentAmountLabel}</strong>
 
                         <p>Nội dung</p>
                         <div className={cx('copy-line')}>
-                            <strong>{order_code}</strong>
+                            <strong>{transferContent || '--'}</strong>
                             <button
                                 type="button"
                                 onClick={() =>
                                     copyText(
-                                        order_code,
+                                        transferContent,
                                         'nội dung chuyển khoản',
                                     )
                                 }
@@ -197,7 +227,8 @@ function QRCodeScreen({ pkg }) {
                     <button
                         type="button"
                         className={cx('btn-inline', 'btn-cancel')}
-                        // onClick={onCancelOrder}
+                        onClick={onCancelOrder}
+                        disabled={!onCancelOrder}
                     >
                         Hủy giao dịch
                     </button>
@@ -205,10 +236,12 @@ function QRCodeScreen({ pkg }) {
                     <button
                         type="button"
                         className={cx('btn-inline', 'btn-confirm')}
-                        // onClick={onManualCheck}
-                        // disabled={isManualChecking}
+                        onClick={onManualCheck}
+                        disabled={!onManualCheck || isManualChecking}
                     >
-                        Tôi đã thanh toán
+                        {isManualChecking
+                            ? 'Đang kiểm tra...'
+                            : 'Tôi đã thanh toán'}
                     </button>
                 </div>
             </div>
