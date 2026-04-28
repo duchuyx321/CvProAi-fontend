@@ -12,6 +12,7 @@ import ExperienceFields from './components/ExperienceFields';
 import ProjectsFields from './components/ProjectsFields';
 import EducationFields from './components/EducationFields';
 import CertificatesFields from './components/CertificatesFields';
+import DynamicSectionFields from './components/DynamicSectionFields';
 
 const cx = classNames.bind(styles);
 
@@ -28,14 +29,6 @@ const SECTION_RENDERERS = {
     education: EducationFields,
     certificates: CertificatesFields,
 };
-
-function UnsupportedSection({ title }) {
-    return (
-        <div className={cx('emptyState')}>
-            <p>Section này chưa được hỗ trợ: {title}</p>
-        </div>
-    );
-}
 
 function SectionItem({
     section,
@@ -76,7 +69,16 @@ function SectionItem({
 
     const renderSectionBody = () => {
         if (!Renderer) {
-            return <UnsupportedSection title={section?.title} />;
+            return (
+                <DynamicSectionFields
+                    data={sectionData}
+                    section={section}
+                    sectionKey={section.key}
+                    onChangeField={onChangeField}
+                    onChangeArrayField={onChangeArrayField}
+                    onChangeObjectInArray={onChangeObjectInArray}
+                />
+            );
         }
 
         return (

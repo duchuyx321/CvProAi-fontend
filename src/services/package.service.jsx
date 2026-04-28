@@ -1,21 +1,21 @@
 import * as Response from '~/utils/HttpsRequest';
 
-export const getCurrentPackage = async () => {
+export const getMyPackage = async () => {
     try {
-        const res = await Response.GET('package/current');
-        return res;
+        const result = await Response.GET('package');
+        return result
     } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        console.log(error);
+        throw error;
     }
 };
 
-export const cancelPackageRenew = async () => {
+export const cancelPackageSubscription = async () => {
     try {
-        const res = await Response.POST('package/cancel-renew');
-        return res;
+        const result = await Response.POST('package/cancel');
+        return result;
     } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        console.log(error);
+        throw error;
     }
 };

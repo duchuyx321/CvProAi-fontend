@@ -31,6 +31,9 @@ export const router = {
     package: '/package',
     history: '/history',
 
+    payment: '/checkout/:payment_id',
+    paymentSuccess: '/payment/success/:orderId',
+    upgradeOptions: '/upgrade-options/:slug',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',

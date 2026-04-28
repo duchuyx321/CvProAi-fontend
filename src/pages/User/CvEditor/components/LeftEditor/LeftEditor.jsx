@@ -175,7 +175,7 @@ function LeftEditor({
                 <button
                     type="button"
                     className={cx('btn-icon')}
-                    onClick={() => handleNavigateWithConfirm(config.router.cvSample)}
+                    onClick={() => handleNavigateWithConfirm(-1)}
                     title="Quay lại Thư viện mẫu"
                 >
                     <FiArrowLeft />
@@ -205,7 +205,9 @@ function LeftEditor({
                 <button
                     type="button"
                     className={cx('btn-template')}
-                    onClick={() => handleNavigateWithConfirm(config.router.cvSample)}
+                    onClick={() =>
+                        handleNavigateWithConfirm(config.router.cvSample)
+                    }
                 >
                     <FiLayout /> Chọn mẫu
                 </button>

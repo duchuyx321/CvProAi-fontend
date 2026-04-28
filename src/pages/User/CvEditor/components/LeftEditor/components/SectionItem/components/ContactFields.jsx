@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
+import { getFieldLabel, uniqueFieldKeys } from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
 
@@ -24,54 +25,46 @@ function BaseInput({ value, onChange, type = 'text', disabled = false }) {
     );
 }
 
-function ContactFields({ data = {}, onChangeField, sectionKey }) {
+const DEFAULT_CONTACT_FIELDS = [
+    'email',
+    'phone',
+    'website',
+    'birth_date',
+    'address',
+];
+
+function ContactFields({ data = {}, onChangeField, sectionKey, section = {} }) {
+    const fieldKeys = [
+        ...new Set([
+            ...DEFAULT_CONTACT_FIELDS,
+            ...uniqueFieldKeys(section?.fields),
+            ...Object.keys(data || {}),
+        ]),
+    ].filter(Boolean);
+
     return (
         <div className={cx('fieldsGrid')}>
-            <FieldGroup label="Email">
-                <BaseInput
-                    type="email"
-                    value={data.email}
-                    onChange={(e) =>
-                        onChangeField?.(sectionKey, 'email', e.target.value)
+            {fieldKeys.map((fieldKey) => (
+                <FieldGroup
+                    key={fieldKey}
+                    label={getFieldLabel(fieldKey)}
+                    fullWidth={
+                        fieldKey === 'address' || fieldKey === 'location'
                     }
-                />
-            </FieldGroup>
-
-            <FieldGroup label="Số điện thoại">
-                <BaseInput
-                    value={data.phone}
-                    onChange={(e) =>
-                        onChangeField?.(sectionKey, 'phone', e.target.value)
-                    }
-                />
-            </FieldGroup>
-
-            <FieldGroup label="Website">
-                <BaseInput
-                    value={data.website}
-                    onChange={(e) =>
-                        onChangeField?.(sectionKey, 'website', e.target.value)
-                    }
-                />
-            </FieldGroup>
-
-            <FieldGroup label="Ngày sinh">
-                <BaseInput
-                    value={data.birth_date}
-                    onChange={(e) =>
-                        onChangeField?.(sectionKey, 'birth_date', e.target.value)
-                    }
-                />
-            </FieldGroup>
-
-            <FieldGroup label="Địa chỉ" fullWidth>
-                <BaseInput
-                    value={data.address}
-                    onChange={(e) =>
-                        onChangeField?.(sectionKey, 'address', e.target.value)
-                    }
-                />
-            </FieldGroup>
+                >
+                    <BaseInput
+                        type={fieldKey === 'email' ? 'email' : 'text'}
+                        value={data?.[fieldKey]}
+                        onChange={(e) =>
+                            onChangeField?.(
+                                sectionKey,
+                                fieldKey,
+                                e.target.value,
+                            )
+                        }
+                    />
+                </FieldGroup>
+            ))}
         </div>
     );
 }
