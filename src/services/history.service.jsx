@@ -1,11 +1,13 @@
 import * as Response from '~/utils/HttpsRequest';
 
-export const getPaymentHistory = async () => {
+export const getPaymentHistory = async ({ page = 1, limit = 10 } = {}) => {
     try {
-        const res = await Response.GET('payment/history');
-        return res;
+        const result = await Response.GET(
+            `payments?page=${page}&limit=${limit}`,
+        );
+        return result;
     } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        console.log(error);
+        throw error;
     }
 };

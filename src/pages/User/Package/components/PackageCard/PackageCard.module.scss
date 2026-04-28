@@ -1,0 +1,261 @@
+.card {
+    padding: 28px;
+    border: 1px solid #d9e2f1;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.header {
+    margin-bottom: 20px;
+}
+
+.titleWrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.title {
+    margin: 0;
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.ending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.description {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.65;
+    color: #6b7280;
+}
+
+.subMessage {
+    margin: 10px 0 0;
+    font-size: 1.4rem;
+    line-height: 1.55;
+    color: #4b5563;
+}
+
+.warningText {
+    color: #b45309;
+}
+
+.priceBox {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.price {
+    font-size: 4.4rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #1d4ed8;
+}
+
+.unit {
+    margin-bottom: 5px;
+    font-size: 1.6rem;
+    color: #6b7280;
+}
+
+.meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.metaItem {
+    padding: 14px;
+    border-radius: 12px;
+    background: #f8faff;
+}
+
+.metaLabel {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1.3rem;
+    color: #6b7280;
+}
+
+.metaValue {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.section {
+    margin-top: 24px;
+}
+
+.sectionTitle {
+    margin: 0 0 14px;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.benefitList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.benefitItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.benefitIcon {
+    color: #10b981;
+    font-size: 1.8rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.benefitText {
+    font-size: 1.5rem;
+    line-height: 1.55;
+    color: #374151;
+}
+
+.quotaList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.quotaItem {
+    padding: 16px;
+    border-radius: 12px;
+    background: #f8faff;
+}
+
+.quotaRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 10px;
+}
+
+.quotaLabel {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.quotaValue {
+    font-size: 1.4rem;
+    color: #4b5563;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progressBar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%);
+}
+
+.quotaRemaining {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #6b7280;
+}
+
+.cancelBox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 28px;
+    padding: 18px 20px;
+    border: 1px solid #f3d2d2;
+    border-radius: 16px;
+    background: #fff7f7;
+}
+
+.cancelContent {
+    flex: 1;
+}
+
+.cancelTitle {
+    margin: 0 0 6px;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.cancelDesc {
+    margin: 0;
+    font-size: 1.4rem;
+    line-height: 1.55;
+    color: #6b7280;
+}
+
+.cancelBtn {
+    min-width: 88px;
+    height: 38px;
+    padding: 0 18px;
+    border: 1px solid #e5b4b4;
+    border-radius: 999px;
+    background: #fff;
+    color: #dc2626;
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.cancelBtn:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+.cancelBtn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
