@@ -17,7 +17,7 @@ export const getMyCvs = async (params = {}) => {
 
 export const softDeleteMyCv = async (cvId) => {
     try {
-        const res = await Response.DELETE(`cvs/${cvId}`);
+        const res = await Response.DELETE(`cvs/delete/${cvId}`);
         return res;
     } catch (error) {
         return error?.response?.data;

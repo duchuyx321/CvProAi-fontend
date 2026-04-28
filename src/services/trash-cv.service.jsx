@@ -15,9 +15,9 @@ export const getTrashCvs = async (params = {}) => {
     }
 };
 
-export const restoreMyCv = async (cvId) => {
+export const resotreMyCv = async (cvId) => {
     try {
-        const res = await Response.PATCH(`cvs/${cvId}/restore`, {});
+        const res = await Response.PATCH(`cvs/restore/${cvId}`);
         return res;
     } catch (error) {
         return error?.response?.data;
@@ -26,7 +26,7 @@ export const restoreMyCv = async (cvId) => {
 
 export const forceDeleteMyCv = async (cvId) => {
     try {
-        const res = await Response.DELETE(`cvs/${cvId}/force`);
+        const res = await Response.DELETE(`cvs/destroy/${cvId}`);
         return res;
     } catch (error) {
         return error?.response?.data;

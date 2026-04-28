@@ -22,7 +22,7 @@ import CardItemCV from '../MyCvs/components/CardItemCV';
 import {
     forceDeleteMyCv,
     getTrashCvs,
-    restoreMyCv,
+    resotreMyCv,
 } from '~/services/trash-cv.service';
 import styles from './TrashCvs.module.scss';
 
@@ -223,7 +223,7 @@ function TrashCvs() {
         if (!restoreItem) return;
 
         try {
-            const res = await restoreMyCv(restoreItem.id);
+            const res = await resotreMyCv(restoreItem.id);
 
             if (!res?.success) {
                 toast.error(
@@ -401,7 +401,9 @@ function TrashCvs() {
                     <div className={cx('heading')}>
                         <div className={cx('titleRow')}>
                             <h1 className={cx('title')}>Thùng rác</h1>
-                            <span className={cx('countBadge')}>{totalItems}</span>
+                            <span className={cx('countBadge')}>
+                                {totalItems}
+                            </span>
                         </div>
 
                         <p className={cx('desc')}>
