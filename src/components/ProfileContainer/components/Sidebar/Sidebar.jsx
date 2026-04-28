@@ -13,25 +13,21 @@ const cx = classNames.bind(styles);
 
 const LIST_SIDEBARS = [
     {
-        key: 'profile',
         title: 'Thông tin cá nhân',
         icon: <MdOutlinePersonOutline />,
         to: config.router.profile,
     },
     {
-        key: 'security',
         title: 'Bảo mật',
         icon: <MdOutlineSecurity />,
         to: config.router.security,
     },
     {
-        key: 'package',
         title: 'Gói dịch vụ',
         icon: <MdOutlineInventory2 />,
         to: config.router.package,
     },
     {
-        key: 'history',
         title: 'Lịch sử giao dịch',
         icon: <RiHistoryLine />,
         to: config.router.history,
@@ -103,7 +99,7 @@ function Sidebar() {
                 <nav className={cx('menu')}>
                     {LIST_SIDEBARS.map((item) => (
                         <NavLink
-                            key={item.key}
+                            key={item.to}
                             to={item.to}
                             end
                             className={({ isActive }) =>
