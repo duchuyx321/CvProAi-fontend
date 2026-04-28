@@ -7,6 +7,7 @@ import { config } from '~/config';
 import { getProfile } from '~/services/profile.service';
 import styles from './Sidebar.module.scss';
 import { RiHistoryLine } from 'react-icons/ri';
+import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -52,32 +53,28 @@ function getInitial(name = '') {
 }
 
 function Sidebar() {
-    const [user, setUser] = useState({
-        name: 'Người dùng',
-        role: 'Thành viên',
-        avatar: '',
-    });
+    const [user, setUser] = useState({});
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const result = await getProfile();
-
-            if (!result?.success) return;
-
-            const profile = result?.data || {};
-
-            setUser({
-                name: profile?.name || profile?.full_name || 'Người dùng',
-                role: profile?.role || 'Thành viên',
-                avatar: profile?.avatar || '',
-            });
-        };
-
+            try {
+                const result = await getProfile();
+                if (!result?.success) {
+                    throw new Error(
+                        result?.message || 'Không thể tải thông tin cá nhân',
+                    )
+                }
+                setUser(result?.data || {});
+            } catch (error) {
+                toast.error(
+                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau'
+                )
+            }
+        }
         fetchProfile();
-    }, []);
+    }, [])
 
-    const { name, role, avatar } = user;
-    const hasAvatar = Boolean(avatar);
+    const hasAvatar = Boolean(user?.avatar_url);
 
     return (
         <aside className={cx('wrapper')}>
@@ -86,19 +83,19 @@ function Sidebar() {
                     <div className={cx('avatar')}>
                         {hasAvatar ? (
                             <img
-                                src={avatar}
-                                alt={name}
+                                src={user?.avatar_url}
+                                alt={user?.full_name}
                                 className={cx('avatarImg')}
                             />
                         ) : (
                             <span className={cx('avatarText')}>
-                                {getInitial(name)}
+                                {getInitial(user?.full_name)}
                             </span>
                         )}
                     </div>
 
-                    <h2 className={cx('name')}>{name}</h2>
-                    <p className={cx('role')}>{role}</p>
+                    <h2 className={cx('name')}>{user?.full_name || ''}</h2>
+                    <p className={cx('role')}>{user?.role || ''}</p>
                 </div>
 
                 <div className={cx('line')}></div>
