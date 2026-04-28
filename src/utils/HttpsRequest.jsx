@@ -106,12 +106,18 @@ export const GET = async (path, option = {}) => {
     return response.data;
 };
 
-export const POST = async (path, option = {}) => {
-    const response = await httpsRequests.post(path, option);
+// eslint-disable-next-line react-refresh/only-export-components
+export const POST = async (path, data = {}, config = {}) => {
+    const response = await httpsRequests.post(path, data, config);
     return response.data;
 };
 export const PATCH = async (path, option = {}) => {
     const response = await httpsRequests.patch(path, option);
+    return response.data;
+};
+
+export const PUT = async (path, option = {}) => {
+    const response = await httpsRequests.put(path, option);
     return response.data;
 };
 export const DELETE = async (path, option = {}) => {
