@@ -1,40 +1,189 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
-import { getPaymentHistory } from '~/services/history.service';
+import HistoryRow from './components/HistoryRow';
 import styles from './HistoryMain.module.scss';
-import Button from '~/components/Button';
+// import { getPaymentHistory } from '~/services/history.service';
 
 const cx = classNames.bind(styles);
 
-const PAGE_SIZE = 10;
+// eslint-disable-next-line react-refresh/only-export-components
+export const HISTORY_MOCKS = {
+    success: true,
+    message: 'Lấy lịch sử giao dịch thành công',
+    data: {
+        items: [
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90001',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-83921',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'PAID',
+                provider: 'SEPAY',
+                provider_transaction_id: 'SEPAY_TXN_83921',
+                description: 'Thanh toán gói Premium 1 tháng',
+                metadata: {
+                    reference_code: 'CVPROAI83921',
+                    bank_code: 'MB',
+                },
+                paid_at: '2026-05-15T08:30:00.000Z',
+                created_at: '2026-05-15T08:25:00.000Z',
+                updated_at: '2026-05-15T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
+            },
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90002',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-72810',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'PAID',
+                provider: 'SEPAY',
+                provider_transaction_id: 'SEPAY_TXN_72810',
+                description: 'Thanh toán gói Premium 1 tháng',
+                metadata: {
+                    reference_code: 'CVPROAI72810',
+                    bank_code: 'VCB',
+                },
+                paid_at: '2026-04-15T08:30:00.000Z',
+                created_at: '2026-04-15T08:25:00.000Z',
+                updated_at: '2026-04-15T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
+            },
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90003',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-72805',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'FAILED',
+                provider: 'SEPAY',
+                provider_transaction_id: null,
+                description: 'Thanh toán gói Premium 1 tháng thất bại',
+                metadata: {
+                    reference_code: 'CVPROAI72805',
+                    bank_code: 'TPB',
+                    failure_reason: 'Không nhận được xác nhận thanh toán',
+                },
+                paid_at: null,
+                created_at: '2026-04-15T07:45:00.000Z',
+                updated_at: '2026-04-15T07:50:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
+            },
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90004',
+                user_id: 'test-user-id',
+                order_type: 'AI_ADDON',
+                order_code: 'CVP-AI-70112',
+                plan_id: null,
+                addon_package_id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
+                amount_cents: '49000',
+                currency: 'VND',
+                status: 'PAID',
+                provider: 'SEPAY',
+                provider_transaction_id: 'SEPAY_TXN_70112',
+                description: 'Mua thêm 10 lượt phân tích AI',
+                metadata: {
+                    reference_code: 'CVPROAI70112',
+                    bank_code: 'ACB',
+                },
+                paid_at: '2026-03-15T09:10:00.000Z',
+                created_at: '2026-03-15T09:05:00.000Z',
+                updated_at: '2026-03-15T09:10:00.000Z',
+                plan: null,
+                addon_package: {
+                    id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
+                    name: 'Gói 10 lượt AI',
+                    slug: 'ai-10-runs',
+                    runs: 10,
+                },
+            },
+            {
+                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90005',
+                user_id: 'test-user-id',
+                order_type: 'SUBSCRIPTION',
+                order_code: 'CVP-90001',
+                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                addon_package_id: null,
+                amount_cents: '199000',
+                currency: 'VND',
+                status: 'CANCELLED',
+                provider: 'SEPAY',
+                provider_transaction_id: null,
+                description: 'Đơn thanh toán gói Premium đã hủy',
+                metadata: {
+                    reference_code: 'CVPROAI90001',
+                    bank_code: 'MB',
+                },
+                paid_at: null,
+                created_at: '2026-05-16T08:25:00.000Z',
+                updated_at: '2026-05-16T08:30:00.000Z',
+                plan: {
+                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+                    name: 'Premium',
+                    slug: 'premium',
+                    billing_cycle: 'MONTH',
+                },
+                addon_package: null,
+            },
+        ],
+        pagination: {
+            page: 1,
+            limit: 10,
+            total_items: 5,
+            total_pages: 1,
+        },
+    },
+    date: '08:39:35 21/04/2026',
+    path: '/api/v1/users/me/payments',
+};
 
 function HistoryMain() {
-    const [historyList, setHistoryList] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-
-    const totalItems = historyList.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
-
-    const currentList = useMemo(() => {
-        const start = (currentPage - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
-
-        return historyList.slice(start, end);
-    }, [historyList, currentPage]);
-
-    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-    const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
+    const [historyData, setHistoryData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setCurrentPage(1);
-    }, [historyList]);
+        let cancelled = false;
 
-    useEffect(() => {
         const fetchHistory = async () => {
+            setIsLoading(true);
+
             try {
-                const result = await getPaymentHistory();
+                // const result = await getPaymentHistory({
+                //     page: 1,
+                //     limit: 10,
+                // });
+
+                const result = HISTORY_MOCKS;
 
                 if (!result?.success) {
                     throw new Error(
@@ -42,146 +191,127 @@ function HistoryMain() {
                     );
                 }
 
-                setHistoryList(result?.data || []);
+                if (!Array.isArray(result?.data?.items)) {
+                    throw new Error('Dữ liệu lịch sử giao dịch không hợp lệ');
+                }
+
+                if (!cancelled) {
+                    setHistoryData(result.data);
+                }
             } catch (error) {
-                toast.error(
-                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
-                );
+                if (!cancelled) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau',
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchHistory();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    const handlePrevPage = () => {
-        if (currentPage === 1) return;
-        setCurrentPage((prev) => prev - 1);
-    };
-
-    const handleNextPage = () => {
-        if (currentPage === totalPages) return;
-        setCurrentPage((prev) => prev + 1);
-    };
-
-    const renderStatus = (status, statusText) => {
+    if (isLoading) {
         return (
-            <span
-                className={cx('status', {
-                    success: status === 'success',
-                    failed: status === 'failed',
-                    pending: status === 'pending',
-                })}
-            >
-                <span className={cx('dot')}></span>
-                {statusText}
-            </span>
+            <div className={cx('wrapper')}>
+                <p className={cx('loading')}>Đang tải lịch sử giao dịch...</p>
+            </div>
         );
-    };
+    }
+
+    if (!historyData) {
+        return (
+            <div className={cx('wrapper')}>
+                <p className={cx('empty')}>Không có dữ liệu giao dịch.</p>
+            </div>
+        );
+    }
+
+    const { items, pagination } = historyData;
 
     return (
         <div className={cx('wrapper')}>
             <section className={cx('card')}>
                 <div className={cx('header')}>
-                    <h1 className={cx('title')}>Lịch sử giao dịch</h1>
+                    <h2 className={cx('title')}>Lịch sử giao dịch</h2>
                     <p className={cx('desc')}>
-                        Theo dõi các khoản thanh toán gia hạn của bạn.
+                        Theo dõi các khoản thanh toán gói Premium và lượt AI mua thêm.
                     </p>
                 </div>
 
-                <div className={cx('tableWrap')}>
-                    <table className={cx('table')}>
-                        <thead>
-                            <tr>
-                                <th>Mã GD</th>
-                                <th>Ngày thanh toán</th>
-                                <th>Gói dịch vụ</th>
-                                <th>Số tiền</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
+                {items.length === 0 ? (
+                    <p className={cx('empty')}>Chưa có giao dịch nào.</p>
+                ) : (
+                    <>
+                        <div className={cx('tableWrapper')}>
+                            <div className={cx('tableHeader')}>
+                                <div className={cx('col', 'colCode')}>Mã đơn</div>
+                                <div className={cx('col', 'colDate')}>
+                                    Ngày thanh toán
+                                </div>
+                                <div className={cx('col', 'colPlan')}>
+                                    Nội dung
+                                </div>
+                                <div className={cx('col', 'colAmount')}>
+                                    Số tiền
+                                </div>
+                                <div className={cx('col', 'colMethod')}>
+                                    Phương thức
+                                </div>
+                                <div className={cx('col', 'colStatus')}>
+                                    Trạng thái
+                                </div>
+                            </div>
 
-                        <tbody>
-                            {
-                                currentList.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className={cx('empty')}>
-                                            Chưa có giao dịch nào
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentList.map((item) => (
-                                        <tr key={item.id}>
-                                            <td className={cx('id')}>
-                                                #{item.code || item.id}
-                                            </td>
-                                            <td>{item.paid_at || item.paidAt}</td>
-                                            <td>
-                                                <div className={cx('package')}>
-                                                    <span
-                                                        className={cx('packageName')}
-                                                    >
-                                                        {item.package_name ||
-                                                            item.packageName}
-                                                    </span>
-                                                    <span
-                                                        className={cx('duration')}
-                                                    >
-                                                        {item.duration || ''}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                {item.amount_text ||
-                                                    item.amount ||
-                                                    '0đ'}
-                                            </td>
-                                            <td>
-                                                {renderStatus(
-                                                    item.status,
-                                                    item.status_text ||
-                                                    item.statusText,
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                        </tbody>
-                    </table>
-                </div>
+                            <div className={cx('tableBody')}>
+                                {items.map((item) => (
+                                    <HistoryRow key={item.id} item={item} />
+                                ))}
+                            </div>
+                        </div>
 
-                <div className={cx('footer')}>
-                    <p className={cx('note')}>
-                        Hiển thị {startItem} đến {endItem} trong số {totalItems}{' '}
-                        giao dịch
-                    </p>
+                        <div className={cx('footer')}>
+                            <p className={cx('summary')}>
+                                Hiển thị 1 đến {items.length} trong số{' '}
+                                {pagination?.total_items || items.length} giao dịch
+                            </p>
 
-                    <div className={cx('pagination')}>
-                        <Button
-                            type="button"
-                            className={cx('pageBtn')}
-                            onClick={handlePrevPage}
-                            disabled={currentPage === 1}
-                        >
-                            Trước
-                        </Button>
+                            <div className={cx('pagination')}>
+                                <button
+                                    type="button"
+                                    className={cx('pageBtn')}
+                                    disabled
+                                >
+                                    Trước
+                                </button>
 
-                        <Button
-                            type="button"
-                            className={cx('pageBtn', 'active')}
-                        >
-                            {currentPage}
-                        </Button>
+                                <button
+                                    type="button"
+                                    className={cx('pageBtn', 'active')}
+                                >
+                                    {pagination?.page || 1}
+                                </button>
 
-                        <Button
-                            type="button"
-                            className={cx('pageBtn')}
-                            onClick={handleNextPage}
-                            disabled={currentPage === totalPages}
-                        >
-                            Sau
-                        </Button>
-                    </div>
-                </div>
+                                <button
+                                    type="button"
+                                    className={cx('pageBtn')}
+                                    disabled
+                                >
+                                    Sau
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </section>
         </div>
     );

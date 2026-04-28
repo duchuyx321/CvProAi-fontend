@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
+
 import Modal from '~/components/Modal';
 import Input from '~/components/Input';
 import Button from '~/components/Button';
@@ -8,12 +9,14 @@ import HeaderMedia from './components/HeaderMedia';
 import SectionItem from './components/SectionItem';
 import { validateRegex } from '~/utils/auth.validator';
 import { getProfile, updateProfile } from '~/services/profile.service';
+
 import styles from './ProfileMain.module.scss';
 
 const cx = classNames.bind(styles);
 
 const getValidateKey = (fieldKey) => {
-    if (fieldKey === 'name') return 'fullName';
+    if (fieldKey === 'full_name') return 'fullName';
+
     return fieldKey;
 };
 
@@ -38,19 +41,39 @@ const validateFieldValue = (fieldKey, value, fieldConfig) => {
     return '';
 };
 
-const getUpdatePayload = (fieldKey, value) => {
-    const payloadMap = {
-        name: 'full_name',
-        phone: 'phone',
-        email: 'email',
-        username: 'username',
-        bio: 'bio',
-        avatar: 'avatar',
-        cover: 'cover',
-    };
+
+const mapProfileResponse = (data = {}) => {
+    const profile = data.profile || {};
 
     return {
-        [payloadMap[fieldKey] || fieldKey]: value,
+        ...data,
+
+        phone: profile.phone ?? '',
+        summary: profile.summary ?? '',
+        avatar_url: profile.avatar_url ?? '',
+        cover: profile.cover ?? data.cover ?? '',
+
+        profile,
+    };
+};
+
+
+const getUpdatePayload = (fieldKey, value) => {
+    const payloadMap = {
+        full_name: 'name', 
+        phone: 'phone',
+        email: 'email',
+        summary: 'summary',
+    };
+
+    const payloadKey = payloadMap[fieldKey];
+
+    if (!payloadKey) {
+        return {};
+    }
+
+    return {
+        [payloadKey]: value,
     };
 };
 
@@ -64,8 +87,13 @@ function ProfileMain({ LIST_CONTENT = [] }) {
     const fieldList = useMemo(() => {
         return LIST_CONTENT.map((item) => {
             const rawValue = user?.[item.key];
+
             const value =
-                typeof rawValue === 'string' ? rawValue.trim() : rawValue || '';
+                typeof rawValue === 'string'
+                    ? rawValue.trim()
+                    : rawValue
+                      ? String(rawValue)
+                      : '';
 
             return {
                 ...item,
@@ -77,6 +105,7 @@ function ProfileMain({ LIST_CONTENT = [] }) {
 
     const initialValue = useMemo(() => {
         if (!editingField?.key) return '';
+
         return (user?.[editingField.key] || '').trim();
     }, [editingField, user]);
 
@@ -85,6 +114,8 @@ function ProfileMain({ LIST_CONTENT = [] }) {
     const isSaveDisabled = submitting || !!fieldError || isUnchanged;
 
     useEffect(() => {
+        let cancelled = false;
+
         const fetchProfile = async () => {
             try {
                 const result = await getProfile();
@@ -95,15 +126,25 @@ function ProfileMain({ LIST_CONTENT = [] }) {
                     );
                 }
 
-                setUser(result?.data || {});
+                if (!cancelled) {
+                    setUser(mapProfileResponse(result?.data || {}));
+                }
             } catch (error) {
-                toast.error(
-                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
-                );
+                if (!cancelled) {
+                    toast.error(
+                        error?.response?.data?.message ||
+                            error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau',
+                    );
+                }
             }
         };
 
         fetchProfile();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     useEffect(() => {
@@ -118,12 +159,14 @@ function ProfileMain({ LIST_CONTENT = [] }) {
     }, [editingField, user]);
 
     const handleOpenModal = (field) => {
-        if (submitting) return;
+        if (submitting || field.readonly) return;
+
         setEditingField(field);
     };
 
     const handleCloseModal = () => {
         if (submitting) return;
+
         setEditingField(null);
     };
 
@@ -158,10 +201,20 @@ function ProfileMain({ LIST_CONTENT = [] }) {
 
         const payload = getUpdatePayload(currentField.key, currentValue);
 
+        console.log('Update field:', currentField.key);
+        console.log('Update payload:', payload);
+
+        if (Object.keys(payload).length === 0) {
+            toast.error('Trường cập nhật không hợp lệ');
+            return;
+        }
+
         try {
             setSubmitting(true);
 
             const updatePromise = updateProfile(payload).then((result) => {
+                console.log('Update profile result:', result);
+
                 if (!result?.success) {
                     throw new Error(
                         result?.message || 'Cập nhật thông tin thất bại',
@@ -188,16 +241,22 @@ function ProfileMain({ LIST_CONTENT = [] }) {
                 },
             });
 
-            setUser((prev) => ({
-                ...prev,
-                [currentField.key]: currentValue,
-            }));
+            const profileResult = await getProfile();
 
-            setEditingField(null); 
+            if (profileResult?.success) {
+                setUser(mapProfileResponse(profileResult?.data || {}));
+            } else {
+                setUser((prev) => ({
+                    ...prev,
+                    [currentField.key]: currentValue,
+                }));
+            }
+
+            setEditingField(null);
         } catch {
             // toast.promise đã hiển thị lỗi rồi, không cần xử lý thêm
         } finally {
-            setSubmitting(false); 
+            setSubmitting(false);
         }
     };
 
@@ -249,15 +308,21 @@ function ProfileMain({ LIST_CONTENT = [] }) {
     return (
         <div className={cx('wrapper')}>
             <HeaderMedia
-                name={user?.name || user?.full_name || ''}
-                bio={user?.bio || ''}
-                avatar={user?.avatar || ''}
+                fullName={user?.full_name || ''}
+                summary={user?.summary || ''}
+                avatarUrl={user?.avatar_url || ''}
                 cover={user?.cover || ''}
-                onAvatarChange={(nextAvatar) =>
-                    setUser((prev) => ({ ...prev, avatar: nextAvatar }))
+                onAvatarUrlChange={(nextAvatarUrl) =>
+                    setUser((prev) => ({
+                        ...prev,
+                        avatar_url: nextAvatarUrl,
+                    }))
                 }
                 onCoverChange={(nextCover) =>
-                    setUser((prev) => ({ ...prev, cover: nextCover }))
+                    setUser((prev) => ({
+                        ...prev,
+                        cover: nextCover,
+                    }))
                 }
             />
 

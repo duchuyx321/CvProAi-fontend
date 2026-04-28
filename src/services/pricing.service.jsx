@@ -2,7 +2,7 @@ import * as Response from '~/utils/HttpsRequest';
 
 export const getPricing = async () => {
     try {
-        const result = await Response.GET('pricing');
+        const result = await Response.GET('plans/all');
         return result;
     } catch (error) {
         console.log(error);
