@@ -12,8 +12,10 @@ export const SECTION_TYPE_MAP = {
     education: 'education',
     certificates: 'certificates',
     additional: 'additional',
+    activities: 'activities',
     languages: 'languages',
     awards: 'awards',
+    custom: 'custom',
     references: 'references',
 };
 
@@ -31,8 +33,10 @@ export const SECTION_CONTENT_KEY_MAP = {
     education: 'EDUCATION',
     certificates: 'CERTIFICATES',
     additional: 'ADDITIONAL',
+    activities: 'ACTIVITIES',
     languages: 'LANGUAGES',
     awards: 'AWARDS',
+    custom: 'CUSTOM',
     references: 'REFERENCES',
 };
 
@@ -42,6 +46,7 @@ export const ARRAY_SECTION_TYPES = new Set([
     'projects',
     'education',
     'certificates',
+    'activities',
     'languages',
     'awards',
     'references',
@@ -57,9 +62,11 @@ export const DEFAULT_SECTION_VALUE_MAP = {
     projects: [],
     education: [],
     certificates: [],
+    activities: [],
     additional: {},
     languages: [],
     awards: [],
+    custom: {},
     references: [],
 };
 
@@ -100,7 +107,18 @@ export const DEFAULT_ARRAY_ITEM_MAP = {
     certificates: {
         name: '',
         issuer: '',
+        organization: '',
+        date: '',
         issue_date: '',
+        credential_url: '',
+        description: '<p></p>',
+    },
+
+    activities: {
+        organization: '',
+        role: '',
+        start_date: '',
+        end_date: '',
         description: '<p></p>',
     },
 
@@ -113,6 +131,8 @@ export const DEFAULT_ARRAY_ITEM_MAP = {
     awards: {
         name: '',
         issuer: '',
+        organization: '',
+        date: '',
         year: '',
         description: '',
     },
@@ -142,7 +162,6 @@ export function normalizeSectionType(sectionKey, sectionConfig = {}) {
     );
 }
 
-
 export function getContentKey(sectionKey, sectionConfig = {}) {
     const normalizedSectionKey = normalizeRawKey(sectionKey);
     const normalizedType = normalizeSectionType(sectionKey, sectionConfig);
@@ -167,7 +186,8 @@ export function getDefaultSectionValue(sectionKey, sectionConfig = {}) {
     const defaultValue = DEFAULT_SECTION_VALUE_MAP[normalizedType];
 
     if (Array.isArray(defaultValue)) return [...defaultValue];
-    if (defaultValue && typeof defaultValue === 'object') return { ...defaultValue };
+    if (defaultValue && typeof defaultValue === 'object')
+        return { ...defaultValue };
 
     return {};
 }
@@ -180,10 +200,37 @@ export function createDefaultArrayItem(sectionKey, sectionConfig = {}) {
         DEFAULT_ARRAY_ITEM_MAP[normalizedSectionKey] ||
         DEFAULT_ARRAY_ITEM_MAP[normalizedType] ||
         {};
+    const nextItem = { ...item };
+    const fieldKeys = Array.isArray(sectionConfig?.fields)
+        ? sectionConfig.fields
+              .flatMap((field) => {
+                  if (typeof field === 'string') return [field];
+                  if (field?.type === 'FIELD' && field?.key) return [field.key];
+                  if (Array.isArray(field?.items)) {
+                      return field.items
+                          .map((itemField) =>
+                              typeof itemField === 'string'
+                                  ? itemField
+                                  : itemField?.key,
+                          )
+                          .filter(Boolean);
+                  }
+                  return field?.key ? [field.key] : [];
+              })
+              .filter(Boolean)
+        : [];
 
-    return { ...item };
+    fieldKeys.forEach((fieldKey) => {
+        if (nextItem[fieldKey] !== undefined) return;
+        nextItem[fieldKey] = fieldKey === 'level' ? 0 : '';
+    });
+
+    if (sectionConfig?.options?.skill?.display === 'PROGRESS_BAR') {
+        nextItem.level = nextItem.level ?? 0;
+    }
+
+    return nextItem;
 }
-
 
 export function buildSectionListFromConfig(templateConfig = {}, options = {}) {
     const zones = templateConfig?.zones || {};
@@ -210,10 +257,12 @@ export function buildSectionListFromConfig(templateConfig = {}, options = {}) {
             rawType: sectionConfig?.type || sectionKey,
             fields: sectionConfig?.fields || [],
             variant: sectionConfig?.variant || '',
+            options: sectionConfig?.options || {},
+            style: sectionConfig?.style || {},
+            visible: sectionConfig?.visible,
         };
     });
 }
-
 
 export function mapResumeDataBySection(templateConfig = {}, resumeData = {}) {
     const sections = templateConfig?.sections || {};
@@ -253,7 +302,6 @@ export function mapResumeDataBySection(templateConfig = {}, resumeData = {}) {
     return nextResumeData;
 }
 
-
 export function buildEditorResumeData(cvData = {}) {
     const content = cvData?.content || {};
     const configSections = cvData?.config?.sections || {};
@@ -286,7 +334,6 @@ export function buildEditorResumeData(cvData = {}) {
     return result;
 }
 
-
 // State khởi tạo cho CvEditor
 export function createInitialCvState() {
     return {
@@ -298,7 +345,6 @@ export function createInitialCvState() {
         config: {},
     };
 }
-
 
 export function validateTemplateConfig(templateConfig = {}) {
     const zones = templateConfig?.zones || {};

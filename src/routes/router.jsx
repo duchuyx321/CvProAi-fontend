@@ -14,9 +14,8 @@ import Dashboard from '~/pages/User/Dashboard';
 import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
-import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
-import ResultAi from '~/pages/User/AiAnalysis/ResultAi';
+import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
@@ -25,11 +24,16 @@ import ManagePackages from '~/pages/Admin/ManagePackages';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
 import DetailLayout from '~/layouts/DetailLayout';
+
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
 import CvTemplateDetail from '~/pages/User/CvTemplateDetail';
-import CvEditor from '~/pages/User/CvEditor';
+import Payment from '~/pages/User/Payment';
+import PaymentSuccess from '~/pages/User/PaymentSuccess';
+import UpgradeOptionsPage from '~/pages/User/UpgradeOptionsPage';
+import CreateCv from '~/pages/User/CreateCv';
+import EditCv from '~/pages/User/EditCv';
 import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
 
 // public router
@@ -95,7 +99,7 @@ const PublicRouter = [
         component: CvTemplates,
         layout: DefaultLayout,
     },
-     {
+    {
         path: config.router.CvTemplateDetail,
         component: CvTemplateDetail,
         layout: PublicLayout,
@@ -107,12 +111,12 @@ const PublicRouter = [
     },
     {
         path: config.router.createCv,
-        component: CvEditor,
+        component: CreateCv,
         layout: null,
     },
     {
         path: config.router.editCv,
-        component: CvEditor,
+        component: EditCv,
         layout: null,
     },
     {
@@ -126,14 +130,24 @@ const PublicRouter = [
         layout: DefaultLayout,
     },
     {
-        path: `${config.router.aiAnalysisResult}/:aiRunId?`,
+        path: config.router.aiAnalysisResult,
         component: ResultAi,
         layout: DetailLayout,
     },
     {
-        path: config.router.upgradePremium,
-        component: UpgradePremium,
+        path: config.router.cvAnalysisHistory,
+        component: CvAnalysisHistory,
         layout: DefaultLayout,
+    },
+    {
+        path: config.router.upgradePremium,
+        component: Pricing,
+        layout: DefaultLayout,
+    },
+    {
+        path: config.router.upgradeOptions,
+        component: UpgradeOptionsPage,
+        layout: DetailLayout,
     },
     {
         path: config.router.profile,
@@ -156,10 +170,20 @@ const PublicRouter = [
         layout: DetailLayout,
     },
     {
-        path: config.router.cvAnalysisHistory,
-        component: CvAnalysisHistory,
-        layout: DefaultLayout,
-    }
+        path: config.router.payment,
+        component: Payment,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.paymentSuccess,
+        component: PaymentSuccess,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.adminDashboard,
+        component: AdminDashboard,
+        layout: AdminLayout,
+    },
 ];
 
 // user router
@@ -167,11 +191,6 @@ const UserRouter = [];
 
 // admin router
 const AdminRouter = [
-    {
-        path: config.router.adminDashboard,
-        component: AdminDashboard,
-        layout: AdminLayout,
-    },
     {
         path: config.router.manageUsers,
         component: ManageUsers,

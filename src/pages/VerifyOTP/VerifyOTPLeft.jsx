@@ -212,7 +212,7 @@ function VerifyOTPLeft() {
             await initializeAuth();
             setTimeout(() => {
                 // window.location.replace(config.router.home);
-                navigate(config.router.home);
+                navigate(config.router.dashboard);
             }, 800);
         } else if (formType === 'RESET_PASSWORD') {
             setTimeout(() => {

@@ -136,7 +136,7 @@ function MenuOther({ text = 'Hoặc tiếp tục với' }) {
             await initializeAuth();
             setTimeout(() => {
                 // window.location.replace(config.router.home);
-                navigate(config.router.home); //dashboard
+                navigate(config.router.dashboard);
             }, 800);
         } catch (error) {
             console.error('Google login error:', error);

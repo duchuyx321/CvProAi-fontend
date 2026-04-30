@@ -23,6 +23,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
 
     const clearAuthState = useCallback(() => {
@@ -31,24 +32,42 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const initializeAuth = useCallback(async () => {
-        // try {
-        //     const meRes = await getProfile();
-        //     const me = meRes?.data ?? meRes ?? null;
-        //     if (!meRes.success) {
-        //         clearAuthState();
-        //         return null;
-        //     }
-        //     console.log(me);
+        const token = localStorage.getItem('accessToken');
 
-        //     setUser(me);
-        //     return me;
-        // } catch (error) {
-        //     console.log(error);
-        //     return null;
-        // } finally {
-        //     setIsInitialized(true);
-        // }
-    }, [clearAuthState]);
+        if (!token) {
+            setUser(null);
+            setIsInitialized(true);
+            return null;
+        }
+
+        try {
+            setIsLoading(true);
+
+            const meRes = await getProfile();
+            const me = meRes?.data ?? meRes ?? null;
+
+            if (!meRes?.success) {
+                if (meRes?.status === 401) {
+                    setUser(null);
+                    return null;
+                }
+
+                throw new Error(
+                    meRes?.message || 'Không thể khởi tạo phiên đăng nhập',
+                );
+            }
+
+            setUser(me);
+            return me;
+        } catch (error) {
+            console.log(error);
+            setUser(null);
+            return null;
+        } finally {
+            setIsLoading(false);
+            setIsInitialized(true);
+        }
+    }, []);
 
     useEffect(() => {
         initializeAuth();
@@ -60,10 +79,11 @@ export const AuthProvider = ({ children }) => {
             setUser,
             clearAuthState,
             isAuthenticated: !!user,
+            isLoading,
             isInitialized,
             initializeAuth,
         }),
-        [user, isInitialized, initializeAuth, clearAuthState],
+        [user, isLoading, isInitialized, initializeAuth, clearAuthState],
     );
 
     return (

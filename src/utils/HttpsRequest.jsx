@@ -9,6 +9,16 @@ const refreshClient = axios.create({
     baseURL: import.meta.env.VITE_HTTPS_BACKEND,
     withCredentials: true,
 });
+
+let refreshPromise = null;
+
+const extractAccessToken = (payload) =>
+    payload?.data?.meta?.accessToken ||
+    payload?.data?.accessToken ||
+    payload?.meta?.accessToken ||
+    payload?.accessToken ||
+    null;
+
 const emitAuthExpired = () => {
     window.dispatchEvent(
         new CustomEvent('auth:expired', {
@@ -21,10 +31,7 @@ const emitAuthExpired = () => {
 
 const refreshToken = async () => {
     const response = await refreshClient.post('auth/refresh');
-    const accessToken =
-        response?.data?.meta?.accessToken ||
-        response?.data?.accessToken ||
-        null;
+    const accessToken = extractAccessToken(response?.data);
 
     if (!accessToken) {
         throw new Error('No access token');
@@ -32,6 +39,16 @@ const refreshToken = async () => {
 
     localStorage.setItem('accessToken', `Bearer ${accessToken}`);
     return accessToken;
+};
+
+const getRefreshToken = async () => {
+    if (!refreshPromise) {
+        refreshPromise = refreshToken().finally(() => {
+            refreshPromise = null;
+        });
+    }
+
+    return refreshPromise;
 };
 
 httpsRequests.interceptors.request.use(
@@ -65,8 +82,14 @@ httpsRequests.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
         try {
-            const accessToken = await refreshToken();
+            const accessToken = await getRefreshToken();
             originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return httpsRequests(originalRequest);
@@ -83,12 +106,18 @@ export const GET = async (path, option = {}) => {
     return response.data;
 };
 
-export const POST = async (path, option = {}) => {
-    const response = await httpsRequests.post(path, option);
+// eslint-disable-next-line react-refresh/only-export-components
+export const POST = async (path, data = {}, config = {}) => {
+    const response = await httpsRequests.post(path, data, config);
     return response.data;
 };
 export const PATCH = async (path, option = {}) => {
     const response = await httpsRequests.patch(path, option);
+    return response.data;
+};
+
+export const PUT = async (path, option = {}) => {
+    const response = await httpsRequests.put(path, option);
     return response.data;
 };
 export const DELETE = async (path, option = {}) => {

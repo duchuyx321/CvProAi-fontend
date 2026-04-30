@@ -1,92 +1,134 @@
+import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
-import { IoCheckmarkCircleOutline } from 'react-icons/io5';
+import { toast } from 'react-toastify';
 
-import Button from '~/components/Button';
-import { config } from '~/config';
 import styles from './Pricing.module.scss';
+import PricingCard from './components/PricingCard';
+import { useAuth } from '~/context/AuthContext';
+import { getPricing } from '~/services/pricing.service';
 
 const cx = classNames.bind(styles);
 
-const LIST_PLANS = [
-    {
-        key: 'free',
-        title: 'Gói Miễn phí',
-        price: '0đ',
-        unit: '/vĩnh viễn',
-        features: [
-            'Phân tích AI giới hạn (5 lần/tháng)',
-            'Xuất PDF có watermark',
-        ],
-        buttonText: 'Bắt đầu ngay',
-        popular: false,
-        to: config.router.register,
-    },
-    {
-        key: 'premium',
-        title: 'Gói Premium',
-        price: '199.000đ',
-        unit: '/tháng',
-        features: [
-            'Tạo CV không giới hạn',
-            'Phân tích AI nâng cao (Không giới hạn)',
-            'PDF không watermark (Chất lượng cao)',
-            'Xem lịch sử phân tích và giao dịch',
-        ],
-        buttonText: 'Nâng cấp Premium',
-        popular: true,
-        to: config.router.register,
-    },
-];
-
-function PricingCard({
-    title,
-    price,
-    unit,
-    features = [],
-    buttonText,
-    popular = false,
-    to,
-}) {
-    return (
-        <article className={cx('card', { popular })}>
-            {popular ? (
-                <div className={cx('badge')}>PHỔ BIẾN NHẤT</div>
-            ) : null}
-
-            <div className={cx('head')}>
-                <h2 className={cx('cardTitle')}>{title}</h2>
-
-                <div className={cx('priceBox')}>
-                    <span className={cx('price')}>{price}</span>
-                    <span className={cx('unit')}>{unit}</span>
-                </div>
-            </div>
-
-            <div className={cx('list')}>
-                {features.map((item, index) => (
-                    <div key={`${title}-${index}`} className={cx('item')}>
-                        <span className={cx('itemIcon')}>
-                            <IoCheckmarkCircleOutline />
-                        </span>
-                        <span className={cx('itemText')}>{item}</span>
-                    </div>
-                ))}
-            </div>
-
-            <div className={cx('actions')}>
-                <Button
-                    to={to}
-                    primary={popular}
-                    className={cx('btn', { btnPrimary: popular })}
-                >
-                    {buttonText}
-                </Button>
-            </div>
-        </article>
-    );
+function normalizeSlug(value = '') {
+    return value.trim().toLowerCase();
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
+// export const PRICING_RESPONSE = {
+//     success: true,
+//     message: 'Lấy dữ liệu thành công',
+//     data: [
+//         {
+//             id: '02cd62a8-749a-4541-8202-be8e947a489b',
+//             name: 'Free',
+//             description:
+//                 'Gói miễn phí để tạo CV, phân tích AI cơ bản và xuất file với giới hạn hằng tháng.',
+//             price: '0',
+//             currency: 'VND',
+//             billing_cycle: 'MONTH',
+//             cv_limit: 2,
+//             export_limit: 5,
+//             ai_limit: 3,
+//             premium_template: false,
+//             remove_watermark: false,
+//             custom_domain: false,
+//             priority_support: false,
+//             allow_ai_addon_purchase: false,
+//             is_active: true,
+//             slug: 'free',
+//             view_full_ai_analysis: true,
+//         },
+//         {
+//             id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
+//             name: 'Premium',
+//             description:
+//                 'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
+//             price: '199000',
+//             currency: 'VND',
+//             billing_cycle: 'MONTH',
+//             cv_limit: 20,
+//             export_limit: 15,
+//             ai_limit: 10,
+//             premium_template: true,
+//             remove_watermark: true,
+//             custom_domain: true,
+//             priority_support: true,
+//             allow_ai_addon_purchase: true,
+//             is_active: true,
+//             slug: 'premium',
+//             view_full_ai_analysis: true,
+//         },
+//     ],
+// };
+
 function Pricing() {
+    const { isAuthenticated, user } = useAuth();
+
+    // giả lập user đã đăng nhập và đang dùng gói Premium
+    // const isAuthenticated = true;
+    // const user = {
+    //     plan: {
+    //         name: 'Premium',
+    //         slug: 'Premium',
+    //     },
+    // };
+
+    const currentPlanSlug = normalizeSlug(user?.plan?.slug ?? 'free');
+
+    const isCurrentPremium = isAuthenticated && currentPlanSlug === 'premium';
+
+    const checkIsCurrentPlan = (plan) => {
+        if (!isAuthenticated) return false;
+
+        return currentPlanSlug === normalizeSlug(plan.slug);
+    };
+
+    const [pricing, setPricing] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false; const fetchPricing = async () => {
+            setIsLoading(true);
+
+            try {
+                const result = await getPricing();
+                // const result = PRICING_RESPONSE;
+
+                if (!result?.success) {
+                    throw new Error(
+                        result?.message ?? 'Không thể tải bảng giá',
+                    );
+                }
+
+                if (!Array.isArray(result?.data)) {
+                    throw new Error('Dữ liệu bảng giá không hợp lệ');
+                }
+
+                const activePlans = result.data.filter((plan) => plan.is_active === true);
+
+                if (!cancelled) {
+                    setPricing(activePlans);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    toast.error(
+                        error?.message ?? 'Có lỗi xảy ra, vui lòng thử lại sau',
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchPricing();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     return (
         <section className={cx('wrapper')}>
             <div className={cx('inner')}>
@@ -95,19 +137,26 @@ function Pricing() {
                     <p className={cx('desc')}>
                         Chọn gói phù hợp để tối đa khả năng trúng tuyển.
                     </p>
-                </div><div className={cx('grid')}>
-                    {LIST_PLANS.map((item) => (
-                        <PricingCard
-                            key={item.key}
-                            title={item.title}
-                            price={item.price}
-                            unit={item.unit}
-                            features={item.features}
-                            buttonText={item.buttonText}
-                            popular={item.popular}
-                            to={item.to}
-                        />
-                    ))}
+                </div>
+
+                <div className={cx('grid')}>
+                    {isLoading ? (
+                        <p className={cx('loading')}>Đang tải bảng giá...</p>
+                    ) : pricing.length === 0 ? (
+                        <p className={cx('empty')}>
+                            Hiện chưa có gói dịch vụ nào.
+                        </p>
+                    ) : (
+                        pricing.map((plan) => (
+                            <PricingCard
+                                key={plan.id}
+                                plan={plan}
+                                isAuthenticated={isAuthenticated}
+                                isCurrentPlan={checkIsCurrentPlan(plan)}
+                                isCurrentPremium={isCurrentPremium}
+                            />
+                        ))
+                    )}
                 </div>
             </div>
         </section>

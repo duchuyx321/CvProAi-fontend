@@ -9,8 +9,8 @@ import styles from './HeaderMedia.module.scss';
 
 const cx = classNames.bind(styles);
 
-const getInitial = (name = '') => {
-    const words = name.trim().split(' ').filter(Boolean);
+const getInitial = (fullName = '') => {
+    const words = fullName.trim().split(' ').filter(Boolean);
 
     if (!words.length) return 'U';
 
@@ -35,24 +35,24 @@ const readFileAsDataUrl = (file) => {
 };
 
 function HeaderMedia({
-    name = '',
-    bio = '',
-    avatar = '',
+    fullName = '',
+    summary = '',
+    avatarUrl = '',
     cover = '',
-    onAvatarChange,
+    onAvatarUrlChange,
     onCoverChange,
 }) {
     const avatarInputRef = useRef(null);
     const coverInputRef = useRef(null);
 
-    const [avatarPreview, setAvatarPreview] = useState(avatar || '');
+    const [avatarPreview, setAvatarPreview] = useState(avatarUrl || '');
     const [coverPreview, setCoverPreview] = useState(cover || '');
     const [avatarSubmitting, setAvatarSubmitting] = useState(false);
     const [coverSubmitting, setCoverSubmitting] = useState(false);
 
     useEffect(() => {
-        setAvatarPreview(avatar || '');
-    }, [avatar]);
+        setAvatarPreview(avatarUrl || '');
+    }, [avatarUrl]);
 
     useEffect(() => {
         setCoverPreview(cover || '');
@@ -60,11 +60,13 @@ function HeaderMedia({
 
     const handleOpenAvatarPicker = () => {
         if (avatarSubmitting) return;
+
         avatarInputRef.current?.click();
     };
 
     const handleOpenCoverPicker = () => {
         if (coverSubmitting) return;
+
         coverInputRef.current?.click();
     };
 
@@ -79,6 +81,7 @@ function HeaderMedia({
             setAvatarPreview(previewUrl);
 
             const formData = new FormData();
+
             formData.append('avatar', file);
 
             const updatePromise = updateAvatar(formData).then((result) => {
@@ -110,17 +113,17 @@ function HeaderMedia({
                 },
             });
 
-            const nextAvatar =
-                result?.data?.avatar ||
-                result?.data?.data?.avatar ||
+            const nextAvatarUrl =
+                result?.data?.avatar_url ||
+                result?.data?.data?.avatar_url ||
                 result?.data?.url ||
                 previewUrl;
 
-            setAvatarPreview(nextAvatar);
-            onAvatarChange?.(nextAvatar);
+            setAvatarPreview(nextAvatarUrl);
+
+            onAvatarUrlChange?.(nextAvatarUrl);
         } catch {
-            // Rollback preview về ảnh cũ nếu thất bại
-            setAvatarPreview(avatar || '');
+            setAvatarPreview(avatarUrl || '');
         } finally {
             setAvatarSubmitting(false);
             event.target.value = '';
@@ -221,12 +224,12 @@ function HeaderMedia({
                         {avatarPreview ? (
                             <img
                                 src={avatarPreview}
-                                alt={name || 'Avatar'}
+                                alt={fullName || 'Avatar'}
                                 className={cx('avatar-img')}
                             />
                         ) : (
                             <span className={cx('avatar-text')}>
-                                {getInitial(name)}
+                                {getInitial(fullName)}
                             </span>
                         )}
                     </div>
@@ -251,8 +254,13 @@ function HeaderMedia({
                 </div>
 
                 <div className={cx('info')}>
-                    <h1 className={cx('name')}>{name || 'Người dùng'}</h1>
-                    <p className={cx('bio')}>{bio || 'Chưa cập nhật'}</p>
+                    <h1 className={cx('name')}>
+                        {fullName || 'Người dùng'}
+                    </h1>
+
+                    <p className={cx('bio')}>
+                        {summary || 'Chưa cập nhật'}
+                    </p>
                 </div>
             </div>
         </section>

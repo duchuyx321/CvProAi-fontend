@@ -79,7 +79,7 @@ function LoginLeft() {
             await initializeAuth();
             setTimeout(() => {
                 // window.location.replace(config.router.home);
-                navigate(config.router.home); //dashboard
+                navigate(config.router.dashboard); //
             }, 800);
         } catch (error) {
             console.log('Login error:', error);

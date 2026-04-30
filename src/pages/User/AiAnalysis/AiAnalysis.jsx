@@ -6,10 +6,14 @@ import { toast } from 'react-toastify';
 import CVUploadCard from './components/CVUploadCard';
 import JobDescriptionCard from './components/JobDescriptionCard';
 import SavedCVList from './components/CVList';
-import { buildAnalyzeCVFormData } from '~/services/aiAnalysis.service';
-import { validateAIAnalysisForm } from '~/utils/aiAnalysis.validator';
+import {
+    analyzeCV,
+    buildAnalyzeCVFormData,
+} from '~/services/aiAnalysis.service';
 import { validateJobDescriptionFile } from '~/utils/jobDescriptionFile.validator';
 import styles from './AiAnalysis.module.scss';
+import { useNavigate } from 'react-router-dom';
+import { config } from '~/config';
 
 const cx = classNames.bind(styles);
 
@@ -32,57 +36,28 @@ const MOCK_SAVED_CVS = [
         location: 'Đà Nẵng',
         level: '3 năm kinh nghiệm',
     },
-    {
-        id: 3,
-        fileName: 'CV_Fullstack_JavaScript_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-04-06',
-        role: 'Fullstack Developer',
-        location: 'Hà Nội',
-        level: '4 năm kinh nghiệm',
-    },
-    {
-        id: 4,
-        fileName: 'CV_Intern_Frontend_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-04-03',
-        role: 'Frontend Intern',
-        location: 'Hồ Chí Minh',
-        level: 'Sinh viên năm cuối',
-    },
-    {
-        id: 5,
-        fileName: 'CV_Designer_Product_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-03-28',
-        role: 'Product Designer',
-        location: 'Cần Thơ',
-        level: '2 năm kinh nghiệm',
-    },
-    {
-        id: 6,
-        fileName: 'CV_Tester_QA_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-03-20',
-        role: 'QA Tester',
-        location: 'Hồ Chí Minh',
-        level: '1.5 năm kinh nghiệm',
-    },
 ];
 
 function AiAnalysis() {
     const [savedCVs, setSavedCVs] = useState([]);
     const [loadingSavedCVs, setLoadingSavedCVs] = useState(false);
     const [showSavedCVSection, setShowSavedCVSection] = useState(false);
-
-    const [selectedCV, setSelectedCV] = useState(null);
-
-    const [jobDescriptionInputMode, setJobDescriptionInputMode] =
-        useState('TEXT');
-    const [jobDescriptionText, setJobDescriptionText] = useState('');
-    const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
-
     const [analyzing, setAnalyzing] = useState(false);
+    const navigate = useNavigate();
+    // Chỉ còn 2 state chính
+    const [cvInput, setCvInput] = useState({
+        type: null, // 'ID' | 'FILE'
+        cv_id: null,
+        cv_file: null,
+        name: '',
+        fileUrl: '',
+    });
+
+    const [jdInput, setJdInput] = useState({
+        type: 'TEXT', // 'TEXT' | 'FILE'
+        jd_text: '',
+        jd_file: null,
+    });
 
     useEffect(() => {
         loadMockCVCollection();
@@ -91,11 +66,7 @@ function AiAnalysis() {
     const loadMockCVCollection = async () => {
         try {
             setLoadingSavedCVs(true);
-
-            await new Promise((resolve) => {
-                setTimeout(resolve, 400);
-            });
-
+            await new Promise((resolve) => setTimeout(resolve, 400));
             setSavedCVs(MOCK_SAVED_CVS);
         } catch (error) {
             console.error('Load mock CV collection error:', error);
@@ -120,11 +91,12 @@ function AiAnalysis() {
 
         const cvUrl = cv?.fileUrl || cv?.cvUrl || cv?.url || '';
 
-        setSelectedCV({
-            id: cvId,
+        setCvInput({
+            type: 'ID',
+            cv_id: cvId,
+            cv_file: null,
             name: cvName,
             fileUrl: cvUrl,
-            source: 'saved',
         });
 
         toast.success('Đã chọn CV từ bộ sưu tập');
@@ -133,11 +105,12 @@ function AiAnalysis() {
     const handleUploadLocalCV = (file) => {
         if (!file) return;
 
-        setSelectedCV({
-            id: null,
+        setCvInput({
+            type: 'FILE',
+            cv_id: null,
+            cv_file: file,
             name: file.name,
-            file,
-            source: 'local',
+            fileUrl: '',
         });
 
         setShowSavedCVSection(false);
@@ -155,19 +128,27 @@ function AiAnalysis() {
     };
 
     const handleChangeJobDescriptionInputMode = (mode) => {
-        setJobDescriptionInputMode(mode);
-
         if (mode === 'TEXT') {
-            setJobDescriptionFile(null);
+            setJdInput((prev) => ({
+                ...prev,
+                type: 'TEXT',
+                jd_file: null,
+            }));
+            return;
         }
 
-        if (mode === 'FILE') {
-            setJobDescriptionText('');
-        }
+        setJdInput((prev) => ({
+            ...prev,
+            type: 'FILE',
+            jd_text: '',
+        }));
     };
 
     const handleJobDescriptionTextChange = (value) => {
-        setJobDescriptionText(value);
+        setJdInput((prev) => ({
+            ...prev,
+            jd_text: value,
+        }));
     };
 
     const handleUploadJobDescriptionFile = (file) => {
@@ -180,45 +161,58 @@ function AiAnalysis() {
             return;
         }
 
-        setJobDescriptionFile({
-            name: file.name,
-            size: file.size,
-            file,
-        });
+        setJdInput((prev) => ({
+            ...prev,
+            jd_file: file,
+        }));
 
         toast.success('Đã tải file mô tả công việc');
     };
 
     const handleRemoveJobDescriptionFile = () => {
-        setJobDescriptionFile(null);
+        setJdInput((prev) => ({
+            ...prev,
+            jd_file: null,
+        }));
+    };
+
+    const validateAnalyzeInput = () => {
+        if (cvInput.type === 'ID' && !cvInput.cv_id) {
+            return 'Vui lòng chọn CV trong hệ thống';
+        }
+
+        if (cvInput.type === 'FILE' && !cvInput.cv_file) {
+            return 'Vui lòng tải CV từ máy tính';
+        }
+
+        if (!cvInput.type) {
+            return 'Vui lòng chọn CV để phân tích';
+        }
+
+        if (jdInput.type === 'TEXT' && !jdInput.jd_text.trim()) {
+            return 'Vui lòng nhập mô tả công việc';
+        }
+
+        if (jdInput.type === 'FILE' && !jdInput.jd_file) {
+            return 'Vui lòng tải file mô tả công việc';
+        }
+
+        return '';
     };
 
     const fetchAnalyzeAPI = async () => {
-        const formData = buildAnalyzeCVFormData({
-            selectedCV,
-            jobDescriptionInputMode,
-            jobDescriptionText,
-            jobDescriptionFile,
-        });
-
-        console.log('Analyze payload:', Array.from(formData.entries()));
-
-        await new Promise((resolve) => {
-            setTimeout(resolve, 700);
-        });
-
-        return true;
+        const formData = buildAnalyzeCVFormData({ cvInput, jdInput });
+        const result = await analyzeCV(formData);
+        if (!result?.success) {
+            throw new Error(result?.message || 'Phân tích CV thất bại');
+        }
+        return result;
     };
 
     const handleAnalyze = async () => {
         if (analyzing) return;
 
-        const errorMessage = validateAIAnalysisForm({
-            selectedCV,
-            jobDescriptionInputMode,
-            jobDescriptionText,
-            jobDescriptionFile,
-        });
+        const errorMessage = validateAnalyzeInput();
 
         if (errorMessage) {
             toast.warning(errorMessage);
@@ -230,7 +224,7 @@ function AiAnalysis() {
 
             const resultFetchAPI = fetchAnalyzeAPI();
 
-            await toast.promise(resultFetchAPI, {
+            const result = await toast.promise(resultFetchAPI, {
                 pending: 'Đang phân tích CV...',
                 success: 'Phân tích CV thành công',
                 error: {
@@ -242,15 +236,45 @@ function AiAnalysis() {
                     },
                 },
             });
-
-            // TODO:
-            // navigate('/ai-analysis/result', { state: { ... } });
+            console.log(result);
+            // navigate sang result ở đây
+            setTimeout(() => {
+                // window.location.replace(config.router.home);
+                navigate(
+                    `${config.router.aiAnalysisResult_route}${result.data.dataValues.id || result.data.id}`,
+                ); //dashboard
+            }, 800);
         } catch (error) {
             console.error('Analyze CV error:', error);
         } finally {
             setAnalyzing(false);
         }
     };
+
+    const selectedCV =
+        cvInput.type === 'ID'
+            ? {
+                  id: cvInput.cv_id,
+                  name: cvInput.name,
+                  fileUrl: cvInput.fileUrl,
+                  source: 'saved',
+              }
+            : cvInput.type === 'FILE'
+              ? {
+                    id: null,
+                    name: cvInput.name,
+                    file: cvInput.cv_file,
+                    source: 'local',
+                }
+              : null;
+
+    const selectedJobDescriptionFile = jdInput.jd_file
+        ? {
+              name: jdInput.jd_file.name,
+              size: jdInput.jd_file.size,
+              file: jdInput.jd_file,
+          }
+        : null;
 
     return (
         <div className={cx('wrapper')}>
@@ -277,18 +301,18 @@ function AiAnalysis() {
 
                             <p className={cx('tipDescription')}>
                                 Đảm bảo CV của bạn ở định dạng PDF và văn bản có
-                                thể quét được để AI đọc chính xác hơn. Nội dung rõ
-                                ràng, có số liệu định lượng và mô tả vai trò cụ
-                                thể sẽ giúp tăng chất lượng đánh giá.
+                                thể quét được để AI đọc chính xác hơn.
                             </p>
                         </div>
                     </aside>
 
                     <section className={cx('workspace')}>
                         <JobDescriptionCard
-                            jobDescriptionInputMode={jobDescriptionInputMode}
-                            jobDescriptionText={jobDescriptionText}
-                            selectedJobDescriptionFile={jobDescriptionFile}
+                            jobDescriptionInputMode={jdInput.type}
+                            jobDescriptionText={jdInput.jd_text}
+                            selectedJobDescriptionFile={
+                                selectedJobDescriptionFile
+                            }
                             onChangeJobDescriptionInputMode={
                                 handleChangeJobDescriptionInputMode
                             }

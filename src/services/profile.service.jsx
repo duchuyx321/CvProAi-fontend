@@ -1,60 +1,65 @@
 import * as Response from '~/utils/HttpsRequest';
 
+const buildErrorResponse = (error) => {
+    const status = error?.status || error?.response?.status;
+    const data = error?.response?.data;
+
+    return {
+        success: false,
+        message:
+            data?.message ||
+            error?.message ||
+            'Có lỗi xảy ra, vui lòng thử lại sau',
+        data: data?.data,
+        status,
+    };
+};
+
+const removeInvalidPayloadFields = (payload = {}) => {
+    return Object.keys(payload).reduce((acc, key) => {
+        const value = payload[key];
+
+        if (value !== undefined && value !== null) {
+            acc[key] = value;
+        }
+
+        return acc;
+    }, {});
+};
+
 export const getProfile = async () => {
     try {
-        const res = await Response.GET('profile');
-        return res;
+        return await Response.GET('profile');
     } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        return buildErrorResponse(error);
     }
 };
 
-export const updateProfile = async (payload = {
-    full_name: '',
-    phone: '',
-    email: '',
-    username: '',
-    bio: '',
-    avatar: '',
-    cover: '',
-}) => {
+export const updateProfile = async (payload = {}) => {
     try {
-        const checkValuePayload = ["", null, undefined]
-        const rest = Object.keys(payload).reduce((acc, key) => {
-            if (!checkValuePayload.includes(payload[key])) {
-                acc[key] = payload[key];
-            }
-            return acc;
-        }, {});
-        const res = await Response.PATCH('profile/update', rest);
-        return res;
+        const rest = removeInvalidPayloadFields(payload);
+
+        if (Object.keys(rest).length === 0) {
+            return {
+                success: false,
+                message: 'Không có dữ liệu cần cập nhật',
+            };
+        }
+
+        return await Response.POST('profile/update', rest);
     } catch (error) {
-        const data = error?.response?.data;
-        return data;
+        return buildErrorResponse(error);
     }
 };
 
-export const updateAvatar = async (avatar) => {
-    try {
-        const res = await Response.PATCH('profile/update', {
-            avatar,
-        });
-        return res;
-    } catch (error) {
-        const data = error?.response?.data;
-        return data;
-    }
+export const updateAvatar = async (avatarUrl) => {
+    return updateProfile({
+        avatar_url: avatarUrl,
+    });
 };
 
 export const updateCover = async (cover) => {
-    try {
-        const res = await Response.PATCH('profile/cover', {
-            cover,
-        });
-        return res;
-    } catch (error) {
-        const data = error?.response?.data;
-        return data;
-    }
+    return updateProfile({
+        cover,
+    });
 };
