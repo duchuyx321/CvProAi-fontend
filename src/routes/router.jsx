@@ -20,7 +20,7 @@ import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
-import ManageOrders from '~/pages/Admin/ManageOrders';
+// import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
@@ -35,6 +35,7 @@ import PaymentSuccess from '~/pages/User/PaymentSuccess';
 import UpgradeOptionsPage from '~/pages/User/UpgradeOptionsPage';
 import CreateCv from '~/pages/User/CreateCv';
 import EditCv from '~/pages/User/EditCv';
+import AdminOrders from '~/pages/Admin/AdminOrders';
 
 // public router
 const PublicRouter = [
@@ -181,6 +182,11 @@ const PublicRouter = [
         component: AdminDashboard,
         layout: AdminLayout,
     },
+    {
+        path: config.router.adminOrders,
+        component: AdminOrders,
+        layout: AdminLayout,
+    }
 ];
 
 // user router
@@ -199,8 +205,8 @@ const AdminRouter = [
         layout: AdminLayout,
     },
     {
-        path: config.router.manageOrders,
-        component: ManageOrders,
+        path: config.router.adminOrders,
+        component: AdminOrders,
         layout: AdminLayout,
     },
     {

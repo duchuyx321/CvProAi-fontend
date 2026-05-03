@@ -1,0 +1,207 @@
+.wrapper {
+    padding: 32px;
+    min-height: 100%;
+    background-color: #faf8f8;
+    color: #111827;
+}
+
+.header {
+    margin-bottom: 28px;
+
+    h1 {
+        margin: 0;
+        color: #111827;
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    p {
+        margin: 8px 0 0;
+        color: #66738a;
+        font-size: 16px;
+        font-weight: 600;
+    }
+}
+
+.filterCard {
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background-color: #ffffff;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.filterGroup {
+    span {
+        display: block;
+        margin-bottom: 8px;
+        color: #6b7a90;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    select,
+    input {
+        width: 100%;
+        height: 42px;
+        padding: 0 14px;
+        border: 1px solid #dbe3ef;
+        border-radius: 8px;
+        background-color: #f9fbfd;
+        color: #1f2937;
+        font-size: 14px;
+        outline: none;
+
+        &:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+    }
+}
+
+.tableCard {
+    overflow: hidden;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    background-color: #ffffff;
+}
+
+.table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: collapse;
+
+    thead {
+        background-color: #f8fafc;
+    }
+
+    th {
+        padding: 18px 24px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.4;
+        letter-spacing: 0.08em;
+        text-align: left;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+}
+
+.emptyCell {
+    padding: 48px 24px;
+    color: #64748b;
+    text-align: center;
+}
+
+.tableFooter {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 14px;
+    }
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+        min-width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 8px;
+        background-color: transparent;
+        color: #0f172a;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+
+        &:disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        svg {
+            width: 18px;
+            height: 18px;
+        }
+    }
+}
+
+.activePage {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+.modalCloseButton,
+.modalSaveButton,
+.modalDeleteButton,
+.modalEditButton {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.modalCloseButton {
+    border: 1px solid #dbe3ef;
+    background-color: #ffffff;
+    color: #475569;
+
+    &:hover {
+        background-color: #f8fafc;
+    }
+}
+
+.modalSaveButton {
+    border: 1px solid #2563eb;
+    background-color: #2563eb;
+    color: #ffffff;
+
+    &:hover {
+        background-color: #1d4ed8;
+    }
+}
+.modalEditButton {
+    border: 1px solid #635bff;
+    background-color: #635bff;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    &:hover {
+        background-color: #5147e8;
+    }
+}
+.modalDeleteButton {
+    border: 1px solid #dc2626;
+    background-color: #dc2626;
+    color: #ffffff;
+
+    &:hover {
+        background-color: #b91c1c;
+    }
+}

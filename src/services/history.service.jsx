@@ -11,3 +11,13 @@ export const getPaymentHistory = async ({ page = 1, limit = 10 } = {}) => {
         throw error;
     }
 };
+
+export const getOrders = async () => {
+    try {
+        const res = await Response.GET('payments');
+        return res;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+}

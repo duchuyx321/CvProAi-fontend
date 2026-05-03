@@ -40,4 +40,5 @@ export const router = {
     adminSettings: '/admin/settings',
     manageOrders: '/admin/orders',
     managePackages: '/admin/packages',
+    adminOrders: '/admin/orders'
 };
