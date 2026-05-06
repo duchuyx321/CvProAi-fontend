@@ -1713,7 +1713,7 @@ export const updateCvBySlug = async (id, data) => {
     }
 
     try {
-        const result = await Response.PUT(`cvs/edit/${id}`, data);
+        const result = await Response.PATCH(`cvs/edit/${id}`, data);
         return result;
     } catch (error) {
         const status = error?.status || error?.response?.status;
