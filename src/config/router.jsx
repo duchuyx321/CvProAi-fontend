@@ -36,6 +36,8 @@ export const router = {
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
+    manageUsersAdd: '/admin/manage-users/add',
+    manageUsersDetail: '/admin/manage-users/:userId',
     manageTemplates: '/admin/templates',
     adminSettings: '/admin/settings',
     manageOrders: '/admin/orders',

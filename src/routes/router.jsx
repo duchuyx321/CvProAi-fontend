@@ -18,10 +18,12 @@ import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
+import AddAccout from '~/pages/Admin/ManageUsers/components/AddAccout';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
 import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
+import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
 import DetailLayout from '~/layouts/DetailLayout';
@@ -181,6 +183,22 @@ const PublicRouter = [
         component: AdminDashboard,
         layout: AdminLayout,
     },
+
+     {
+        path: config.router.manageUsers,
+        component: ManageUsers,
+        layout: AdminLayout,
+    },
+    {
+        path: config.router.manageUsersAdd,
+        component: AddAccout,
+        layout: DetailLayout,
+    },
+    {
+        path: config.router.manageUsersDetail,
+        component: UserDetailInfo,
+        layout: DetailLayout,
+    },
 ];
 
 // user router
@@ -188,11 +206,7 @@ const UserRouter = [];
 
 // admin router
 const AdminRouter = [
-    {
-        path: config.router.manageUsers,
-        component: ManageUsers,
-        layout: AdminLayout,
-    },
+   
     {
         path: config.router.manageTemplates,
         component: ManageTemplates,

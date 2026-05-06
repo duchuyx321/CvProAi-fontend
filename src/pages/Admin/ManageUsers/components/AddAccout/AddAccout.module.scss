@@ -1,0 +1,243 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 0px 150px;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 1.5rem;
+}
+
+.brand,
+.active {
+    font-weight: 800;
+    color: #4f46e5;
+}
+
+.muted,
+.separator {
+    color: #64748b;
+}
+
+.formCard {
+    padding: 28px 30px 34px;
+    border: 1px solid #dbe4f0;
+    border-radius: 28px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 24px 40px rgba(15, 23, 42, 0.04);
+}
+
+.fieldGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.fieldRow {
+    margin-bottom: 24px;
+}
+
+.fullRow {
+    width: 100%;
+}
+
+.selectWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.selectLabel {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.selectField {
+    position: relative;
+    min-height: 54px;
+    padding: 0 18px;
+    border: 1px solid #dbe4f0;
+    border-radius: 16px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #0f172a;
+}
+
+.selectField.hasError {
+    border-color: #ef4444;
+}
+
+.selectValue {
+    flex: 1;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.selectField svg {
+    flex-shrink: 0;
+    color: #94a3b8;
+    font-size: 1.8rem;
+}
+
+.selectField select {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+}
+
+.selectError {
+    font-size: 1.3rem;
+    color: #ef4444;
+}
+
+.helperText {
+    margin: 12px 0 0;
+    font-size: 1.4rem;
+    line-height: 1.7;
+    color: #94a3b8;
+}
+
+.checkboxRow {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    cursor: pointer;
+}
+
+.checkboxRow input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.checkboxFake {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #c8d4e5;
+    border-radius: 10px;
+    background: #ffffff;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.checkboxRow input:checked + .checkboxFake {
+    border-color: #4f46e5;
+    background: #4f46e5;
+}
+
+.checkboxRow input:checked + .checkboxFake::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 10px;
+    width: 6px;
+    height: 12px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkboxLabel {
+    font-size: 1.5rem;
+    color: #475569;
+}
+
+.submitError {
+    margin: 18px 0 0;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    color: #dc2626;
+}
+
+.actions {
+    margin-top: 42px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+}
+
+.ghostButton,
+.primaryButton {
+    min-width: 150px;
+    min-height: 54px;
+    padding: 0 20px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.ghostButton {
+    border: 1px solid #dbe4f0;
+    background: #ffffff;
+    color: #1f2937;
+}
+
+.primaryButton {
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, #6b6ef6 0%, #5b5ce9 100%);
+    color: #ffffff;
+    box-shadow: 0 18px 26px rgba(91, 92, 233, 0.2);
+}
+
+.ghostButton:hover:not(:disabled),
+.primaryButton:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.primaryButton:hover:not(:disabled) {
+    box-shadow: 0 22px 32px rgba(91, 92, 233, 0.26);
+}
+
+.ghostButton:disabled,
+.primaryButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+@media (max-width: 992px) {
+    .formCard {
+        padding: 22px 20px 26px;
+    }
+
+    .fieldGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .actions {
+        flex-direction: column-reverse;
+    }
+
+    .ghostButton,
+    .primaryButton {
+        width: 100%;
+    }
+}
