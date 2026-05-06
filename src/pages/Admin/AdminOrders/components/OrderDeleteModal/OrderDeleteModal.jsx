@@ -18,13 +18,13 @@ function OrderDeleteModal({ order }) {
 
                 <p>
                     Bạn đang chuẩn bị xóa đơn hàng{' '}
-                    <strong>#{order.order_code}</strong>. Hành động này không thể hoàn tác.
+                    <strong>#{order.order_code || '--'}</strong>. Hành động này không thể hoàn tác.
                 </p>
 
                 <div className={cx('orderInfo')}>
                     <div>
                         <span>Người dùng</span>
-                        <strong>{order.user?.name || '--'}</strong>
+                        <strong>{order.user?.full_name || '--'}</strong>
                     </div>
 
                     <div>
@@ -35,6 +35,16 @@ function OrderDeleteModal({ order }) {
                     <div>
                         <span>Gói dịch vụ</span>
                         <strong>{order.plan?.name || '--'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Gói add-on</span>
+                        <strong>{order.addon_package?.name || '--'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Loại đơn</span>
+                        <strong>{order.order_type || '--'}</strong>
                     </div>
 
                     <div>

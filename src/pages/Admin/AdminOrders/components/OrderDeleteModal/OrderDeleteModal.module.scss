@@ -74,12 +74,3 @@
     }
 }
 
-@media (max-width: 640px) {
-    .wrapper {
-        flex-direction: column;
-    }
-
-    .orderInfo {
-        grid-template-columns: 1fr;
-    }
-}

@@ -8,6 +8,22 @@ import styles from './OrderEditModal.module.scss';
 
 const cx = classNames.bind(styles);
 
+function formatDateTime(value) {
+    if (!value) return '';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+}
+
 function ReadonlyRow({ label, value, strongValue = false }) {
     return (
         <div className={cx('detailRow')}>
@@ -40,7 +56,7 @@ function OrderEditModal({ order, plans, statusOptions, editForm, onChange }) {
                 <div className={cx('sectionBody')}>
                     <ReadonlyRow
                         label="Họ và tên"
-                        value={order.user?.name}
+                        value={order.user?.full_name}
                         strongValue
                     />
 
@@ -83,13 +99,13 @@ function OrderEditModal({ order, plans, statusOptions, editForm, onChange }) {
 
                     <FieldGroup label="Gói dịch vụ">
                         <select
-                            name="plan_slug"
-                            value={editForm.plan_slug}
+                            name="plan_name"
+                            value={editForm.plan_name}
                             onChange={onChange}
                         >
                             {plans.map((plan) => (
-                                <option key={plan.id} value={plan.slug}>
-                                    {plan.name}
+                                <option key={plan.value} value={plan.value}>
+                                    {plan.label}
                                 </option>
                             ))}
                         </select>
@@ -120,27 +136,24 @@ function OrderEditModal({ order, plans, statusOptions, editForm, onChange }) {
                                 name="payment_method"
                                 value={editForm.payment_method}
                                 onChange={onChange}
-                                placeholder="Nhập phương thức thanh toán"
+                                placeholder="Backend chưa trả payment_method"
                             />
                         </FieldGroup>
 
                         <FieldGroup label="Thời gian tạo">
                             <input
-                                value={
-                                    order.created_at
-                                        ? new Intl.DateTimeFormat('vi-VN', {
-                                              day: '2-digit',
-                                              month: '2-digit',
-                                              year: 'numeric',
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                          }).format(new Date(order.created_at))
-                                        : ''
-                                }
+                                value={formatDateTime(order.createdAt)}
                                 readOnly
                             />
                         </FieldGroup>
                     </div>
+
+                    <FieldGroup label="Thời gian thanh toán">
+                        <input
+                            value={formatDateTime(order.paid_at)}
+                            readOnly
+                        />
+                    </FieldGroup>
                 </div>
             </section>
         </div>

@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
-import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiEye, FiEdit2 } from 'react-icons/fi';
+// import { FiTrash2 } from 'react-icons/fi';
 import styles from './OrderRow.module.scss';
 
 const cx = classNames.bind(styles);
@@ -36,11 +37,15 @@ function formatCurrency(value, currency = 'VND') {
 function formatDate(value) {
     if (!value) return '--';
 
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '--';
+
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-    }).format(new Date(value));
+    }).format(date);
 }
 
 function getAvatarFallback(name) {
@@ -61,24 +66,27 @@ function splitPlanName(name) {
     return name.split(' ');
 }
 
-function OrderRow({ order, onView, onEdit, onDelete }) {
+function OrderRow({
+    order,
+    onView,
+    onEdit,
+    // onDelete
+}) {
     const statusMeta = STATUS_META[order.status] || {
         label: order.status || '--',
         className: 'default',
     };
 
+    const userName = order.user?.full_name || '--';
+    const userEmail = order.user?.email || '--';
     const planParts = splitPlanName(order.plan?.name);
 
     return (
         <tr className={cx('row')}>
             <td>
-                <button
-                    type="button"
-                    className={cx('orderCode')}
-                    onClick={() => onView?.(order)}
-                >
+                <span className={cx('orderCode')}>
                     #{order.order_code || '--'}
-                </button>
+                </span>
             </td>
 
             <td>
@@ -86,18 +94,18 @@ function OrderRow({ order, onView, onEdit, onDelete }) {
                     {order.user?.avatar ? (
                         <img
                             src={order.user.avatar}
-                            alt={order.user?.name || 'User'}
+                            alt={userName}
                             className={cx('avatar')}
                         />
                     ) : (
                         <div className={cx('avatar', 'avatarFallback')}>
-                            {getAvatarFallback(order.user?.name)}
+                            {getAvatarFallback(userName)}
                         </div>
                     )}
 
                     <div className={cx('userMeta')}>
-                        <strong>{order.user?.name || '--'}</strong>
-                        <span>{order.user?.email || '--'}</span>
+                        <strong>{userName}</strong>
+                        <span>{userEmail}</span>
                     </div>
                 </div>
             </td>
@@ -117,12 +125,6 @@ function OrderRow({ order, onView, onEdit, onDelete }) {
             </td>
 
             <td>
-                <span className={cx('paymentMethod')}>
-                    {order.payment_method || '--'}
-                </span>
-            </td>
-
-            <td>
                 <span className={cx('statusBadge', statusMeta.className)}>
                     {statusMeta.label}
                 </span>
@@ -130,7 +132,7 @@ function OrderRow({ order, onView, onEdit, onDelete }) {
 
             <td>
                 <span className={cx('createdDate')}>
-                    {formatDate(order.created_at)}
+                    {formatDate(order.createdAt)}
                 </span>
             </td>
 
@@ -156,7 +158,7 @@ function OrderRow({ order, onView, onEdit, onDelete }) {
                         <FiEdit2 />
                     </button>
 
-                    <button
+                    {/* <button
                         type="button"
                         className={cx('actionButton', 'deleteAction')}
                         onClick={() => onDelete?.(order)}
@@ -164,7 +166,7 @@ function OrderRow({ order, onView, onEdit, onDelete }) {
                         aria-label="Xóa đơn hàng"
                     >
                         <FiTrash2 />
-                    </button>
+                    </button> */}
                 </div>
             </td>
         </tr>

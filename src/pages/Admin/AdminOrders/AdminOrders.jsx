@@ -6,10 +6,13 @@ import Button from '~/components/Button';
 import OrderRow from './components/OrderRow';
 import OrderDetailModal from './components/OrderDetailModal';
 import OrderEditModal from './components/OrderEditModal';
-import OrderDeleteModal from './components/OrderDeleteModal';
 import styles from './AdminOrders.module.scss';
+import { getOrders } from '~/services/history.service';
+import { useDebounce } from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
+
+const DEFAULT_LIMIT = 8;
 
 const ORDER_STATUS_OPTIONS = [
     {
@@ -38,190 +41,190 @@ const ORDER_STATUS_FILTER_OPTIONS = [
     ...ORDER_STATUS_OPTIONS,
 ];
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const MOCKS_ADMIN_ORDERS = {
-    success: true,
-    message: 'Lấy danh sách đơn hàng thành công',
-    data: {
-        plans: [
-            {
-                id: 'plan-001',
-                name: 'Premium Monthly',
-                slug: 'premium-monthly',
-            },
-            {
-                id: 'plan-002',
-                name: 'Pro Lifetime',
-                slug: 'pro-lifetime',
-            },
-            {
-                id: 'plan-003',
-                name: 'Premium Yearly',
-                slug: 'premium-yearly',
-            },
-        ],
-        pagination: {
-            page: 1,
-            limit: 10,
-            total_items: 4,
-            total_pages: 1,
-        },
-        items: [
-            {
-                id: 'order-8821',
-                order_code: 'ORD-8821',
-                user: {
-                    id: 'user-001',
-                    name: 'Lê Đức Huy',
-                    email: 'hung.le@gmail.com',
-                    avatar: 'https://i.pravatar.cc/80?img=12',
-                },
-                plan: {
-                    id: 'plan-001',
-                    name: 'Premium Monthly',
-                    slug: 'premium-monthly',
-                },
-                amount_cents: '199000',
-                currency: 'VND',
-                payment_method: 'Momo',
-                status: 'PAID',
-                created_at: '2024-05-20T08:30:00.000Z',
-            },
-            {
-                id: 'order-8752',
-                order_code: 'ORD-8752',
-                user: {
-                    id: 'user-002',
-                    name: 'Nguyễn Văn Long',
-                    email: 'mai.tt@hotmail.com',
-                    avatar: 'https://i.pravatar.cc/80?img=14',
-                },
-                plan: {
-                    id: 'plan-002',
-                    name: 'Pro Lifetime',
-                    slug: 'pro-lifetime',
-                },
-                amount_cents: '1299000',
-                currency: 'VND',
-                payment_method: 'VNPAY',
-                status: 'PENDING',
-                created_at: '2024-05-19T08:30:00.000Z',
-            },
-            {
-                id: 'order-8699',
-                order_code: 'ORD-8699',
-                user: {
-                    id: 'user-003',
-                    name: 'Phạm Minh Đức',
-                    email: 'duc.pham@outlook.com',
-                    avatar: 'https://i.pravatar.cc/80?img=15',
-                },
-                plan: {
-                    id: 'plan-003',
-                    name: 'Premium Yearly',
-                    slug: 'premium-yearly',
-                },
-                amount_cents: '899000',
-                currency: 'VND',
-                payment_method: 'Thẻ tín dụng',
-                status: 'FAILED',
-                created_at: '2024-05-18T08:30:00.000Z',
-            },
-            {
-                id: 'order-8640',
-                order_code: 'ORD-8640',
-                user: {
-                    id: 'user-004',
-                    name: 'Nguyễn Bảo Ngọc',
-                    email: 'ngoc.nb@gmail.com',
-                    avatar: 'https://i.pravatar.cc/80?img=16',
-                },
-                plan: {
-                    id: 'plan-001',
-                    name: 'Premium Monthly',
-                    slug: 'premium-monthly',
-                },
-                amount_cents: '199000',
-                currency: 'VND',
-                payment_method: 'ZaloPay',
-                status: 'PAID',
-                created_at: '2024-05-18T08:30:00.000Z',
-            },
-        ],
-    },
-    date: '10:30:00 20/05/2024',
-    path: '/api/v1/admin/orders',
-};
-
 function AdminOrders() {
     const [orders, setOrders] = useState([]);
-    const [plans, setPlans] = useState([]);
-    const [pagination, setPagination] = useState({});
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: DEFAULT_LIMIT,
+        total_items: 0,
+        total_pages: 1,
+    });
+
+    const [searchValue, setSearchValue] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [planFilter, setPlanFilter] = useState('ALL');
-    const [createdDate, setCreatedDate] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const debouncedSearchValue = useDebounce(searchValue, 500);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [modalMode, setModalMode] = useState(null);
+
     const [editForm, setEditForm] = useState({
         status: '',
-        plan_slug: '',
+        plan_name: '',
         amount_cents: '',
-        payment_method: '',
     });
 
-    useEffect(() => {
-        const fetchApi = async () => {
-            try {
-                // const result = await getPayment();
-                const result = MOCKS_ADMIN_ORDERS;
+    const fetchOrders = async (page = 1) => {
+        try {
+            setIsLoading(true);
 
-                if (!result.success) {
-                    throw new Error(result.message || 'Không thể lấy danh sách đơn hàng');
-                }
+            const queryParams = {
+                page,
+                limit: DEFAULT_LIMIT,
+            };
 
-                setOrders(result.data.items || []);
-                setPlans(result.data.plans || []);
-                setPagination(result.data.pagination || {});
-            } catch (error) {
-                console.log(error);
+            if (fromDate) {
+                queryParams.from = fromDate;
             }
-        };
 
-        fetchApi();
-    }, []);
+            if (toDate) {
+                queryParams.to = toDate;
+            }
+
+            const result = await getOrders(queryParams);
+
+            if (!result.success) {
+                throw new Error(
+                    result.message ||
+                    result.messsage ||
+                    'Không thể lấy danh sách đơn hàng',
+                );
+            }
+
+            const ordersData = result.data?.data || [];
+            const metaData = result.data?.meta || {};
+
+            setOrders(ordersData);
+            setPagination({
+                page: metaData.page || page,
+                limit: metaData.limit || DEFAULT_LIMIT,
+                total_items: metaData.total_items || ordersData.length,
+                total_pages: metaData.total_pages || 1,
+            });
+        } catch (error) {
+            console.log(error);
+
+            setOrders([]);
+            setPagination({
+                page: 1,
+                limit: DEFAULT_LIMIT,
+                total_items: 0,
+                total_pages: 1,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOrders(1);
+    }, [fromDate, toDate]);
+
+    useEffect(() => {
+        const hasLocalFilter =
+            debouncedSearchValue.trim() || statusFilter !== 'ALL';
+
+        if (!hasLocalFilter) return;
+        if (pagination.page === 1) return;
+
+        fetchOrders(1);
+    }, [debouncedSearchValue, statusFilter]);
 
     const planOptions = useMemo(() => {
+        const uniquePlanNames = [
+            ...new Set(
+                orders
+                    .map((order) => order.plan?.name)
+                    .filter(Boolean),
+            ),
+        ];
+
         return [
             {
                 label: 'Tất cả các gói',
                 value: 'ALL',
             },
-            ...plans.map((plan) => ({
-                label: plan.name,
-                value: plan.slug,
+            ...uniquePlanNames.map((planName) => ({
+                label: planName,
+                value: planName,
             })),
         ];
-    }, [plans]);
+    }, [orders]);
 
     const filteredOrders = useMemo(() => {
-        return orders.filter((order) => {
-            const isMatchStatus = statusFilter === 'ALL' || order.status === statusFilter;
-            const isMatchPlan = planFilter === 'ALL' || order.plan?.slug === planFilter;
-            const isMatchDate =
-                !createdDate || order.created_at?.slice(0, 10) === createdDate;
+        const keyword = debouncedSearchValue.trim().toLowerCase();
 
-            return isMatchStatus && isMatchPlan && isMatchDate;
+        return orders.filter((order) => {
+            const isMatchStatus =
+                statusFilter === 'ALL' || order.status === statusFilter;
+
+            const searchableText = [
+                order.order_code,
+                order.user?.full_name,
+                order.user?.email,
+                order.plan?.name,
+                order.addon_package?.name,
+                order.order_type,
+                order.status,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+
+            const isMatchSearch = !keyword || searchableText.includes(keyword);
+
+            return isMatchStatus && isMatchSearch;
         });
-    }, [orders, statusFilter, planFilter, createdDate]);
+    }, [orders, statusFilter, debouncedSearchValue]);
 
     const currentPage = pagination.page || 1;
-    const limit = pagination.limit || 10;
-    const totalItems = filteredOrders.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / limit));
-    const showingFrom = totalItems ? 1 : 0;
-    const showingTo = filteredOrders.length;
+    const backendTotalItems = pagination.total_items || 0;
+    const backendTotalPages = Math.max(1, pagination.total_pages || 1);
+
+    const hasLocalFilter =
+        Boolean(debouncedSearchValue.trim()) || statusFilter !== 'ALL';
+
+    const displayCurrentPage = hasLocalFilter ? 1 : currentPage;
+    const displayTotalItems = hasLocalFilter ? filteredOrders.length : backendTotalItems;
+    const displayTotalPages = hasLocalFilter ? 1 : backendTotalPages;
+
+    const showingFrom = filteredOrders.length
+        ? (displayCurrentPage - 1) * DEFAULT_LIMIT + 1
+        : 0;
+
+    const showingTo = filteredOrders.length
+        ? showingFrom + filteredOrders.length - 1
+        : 0;
+
     const isModalOpen = Boolean(selectedOrder && modalMode);
+
+    const handlePrevPage = () => {
+        if (hasLocalFilter || currentPage <= 1 || isLoading) return;
+
+        fetchOrders(currentPage - 1);
+    };
+
+    const handleNextPage = () => {
+        if (hasLocalFilter || currentPage >= backendTotalPages || isLoading) return;
+
+        fetchOrders(currentPage + 1);
+    };
+
+    const handleGoToPage = (page) => {
+        if (hasLocalFilter || page === currentPage || isLoading) return;
+
+        fetchOrders(page);
+    };
+
+    const handleResetFilters = () => {
+        setSearchValue('');
+        setStatusFilter('ALL');
+        setFromDate('');
+        setToDate('');
+    };
 
     const handleViewOrder = (order) => {
         setSelectedOrder(order);
@@ -231,17 +234,12 @@ function AdminOrders() {
     const handleEditOrder = (order) => {
         setSelectedOrder(order);
         setModalMode('edit');
+
         setEditForm({
             status: order.status || '',
-            plan_slug: order.plan?.slug || '',
+            plan_name: order.plan?.name || '',
             amount_cents: order.amount_cents || '',
-            payment_method: order.payment_method || '',
         });
-    };
-
-    const handleDeleteOrder = (order) => {
-        setSelectedOrder(order);
-        setModalMode('delete');
     };
 
     const handleSwitchToEditModal = () => {
@@ -250,24 +248,14 @@ function AdminOrders() {
         handleEditOrder(selectedOrder);
     };
 
-    const handleConfirmDeleteOrder = () => {
-        if (!selectedOrder) return;
-
-        setOrders((prevOrders) => {
-            return prevOrders.filter((item) => item.id !== selectedOrder.id);
-        });
-
-        handleCloseModal();
-    };
-
     const handleCloseModal = () => {
         setSelectedOrder(null);
         setModalMode(null);
+
         setEditForm({
             status: '',
-            plan_slug: '',
+            plan_name: '',
             amount_cents: '',
-            payment_method: '',
         });
     };
 
@@ -290,8 +278,6 @@ function AdminOrders() {
             return;
         }
 
-        const selectedPlan = plans.find((plan) => plan.slug === editForm.plan_slug);
-
         setOrders((prevOrders) => {
             return prevOrders.map((order) => {
                 if (order.id !== selectedOrder.id) return order;
@@ -300,14 +286,10 @@ function AdminOrders() {
                     ...order,
                     status: editForm.status,
                     amount_cents: amountValue,
-                    payment_method: editForm.payment_method.trim(),
-                    plan: selectedPlan
-                        ? {
-                            id: selectedPlan.id,
-                            name: selectedPlan.name,
-                            slug: selectedPlan.slug,
-                        }
-                        : order.plan,
+                    plan: {
+                        ...order.plan,
+                        name: editForm.plan_name,
+                    },
                 };
             });
         });
@@ -318,7 +300,6 @@ function AdminOrders() {
     const getModalTitle = () => {
         if (modalMode === 'view') return 'Chi tiết đơn hàng';
         if (modalMode === 'edit') return 'Chỉnh sửa đơn hàng';
-        if (modalMode === 'delete') return 'Xóa đơn hàng';
 
         return '';
     };
@@ -334,16 +315,12 @@ function AdminOrders() {
             return (
                 <OrderEditModal
                     order={selectedOrder}
-                    plans={plans}
+                    plans={planOptions.filter((plan) => plan.value !== 'ALL')}
                     statusOptions={ORDER_STATUS_OPTIONS}
                     editForm={editForm}
                     onChange={handleEditFormChange}
                 />
             );
-        }
-
-        if (modalMode === 'delete') {
-            return <OrderDeleteModal order={selectedOrder} />;
         }
 
         return null;
@@ -358,18 +335,6 @@ function AdminOrders() {
                     onClick={handleSaveOrder}
                 >
                     Lưu thay đổi
-                </Button>
-            );
-        }
-
-        if (modalMode === 'delete') {
-            return (
-                <Button
-                    type="button"
-                    className={cx('modalDeleteButton')}
-                    onClick={handleConfirmDeleteOrder}
-                >
-                    Xóa đơn hàng
                 </Button>
             );
         }
@@ -408,8 +373,17 @@ function AdminOrders() {
 
             <div className={cx('filterCard')}>
                 <label className={cx('filterGroup')}>
-                    <span>Trạng thái</span>
+                    <span>Tìm kiếm</span>
+                    <input
+                        type="search"
+                        value={searchValue}
+                        placeholder="Mã đơn, email, tên..."
+                        onChange={(event) => setSearchValue(event.target.value)}
+                    />
+                </label>
 
+                <label className={cx('filterGroup')}>
+                    <span>Trạng thái</span>
                     <select
                         value={statusFilter}
                         onChange={(event) => setStatusFilter(event.target.value)}
@@ -423,29 +397,34 @@ function AdminOrders() {
                 </label>
 
                 <label className={cx('filterGroup')}>
-                    <span>Gói dịch vụ</span>
-
-                    <select
-                        value={planFilter}
-                        onChange={(event) => setPlanFilter(event.target.value)}
-                    >
-                        {planOptions.map((plan) => (
-                            <option key={plan.value} value={plan.value}>
-                                {plan.label}
-                            </option>
-                        ))}
-                    </select>
+                    <span>Từ ngày</span>
+                    <input
+                        type="date"
+                        value={fromDate}
+                        max={toDate || undefined}
+                        onChange={(event) => setFromDate(event.target.value)}
+                    />
                 </label>
 
                 <label className={cx('filterGroup')}>
-                    <span>Ngày tạo</span>
-
+                    <span>Đến ngày</span>
                     <input
                         type="date"
-                        value={createdDate}
-                        onChange={(event) => setCreatedDate(event.target.value)}
+                        value={toDate}
+                        min={fromDate || undefined}
+                        onChange={(event) => setToDate(event.target.value)}
                     />
                 </label>
+
+                <div className={cx('filterActions')}>
+                    <Button
+                        type="button"
+                        className={cx('resetFilterButton')}
+                        onClick={handleResetFilters}
+                    >
+                        Làm mới
+                    </Button>
+                </div>
             </div>
 
             <div className={cx('tableCard')}>
@@ -456,7 +435,6 @@ function AdminOrders() {
                             <th>Người dùng</th>
                             <th>Gói dịch vụ</th>
                             <th>Giá</th>
-                            <th>PT thanh toán</th>
                             <th>Trạng thái</th>
                             <th>Ngày tạo</th>
                             <th>Hành động</th>
@@ -470,14 +448,15 @@ function AdminOrders() {
                                 order={order}
                                 onView={handleViewOrder}
                                 onEdit={handleEditOrder}
-                                onDelete={handleDeleteOrder}
                             />
                         ))}
 
                         {!filteredOrders.length && (
                             <tr>
-                                <td colSpan="8" className={cx('emptyCell')}>
-                                    Không tìm thấy đơn hàng phù hợp.
+                                <td colSpan="7" className={cx('emptyCell')}>
+                                    {isLoading
+                                        ? 'Đang tải danh sách đơn hàng...'
+                                        : 'Không tìm thấy đơn hàng phù hợp.'}
                                 </td>
                             </tr>
                         )}
@@ -486,31 +465,48 @@ function AdminOrders() {
 
                 <div className={cx('tableFooter')}>
                     <p>
-                        Hiển thị {showingFrom}-{showingTo} của {totalItems} đơn hàng
+                        Hiển thị {showingFrom}-{showingTo} của {displayTotalItems} đơn hàng
                     </p>
 
                     <div className={cx('pagination')}>
-                        <button type="button" disabled aria-label="Trang trước">
+                        <button
+                            type="button"
+                            disabled={
+                                hasLocalFilter ||
+                                displayCurrentPage <= 1 ||
+                                isLoading
+                            }
+                            onClick={handlePrevPage}
+                            aria-label="Trang trước"
+                        >
                             <FiChevronLeft />
                         </button>
 
-                        {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                            (page) => (
-                                <button
-                                    key={page}
-                                    type="button"
-                                    className={cx({
-                                        activePage: currentPage === page,
-                                    })}
-                                >
-                                    {page}
-                                </button>
-                            ),
-                        )}
+                        {Array.from(
+                            { length: displayTotalPages },
+                            (_, index) => index + 1,
+                        ).map((page) => (
+                            <button
+                                key={page}
+                                type="button"
+                                disabled={hasLocalFilter || isLoading}
+                                className={cx({
+                                    activePage: displayCurrentPage === page,
+                                })}
+                                onClick={() => handleGoToPage(page)}
+                            >
+                                {page}
+                            </button>
+                        ))}
 
                         <button
                             type="button"
-                            disabled={currentPage === totalPages}
+                            disabled={
+                                hasLocalFilter ||
+                                displayCurrentPage >= displayTotalPages ||
+                                isLoading
+                            }
+                            onClick={handleNextPage}
                             aria-label="Trang sau"
                         >
                             <FiChevronRight />

@@ -182,11 +182,7 @@ const PublicRouter = [
         component: AdminDashboard,
         layout: AdminLayout,
     },
-    {
-        path: config.router.adminOrders,
-        component: AdminOrders,
-        layout: AdminLayout,
-    }
+   
 ];
 
 // user router

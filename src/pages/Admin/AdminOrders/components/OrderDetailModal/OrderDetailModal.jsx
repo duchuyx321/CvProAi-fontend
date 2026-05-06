@@ -3,7 +3,6 @@ import {
     FiUser,
     FiShoppingBag,
     FiCreditCard,
-    FiCalendar,
 } from 'react-icons/fi';
 import styles from './OrderDetailModal.module.scss';
 
@@ -28,6 +27,12 @@ const STATUS_META = {
     },
 };
 
+const ORDER_TYPE_META = {
+    SUBSCRIPTION: 'Gói đăng ký',
+    ADDON: 'Gói add-on',
+    BOTH: 'Gói đăng ký + add-on',
+};
+
 function formatCurrency(value, currency = 'VND') {
     const formattedValue = new Intl.NumberFormat('vi-VN').format(Number(value || 0));
 
@@ -41,13 +46,17 @@ function formatCurrency(value, currency = 'VND') {
 function formatDateTime(value) {
     if (!value) return '--';
 
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '--';
+
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-    }).format(new Date(value));
+    }).format(date);
 }
 
 function DetailRow({ label, value, strongValue = false, children }) {
@@ -70,6 +79,8 @@ function OrderDetailModal({ order }) {
         className: 'default',
     };
 
+    const orderTypeLabel = ORDER_TYPE_META[order.order_type] || order.order_type || '--';
+
     return (
         <div className={cx('wrapper')}>
             <section className={cx('section')}>
@@ -81,7 +92,7 @@ function OrderDetailModal({ order }) {
                 <div className={cx('sectionBody')}>
                     <DetailRow
                         label="Họ và tên"
-                        value={order.user?.name}
+                        value={order.user?.full_name}
                         strongValue
                     />
 
@@ -106,8 +117,18 @@ function OrderDetailModal({ order }) {
                     />
 
                     <DetailRow
+                        label="Loại đơn"
+                        value={orderTypeLabel}
+                    />
+
+                    <DetailRow
                         label="Gói dịch vụ"
                         value={order.plan?.name}
+                    />
+
+                    <DetailRow
+                        label="Gói add-on"
+                        value={order.addon_package?.name}
                     />
 
                     <DetailRow
@@ -124,7 +145,7 @@ function OrderDetailModal({ order }) {
 
                     <DetailRow
                         label="Ngày tạo"
-                        value={formatDateTime(order.created_at)}
+                        value={formatDateTime(order.createdAt)}
                     />
                 </div>
             </section>
@@ -142,8 +163,8 @@ function OrderDetailModal({ order }) {
                     />
 
                     <DetailRow
-                        label="Thời gian ghi nhận"
-                        value={formatDateTime(order.created_at)}
+                        label="Thời gian thanh toán"
+                        value={formatDateTime(order.paid_at)}
                     />
                 </div>
             </section>
