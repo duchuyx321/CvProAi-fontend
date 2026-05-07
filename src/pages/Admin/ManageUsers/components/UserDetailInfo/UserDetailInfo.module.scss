@@ -5,10 +5,7 @@
   margin: 0px 150px;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-}
+
 
 .retryButton {
   transition:
@@ -22,24 +19,7 @@
   transform: translateY(-1px);
 }
 
-.breadcrumbs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.5rem;
-}
 
-.brand,
-.active {
-  font-weight: 800;
-  color: #4f46e5;
-}
-
-.muted,
-.separator {
-  color: #64748b;
-}
 
 .warningBanner {
   padding: 14px 16px;

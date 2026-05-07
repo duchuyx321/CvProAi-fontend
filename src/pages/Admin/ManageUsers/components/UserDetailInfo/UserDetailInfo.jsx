@@ -181,6 +181,12 @@ function UserDetailInfo({
                     ...detail.raw,
                     ...(payload || {}),
                     is_locked: shouldLock,
+                     isLocked: shouldLock,
+                is_banned: shouldLock,
+                isBanned: shouldLock,
+                status: shouldLock ? 'BANNED' : 'ACTIVE',
+                account_status: shouldLock ? 'BANNED' : 'ACTIVE',
+                accountStatus: shouldLock ? 'BANNED' : 'ACTIVE',
                     is_online:
                         payload?.is_online ??
                         payload?.isOnline ??
@@ -282,15 +288,6 @@ function UserDetailInfo({
 
     return (
         <section className={cx('wrapper')}>
-            <div className={cx('topbar')}>
-                <div className={cx('breadcrumbs')}>
-                    <span className={cx('brand')}>CvProAI</span>
-                    <span className={cx('separator')}>›</span>
-                    <span className={cx('muted')}>Người dùng</span>
-                    <span className={cx('separator')}>›</span>
-                    <span className={cx('active')}>Chi tiết người dùng</span>
-                </div>
-            </div>
 
             {isError ? (
                 <div className={cx('warningBanner')}>
