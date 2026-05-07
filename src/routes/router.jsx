@@ -18,7 +18,6 @@ import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
-import AddAccout from '~/pages/Admin/ManageUsers/components/AddAccout';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
 import ManageOrders from '~/pages/Admin/ManageOrders';
@@ -188,11 +187,6 @@ const PublicRouter = [
         path: config.router.manageUsers,
         component: ManageUsers,
         layout: AdminLayout,
-    },
-    {
-        path: config.router.manageUsersAdd,
-        component: AddAccout,
-        layout: DetailLayout,
     },
     {
         path: config.router.manageUsersDetail,

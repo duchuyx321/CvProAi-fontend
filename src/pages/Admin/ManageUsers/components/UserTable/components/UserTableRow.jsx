@@ -37,11 +37,6 @@ function UserTableRow({
                 <span className={cx('planBadge')}>{user.planName}</span>
             </td>
             <td data-label="Số CV">{user.cvCount}</td>
-            <td data-label="Trạng thái">
-                <span className={cx('statusBadge', user.statusTone)}>
-                    {user.statusLabel}
-                </span>
-            </td>
             <td data-label="Ngày đăng ký">{formatDate(user.registeredAt)}</td>
             <td data-label="Hành động" className={cx('actionsCell')}>
                 <div className={cx('actionButtons')}>

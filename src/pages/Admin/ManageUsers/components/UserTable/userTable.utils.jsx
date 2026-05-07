@@ -1,14 +1,108 @@
-import { DEFAULT_PLAN_OPTION } from './userTable.constants';
-
 const STATUS_META = {
     online: { label: 'Hoạt động', tone: 'online' },
     offline: { label: 'Chưa hoạt động', tone: 'offline' },
     locked: { label: 'Bị khóa', tone: 'locked' },
 };
 
+export const DATE_FILTER_PRESET_OPTIONS = [
+    { label: '7d qua', value: 'last7Days' },
+    { label: '30d qua', value: 'last30Days' },
+    { label: 'Tháng này', value: 'thisMonth' },
+    { label: 'Năm nay', value: 'thisYear' },
+];
+
 const toNumber = (value, fallback = 0) => {
     const nextValue = Number(value);
     return Number.isFinite(nextValue) ? nextValue : fallback;
+};
+
+const formatDateInputValue = (value) => {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+
+    return `${yyyy}-${mm}-${dd}`;
+};
+
+const shiftDate = (date, numberOfDays) => {
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + numberOfDays);
+    return nextDate;
+};
+
+export const getDateRangeFromPreset = (
+    preset,
+    currentDate = new Date(),
+) => {
+    const today = formatDateInputValue(currentDate);
+    const startOfMonth = formatDateInputValue(
+        new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
+    );
+    const startOfYear = formatDateInputValue(
+        new Date(currentDate.getFullYear(), 0, 1),
+    );
+
+    switch (preset) {
+        case 'last7Days':
+            return {
+                registeredFrom: formatDateInputValue(shiftDate(currentDate, -6)),
+                registeredTo: today,
+            };
+        case 'last30Days':
+            return {
+                registeredFrom: formatDateInputValue(shiftDate(currentDate, -29)),
+                registeredTo: today,
+            };
+        case 'thisMonth':
+            return {
+                registeredFrom: startOfMonth,
+                registeredTo: today,
+            };
+        case 'thisYear':
+            return {
+                registeredFrom: startOfYear,
+                registeredTo: today,
+            };
+        default:
+            return {
+                registeredFrom: '',
+                registeredTo: '',
+            };
+    }
+};
+
+export const getDateFilterLabel = ({
+    registeredPreset = 'all',
+    registeredFrom = '',
+    registeredTo = '',
+}) => {
+    const presetLabel = DATE_FILTER_PRESET_OPTIONS.find(
+        (option) => option.value === registeredPreset,
+    )?.label;
+
+    if (presetLabel) {
+        return `Ngày đăng ký: ${presetLabel}`;
+    }
+
+    if (registeredFrom && registeredTo) {
+        return `Ngày đăng ký: ${formatDate(registeredFrom)} - ${formatDate(registeredTo)}`;
+    }
+
+    if (registeredFrom) {
+        return `Ngày đăng ký: từ ${formatDate(registeredFrom)}`;
+    }
+
+    if (registeredTo) {
+        return `Ngày đăng ký: đến ${formatDate(registeredTo)}`;
+    }
+
+    return 'Ngày đăng ký';
 };
 
 export const getErrorMessage = (
@@ -45,6 +139,7 @@ export const getLatestUsageQuota = (usageQuotas = []) => {
     if (!Array.isArray(usageQuotas) || usageQuotas.length === 0) {
         return null;
     }
+
     return usageQuotas
         .slice()
         .sort((left, right) => {
@@ -62,7 +157,7 @@ export const getLatestUsageQuota = (usageQuotas = []) => {
 export const getPaginationFromPayload = (payload, fallbackPageSize = 8) => {
     const pagination =
         payload?.pagination ||
-        payload?.meta?.meta ||  
+        payload?.meta?.meta ||
         payload?.meta?.pagination ||
         payload?.page;
 
@@ -101,55 +196,6 @@ export const getPaginationFromPayload = (payload, fallbackPageSize = 8) => {
         totalItems,
         totalPages,
     };
-};
-
-export const getPlanOptionsFromPayload = (payload, users = []) => {
-    const apiOptions =
-        payload?.filters?.plans ||
-        payload?.plans ||
-        payload?.meta?.plans ||
-        payload?.planOptions ||
-        [];
-
-    const normalizedOptions = apiOptions
-        .map((option) => {
-            if (typeof option === 'string') {
-                return {
-                    value: option,
-                    label: option,
-                };
-            }
-
-            const value =
-                option?.value || option?.slug || option?.code || option?.name;
-
-            if (!value) return null;
-
-            return {
-                value,
-                label: option?.label || option?.name || value,
-            };
-        })
-        .filter(Boolean);
-
-    const uniquePlansFromUsers = Array.from(
-        new Set(users.map((user) => user.planValue).filter(Boolean)),
-    ).map((planValue) => ({
-        value: planValue,
-        label:
-            users.find((user) => user.planValue === planValue)?.planName ||
-            planValue,
-    }));
-
-    return [DEFAULT_PLAN_OPTION]
-        .concat(normalizedOptions)
-        .concat(uniquePlansFromUsers)
-        .filter(
-            (option, index, currentOptions) =>
-                currentOptions.findIndex(
-                    (currentOption) => currentOption.value === option.value,
-                ) === index,
-        );
 };
 
 export const getStatusMeta = (statusKey = 'offline') => {
@@ -214,10 +260,15 @@ export const normalizeAdminUser = (user = {}) => {
     const isLocked = Boolean(
         user?.is_locked ||
             user?.isLocked ||
+            user?.is_banned ||
+            user?.isBanned ||
+            user?.status === 'BANNED' ||
             user?.status === 'LOCKED' ||
             user?.status === 'BLOCKED' ||
             user?.status === 'INACTIVE' ||
+            user?.account_status === 'BANNED' ||
             user?.account_status === 'LOCKED' ||
+            user?.accountStatus === 'BANNED' ||
             user?.accountStatus === 'LOCKED',
     );
 
@@ -266,43 +317,55 @@ export const formatDate = (value) => {
     return new Intl.DateTimeFormat('vi-VN').format(date);
 };
 
+const getTodayString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+
 export const buildAdminUsersQuery = ({
-  page = 1,
-  limit = 8,
-  keyword,
-  search,
-  status = 'all',
-  plan = 'all',
-  registeredAt = '',
-  format,
-  sortBy = 'updatedAt',
-  sortOrder = 'DESC',
+    page = 1,
+    limit = 8,
+    keyword,
+    search,
+    status = 'all',
+    registeredFrom = '',
+    registeredTo = '',
+    format,
+    sortBy = 'updatedAt',
+    sortOrder = 'DESC',
 }) => {
-  const query = {
-    page,
-    limit,
-    search: (search ?? keyword ?? '').trim(),
-    sort_by: sortBy,
-    sort_order: sortOrder,
-  };
+    const query = {
+        page,
+        limit,
+        search: (search ?? keyword ?? '').trim(),
+        sort_by: sortBy,
+        sort_order: sortOrder,
+    };
 
-  if (status && status !== 'all') {
-    query.status = status;
-  }
+    if (status && status !== 'all') {
+        query.user_status = status === 'locked' ? 'BANNED' : status;
+    }
 
-  if (plan && plan !== 'all') {
-    query.plan = plan;
-  }
+    if (registeredFrom || registeredTo) {
+        if (registeredFrom) {
+            query.from = registeredFrom;
+        }
 
-  if (registeredAt) {
-    query.registered_at = registeredAt;
-  }
+        if (registeredTo) {
+            query.to = registeredTo;
+        } else if (registeredFrom) {
+            query.to = getTodayString();
+        }
+    }
 
-  if (format) {
-    query.format = format;
-  }
+    if (format) {
+        query.format = format;
+    }
 
-  return query;
+    return query;
 };
 
 export const buildPaginationItems = (currentPage, totalPages) => {
@@ -329,19 +392,4 @@ export const buildPaginationItems = (currentPage, totalPages) => {
     });
 
     return items;
-};
-
-export const downloadBlobFile = (
-    blob,
-    fileName = `danh-sach-nguoi-dung-${Date.now()}.xlsx`,
-) => {
-    const objectUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = objectUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(objectUrl);
 };
