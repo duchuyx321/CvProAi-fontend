@@ -3,11 +3,46 @@ export const STATUS_FILTER_OPTIONS = [
     { label: 'Bị khóa', value: 'locked' },
 ];
 
+export const USER_SORT_OPTIONS = [
+    {
+        label: 'Cập nhật mới nhất',
+        sort_by: 'updatedAt',
+        sort_order: 'DESC',
+    },
+    {
+        label: 'Cập nhật cũ nhất',
+        sort_by: 'updatedAt',
+        sort_order: 'ASC',
+    },
+    {
+        label: 'Đăng ký mới nhất',
+        sort_by: 'createdAt',
+        sort_order: 'DESC',
+    },
+    {
+        label: 'Đăng ký cũ nhất',
+        sort_by: 'createdAt',
+        sort_order: 'ASC',
+    },
+];
+
+export const USER_RANGE_OPTIONS = [
+    { label: 'Tất cả thời gian', value: 'all' },
+    { label: '7 ngày qua', value: '7d' },
+    { label: '30 ngày qua', value: '30d' },
+    { label: 'Tháng này', value: 'month' },
+    { label: 'Năm nay', value: 'year' },
+    { label: 'Tùy chỉnh', value: 'custom' },
+];
+
 export const DEFAULT_FILTERS = {
+    search: '',
+    sort_by: 'updatedAt',
+    sort_order: 'DESC',
+    range: 'all',
+    from: '',
+    to: '',
     status: 'all',
-    registeredPreset: 'all',
-    registeredFrom: '',
-    registeredTo: '',
 };
 
 export const INITIAL_PAGINATION = {

@@ -1,108 +1,12 @@
-const STATUS_META = {
-    online: { label: 'Hoạt động', tone: 'online' },
-    offline: { label: 'Chưa hoạt động', tone: 'offline' },
-    locked: { label: 'Bị khóa', tone: 'locked' },
-};
-
-export const DATE_FILTER_PRESET_OPTIONS = [
-    { label: '7d qua', value: 'last7Days' },
-    { label: '30d qua', value: 'last30Days' },
-    { label: 'Tháng này', value: 'thisMonth' },
-    { label: 'Năm nay', value: 'thisYear' },
-];
-
 const toNumber = (value, fallback = 0) => {
     const nextValue = Number(value);
     return Number.isFinite(nextValue) ? nextValue : fallback;
 };
 
-const formatDateInputValue = (value) => {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-
-    return `${yyyy}-${mm}-${dd}`;
-};
-
-const shiftDate = (date, numberOfDays) => {
-    const nextDate = new Date(date);
-    nextDate.setDate(nextDate.getDate() + numberOfDays);
-    return nextDate;
-};
-
-export const getDateRangeFromPreset = (
-    preset,
-    currentDate = new Date(),
-) => {
-    const today = formatDateInputValue(currentDate);
-    const startOfMonth = formatDateInputValue(
-        new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
-    );
-    const startOfYear = formatDateInputValue(
-        new Date(currentDate.getFullYear(), 0, 1),
-    );
-
-    switch (preset) {
-        case 'last7Days':
-            return {
-                registeredFrom: formatDateInputValue(shiftDate(currentDate, -6)),
-                registeredTo: today,
-            };
-        case 'last30Days':
-            return {
-                registeredFrom: formatDateInputValue(shiftDate(currentDate, -29)),
-                registeredTo: today,
-            };
-        case 'thisMonth':
-            return {
-                registeredFrom: startOfMonth,
-                registeredTo: today,
-            };
-        case 'thisYear':
-            return {
-                registeredFrom: startOfYear,
-                registeredTo: today,
-            };
-        default:
-            return {
-                registeredFrom: '',
-                registeredTo: '',
-            };
-    }
-};
-
-export const getDateFilterLabel = ({
-    registeredPreset = 'all',
-    registeredFrom = '',
-    registeredTo = '',
-}) => {
-    const presetLabel = DATE_FILTER_PRESET_OPTIONS.find(
-        (option) => option.value === registeredPreset,
-    )?.label;
-
-    if (presetLabel) {
-        return `Ngày đăng ký: ${presetLabel}`;
-    }
-
-    if (registeredFrom && registeredTo) {
-        return `Ngày đăng ký: ${formatDate(registeredFrom)} - ${formatDate(registeredTo)}`;
-    }
-
-    if (registeredFrom) {
-        return `Ngày đăng ký: từ ${formatDate(registeredFrom)}`;
-    }
-
-    if (registeredTo) {
-        return `Ngày đăng ký: đến ${formatDate(registeredTo)}`;
-    }
-
-    return 'Ngày đăng ký';
+const getStatusLabel = ({ isLocked, isOnline }) => {
+    if (isLocked) return 'Bị khóa';
+    if (isOnline) return 'Hoạt động';
+    return 'Chưa hoạt động';
 };
 
 export const getErrorMessage = (
@@ -198,10 +102,6 @@ export const getPaginationFromPayload = (payload, fallbackPageSize = 8) => {
     };
 };
 
-export const getStatusMeta = (statusKey = 'offline') => {
-    return STATUS_META[statusKey] || STATUS_META.offline;
-};
-
 export const normalizeAdminUser = (user = {}) => {
     const latestQuota = getLatestUsageQuota(user?.usage_quotas);
 
@@ -227,17 +127,6 @@ export const normalizeAdminUser = (user = {}) => {
         user?.phone ||
         user?.user_profile?.phone ||
         'Chưa cập nhật';
-
-    const planValue =
-        user?.current_plan?.slug ||
-        user?.plan?.slug ||
-        user?.package?.slug ||
-        user?.currentPackage?.slug ||
-        user?.subscription?.plan_slug ||
-        user?.current_plan?.name ||
-        user?.plan?.name ||
-        user?.package?.name ||
-        'free';
 
     const planName =
         user?.current_plan?.name ||
@@ -278,22 +167,16 @@ export const normalizeAdminUser = (user = {}) => {
             user?.status === 'ACTIVE',
     );
 
-    const statusKey = isLocked ? 'locked' : isOnline ? 'online' : 'offline';
-    const statusMeta = getStatusMeta(statusKey);
-
     return {
         id: String(id),
         fullName,
         email,
         phone,
         planName,
-        planValue,
         cvCount,
         isLocked,
         isOnline,
-        statusKey,
-        statusLabel: statusMeta.label,
-        statusTone: statusMeta.tone,
+        statusLabel: getStatusLabel({ isLocked, isOnline }),
         registeredAt:
             user?.created_at ||
             user?.createdAt ||
@@ -317,79 +200,35 @@ export const formatDate = (value) => {
     return new Intl.DateTimeFormat('vi-VN').format(date);
 };
 
-const getTodayString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-};
-
 export const buildAdminUsersQuery = ({
     page = 1,
     limit = 8,
-    keyword,
-    search,
+    search = '',
     status = 'all',
-    registeredFrom = '',
-    registeredTo = '',
-    format,
-    sortBy = 'updatedAt',
-    sortOrder = 'DESC',
+    range = 'all',
+    from = '',
+    to = '',
+    sort_by = 'updatedAt',
+    sort_order = 'DESC',
 }) => {
     const query = {
         page,
         limit,
-        search: (search ?? keyword ?? '').trim(),
-        sort_by: sortBy,
-        sort_order: sortOrder,
+        search: search.trim(),
+        sort_by,
+        sort_order,
     };
 
     if (status && status !== 'all') {
         query.user_status = status === 'locked' ? 'BANNED' : status;
     }
 
-    if (registeredFrom || registeredTo) {
-        if (registeredFrom) {
-            query.from = registeredFrom;
-        }
-
-        if (registeredTo) {
-            query.to = registeredTo;
-        } else if (registeredFrom) {
-            query.to = getTodayString();
-        }
-    }
-
-    if (format) {
-        query.format = format;
+    if (range && range !== 'all' && range !== 'custom') {
+        query.range = range;
+    } else if (from && to) {
+        query.from = from;
+        query.to = to;
     }
 
     return query;
-};
-
-export const buildPaginationItems = (currentPage, totalPages) => {
-    if (totalPages <= 1) return [1];
-
-    const pageSet = new Set([1, totalPages, currentPage]);
-
-    if (currentPage > 1) pageSet.add(currentPage - 1);
-    if (currentPage > 2) pageSet.add(currentPage - 2);
-    if (currentPage < totalPages) pageSet.add(currentPage + 1);
-    if (currentPage + 1 < totalPages) pageSet.add(currentPage + 2);
-
-    const pages = Array.from(pageSet).sort((left, right) => left - right);
-    const items = [];
-
-    pages.forEach((page, index) => {
-        const previousPage = pages[index - 1];
-
-        if (index > 0 && page - previousPage > 1) {
-            items.push('ellipsis');
-        }
-
-        items.push(page);
-    });
-
-    return items;
 };
