@@ -1,312 +1,392 @@
-// src/pages/Admin/ManageTemplates/ManageTemplates.jsx
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
-import { toast } from 'react-toastify';
-import { FiPlus } from 'react-icons/fi';
+
+import { IoMdAdd } from 'react-icons/io';
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 
 import Button from '~/components/Button';
-import { config } from '~/config';
-import {
-    getCvTemplates,
-    updateCvTemplate,
-} from '~/services/cv-teamplate.service';
-
-import DeleteTemplateModal from './components/DeleteTemplateModal';
-import TemplateStatsCards from './components/TemplateStatsCards';
-import TemplateTable from './components/TemplateTable';
-import TemplateToolbar from './components/TemplateToolbar';
-
-import {
-    DEFAULT_TEMPLATE_FILTERS,
-    MOCK_ADMIN_TEMPLATES,
-    MOCK_TEMPLATE_STATS,
-    MOCK_TEMPLATE_TOTAL,
-    TEMPLATE_PAGE_SIZE,
-} from './constants';
-import {
-    buildTemplateStats,
-    filterTemplates,
-    getTemplateListFromResponse,
-    getTemplateRecordId,
-} from './utils';
+import GenericAdminToolbar from '~/components/GenericAdminToolbar';
+import Pagination from '~/components/Pagination';
+import { getAllTemplate } from '~/services/admin-template.service';
 
 import styles from './ManageTemplates.module.scss';
 
 const cx = classNames.bind(styles);
+const PAGE_SIZE = 8;
+
+const TemplateSortBy = {
+    CREATED_AT: 'createdAt',
+    UPDATED_AT: 'updatedAt',
+    NAME: 'name',
+};
+
+const SortOrder = {
+    ASC: 'ASC',
+    DESC: 'DESC',
+};
+
+const SORT_OPTIONS = [
+    {
+        label: 'Cập nhật mới nhất',
+        sort_by: TemplateSortBy.UPDATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Cập nhật cũ nhất',
+        sort_by: TemplateSortBy.UPDATED_AT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Tạo mới nhất',
+        sort_by: TemplateSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Tên: A → Z',
+        sort_by: TemplateSortBy.NAME,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Tên: Z → A',
+        sort_by: TemplateSortBy.NAME,
+        sort_order: SortOrder.DESC,
+    },
+];
+
+const RANGE_OPTIONS = [
+    { label: '7 ngày qua', value: '7d' },
+    { label: '30 ngày qua', value: '30d' },
+    { label: 'Tháng này', value: 'month' },
+    { label: 'Năm nay', value: 'year' },
+    { label: 'Tùy chỉnh', value: 'custom' },
+];
+
+const DEFAULT_META = {
+    page: 1,
+    limit: PAGE_SIZE,
+    total_items: 0,
+    total_pages: 1,
+};
+
+function getPageFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = Number(params.get('page'));
+
+    return pageParam > 0 ? pageParam : 1;
+}
+
+function syncPageToUrl(nextPage, replace = false) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(nextPage));
+
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    const method = replace ? 'replaceState' : 'pushState';
+
+    window.history[method](null, '', nextUrl);
+}
+
+function formatDate(value) {
+    if (!value) return '--';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '--';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
+}
+
+function formatNumber(value) {
+    return new Intl.NumberFormat('vi-VN').format(Number(value) || 0);
+}
+
+function getTemplateDisplayId({ index, page, limit }) {
+    return `#CV-${String((page - 1) * limit + index + 1).padStart(3, '0')}`;
+}
 
 function ManageTemplates() {
-    const navigate = useNavigate();
-
-    const [templates, setTemplates] = useState(MOCK_ADMIN_TEMPLATES);
-    const [displayTotal, setDisplayTotal] = useState(MOCK_TEMPLATE_TOTAL);
-    const [usingMockData, setUsingMockData] = useState(true);
-
+    const [page, setPage] = useState(getPageFromUrl);
+    const [templates, setTemplates] = useState([]);
+    const [meta, setMeta] = useState(DEFAULT_META);
     const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [searchValue, setSearchValue] = useState(
-        DEFAULT_TEMPLATE_FILTERS.searchValue,
-    );
-    const [typeFilter, setTypeFilter] = useState(
-        DEFAULT_TEMPLATE_FILTERS.typeFilter,
-    );
-    const [sortValue, setSortValue] = useState(
-        DEFAULT_TEMPLATE_FILTERS.sortValue,
-    );
-    const [currentPage, setCurrentPage] = useState(1);
-    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [filters, setFilters] = useState({
+        search: '',
+        sort_by: TemplateSortBy.UPDATED_AT,
+        sort_order: SortOrder.DESC,
+        range: '30d',
+        from: '',
+        to: '',
+    });
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const pageParam = Number(params.get('page'));
 
-    const fetchTemplates = useCallback(async () => {
-        try {
-            setLoading(true);
-
-            const result = await getCvTemplates(100, 1);
-
-            if (result?.success === false) {
-                setUsingMockData(true);
-                setTemplates(MOCK_ADMIN_TEMPLATES);
-                setDisplayTotal(MOCK_TEMPLATE_TOTAL);
-                toast.warning(
-                    result?.message || 'Không thể tải dữ liệu mẫu CV',
-                );
-                return;
-            }
-
-            const list = getTemplateListFromResponse(result);
-
-            if (list.length > 0) {
-                setUsingMockData(false);
-                setTemplates(list);
-                setDisplayTotal(
-                    result?.data?.total ||
-                        result?.data?.totalItems ||
-                        result?.total ||
-                        list.length,
-                );
-            } else {
-                setUsingMockData(true);
-                setTemplates(MOCK_ADMIN_TEMPLATES);
-                setDisplayTotal(MOCK_TEMPLATE_TOTAL);
-            }
-        } catch (error) {
-            console.error(error);
-            setUsingMockData(true);
-            setTemplates(MOCK_ADMIN_TEMPLATES);
-            setDisplayTotal(MOCK_TEMPLATE_TOTAL);
-            toast.error('Không thể tải dữ liệu mẫu CV');
-        } finally {
-            setLoading(false);
+        if (!params.get('page') || pageParam <= 0 || Number.isNaN(pageParam)) {
+            syncPageToUrl(1, true);
+            setPage(1);
         }
     }, []);
 
     useEffect(() => {
+        let ignore = false;
+
+        const fetchTemplates = async () => {
+            try {
+                setLoading(true);
+
+                const payload = {
+                    page,
+                    limit: PAGE_SIZE,
+                    sort_by: filters.sort_by,
+                    sort_order: filters.sort_order,
+                    search: filters.search,
+                };
+
+                if (filters.range === 'custom') {
+                    payload.from = filters.from;
+                    payload.to = filters.to;
+                } else {
+                    payload.range = filters.range;
+                }
+
+                const result = await getAllTemplate(payload);
+
+                if (ignore) return;
+
+                setTemplates(Array.isArray(result?.data) ? result.data : []);
+                setMeta(result?.meta || DEFAULT_META);
+            } finally {
+                if (!ignore) {
+                    setLoading(false);
+                }
+            }
+        };
+
         fetchTemplates();
-    }, [fetchTemplates]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchValue, typeFilter, sortValue]);
+        return () => {
+            ignore = true;
+        };
+    }, [
+        page,
+        filters.search,
+        filters.sort_by,
+        filters.sort_order,
+        filters.range,
+        filters.from,
+        filters.to,
+    ]);
 
-    const filteredTemplates = useMemo(() => {
-        return filterTemplates({
-            templates,
-            searchValue,
-            typeFilter,
-            sortValue,
-        });
-    }, [templates, searchValue, typeFilter, sortValue]);
+    const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
+    const totalItems = Number(meta?.total_items) || templates.length;
+    const limit = Number(meta?.limit) || PAGE_SIZE;
+    const startItem = totalItems ? (page - 1) * limit + 1 : 0;
+    const endItem = totalItems ? Math.min(page * limit, totalItems) : 0;
 
-    const totalPages = Math.max(
-        1,
-        Math.ceil(filteredTemplates.length / TEMPLATE_PAGE_SIZE),
+    const handlePageChange = useCallback(
+        (newPage) => {
+            if (newPage < 1 || newPage > totalPages || newPage === page) {
+                return;
+            }
+
+            setPage(newPage);
+            syncPageToUrl(newPage);
+        },
+        [page, totalPages],
     );
 
-    useEffect(() => {
-        setCurrentPage((page) => Math.min(page, totalPages));
-    }, [totalPages]);
+    const handleToolbarChange = useCallback(
+        ({ search, sort, range }) => {
+            const nextFilters = {
+                search: search || '',
+                sort_by: sort?.sort_by || TemplateSortBy.UPDATED_AT,
+                sort_order: sort?.sort_order || SortOrder.DESC,
+                range: '',
+                from: '',
+                to: '',
+            };
 
-    const paginatedTemplates = useMemo(() => {
-        const start = (currentPage - 1) * TEMPLATE_PAGE_SIZE;
-        const end = start + TEMPLATE_PAGE_SIZE;
-        return filteredTemplates.slice(start, end);
-    }, [filteredTemplates, currentPage]);
-
-    const stats = useMemo(() => {
-        if (usingMockData) return MOCK_TEMPLATE_STATS;
-        return buildTemplateStats(templates);
-    }, [templates, usingMockData]);
-
-    const tableDisplayTotal =
-        usingMockData && searchValue.trim() === '' && typeFilter === 'all'
-            ? displayTotal
-            : filteredTemplates.length;
-
-    const hasActiveFilters =
-        searchValue !== DEFAULT_TEMPLATE_FILTERS.searchValue ||
-        typeFilter !== DEFAULT_TEMPLATE_FILTERS.typeFilter ||
-        sortValue !== DEFAULT_TEMPLATE_FILTERS.sortValue;
-
-    const handleResetFilters = () => {
-        setSearchValue(DEFAULT_TEMPLATE_FILTERS.searchValue);
-        setTypeFilter(DEFAULT_TEMPLATE_FILTERS.typeFilter);
-        setSortValue(DEFAULT_TEMPLATE_FILTERS.sortValue);
-    };
-
-    const getTemplateNavigationId = (template) => {
-        return (
-            getTemplateRecordId(template) ||
-            template?.id ||
-            template?._id ||
-            template?.code ||
-            null
-        );
-    };
-
-    const handleOpenCreate = () => {
-        navigate(config.router.createTemplate);
-    };
-
-    const handleOpenEdit = (template) => {
-        const templateId = getTemplateNavigationId(template);
-
-        if (!templateId) {
-            toast.warning('Không tìm thấy ID mẫu CV cần chỉnh sửa');
-            return;
-        }
-
-        navigate(`/admin/templates/${encodeURIComponent(templateId)}/edit`, {
-            state: { template },
-        });
-    };
-
-    const handleOpenPreview = (template) => {
-        const templateId = getTemplateNavigationId(template);
-
-        if (!templateId) {
-            toast.warning('Không tìm thấy ID mẫu CV để xem trước');
-            return;
-        }
-
-        navigate(
-            `/admin/templates/${encodeURIComponent(templateId)}/preview`,
-            { state: { template } },
-        );
-    };
-
-    const handleOpenDelete = (template) => {
-        setDeleteTarget(template);
-    };
-
-    const handleCloseDelete = () => {
-        if (submitting) return;
-        setDeleteTarget(null);
-    };
-
-    const handleDeleteTemplate = async () => {
-        if (!deleteTarget || submitting) return;
-
-        const templateId = getTemplateRecordId(deleteTarget);
-        if (!templateId) {
-            toast.warning('Không tìm thấy ID mẫu CV cần xóa');
-            return;
-        }
-
-        try {
-            setSubmitting(true);
-
-            if (usingMockData) {
-                setTemplates((prev) =>
-                    prev.filter(
-                        (item) =>
-                            getTemplateRecordId(item) !==
-                            getTemplateRecordId(deleteTarget),
-                    ),
-                );
-                setDisplayTotal((prev) => Math.max(0, prev - 1));
-                setDeleteTarget(null);
-                toast.success('Xóa mẫu CV thành công');
-                return;
+            if (typeof range === 'string') {
+                nextFilters.range = range;
+            } else {
+                nextFilters.range = 'custom';
+                nextFilters.from = range?.from || '';
+                nextFilters.to = range?.to || '';
             }
 
-            const result = await updateCvTemplate(templateId, {
-                is_active: false,
-                is_deleted: true,
-            });
+            const isSame =
+                filters.search === nextFilters.search &&
+                filters.sort_by === nextFilters.sort_by &&
+                filters.sort_order === nextFilters.sort_order &&
+                filters.range === nextFilters.range &&
+                filters.from === nextFilters.from &&
+                filters.to === nextFilters.to;
 
-            if (result?.success === false) {
-                toast.error(result?.message || 'Xóa mẫu CV thất bại');
-                return;
-            }
+            if (isSame) return;
 
-            toast.success('Xóa mẫu CV thành công');
-            setDeleteTarget(null);
-            fetchTemplates();
-        } catch (error) {
-            console.error(error);
-            toast.error('Có lỗi xảy ra khi xóa mẫu CV');
-        } finally {
-            setSubmitting(false);
-        }
-    };
+            setFilters(nextFilters);
+            setPage(1);
+            syncPageToUrl(1, true);
+        },
+        [filters],
+    );
 
     return (
-        <section className={cx('wrapper')}>
-            <div className={cx('pageHeader')}>
-                <div>
-                    <h1 className={cx('title')}>Quản lý mẫu CV</h1>
-                    <p className={cx('description')}>
-                        Quản lý, kiểm tra và cập nhật danh sách mẫu CV cho hệ
-                        thống AI.
+        <div className={cx('wrapper')}>
+            <header>
+                <div className={cx('title')}>
+                    <h3>Quản lý mẫu CV</h3>
+                    <p>
+                        Quản lý và cập nhật danh sách các mẫu CV cho hệ thống
+                        AI.
                     </p>
                 </div>
+                <div className={cx('action')}>
+                    <Button
+                        primary
+                        leftIcon={<IoMdAdd aria-label="Thêm mẫu CV" />}
+                    >
+                        Thêm mẫu CV
+                    </Button>
+                </div>
+            </header>
 
-                <Button
-                    primary
-                    type="button"
-                    leftIcon={<FiPlus />}
-                    className={cx('createButton')}
-                    onClick={handleOpenCreate}
-                >
-                    Thêm mẫu CV
-                </Button>
+            <div className={cx('toolbar')}>
+                <GenericAdminToolbar
+                    sortOptions={SORT_OPTIONS}
+                    rangeOptions={RANGE_OPTIONS}
+                    defaultSortBy={TemplateSortBy.UPDATED_AT}
+                    defaultSortOrder={SortOrder.DESC}
+                    defaultRange={'30d'}
+                    onChange={handleToolbarChange}
+                    searchPlaceholder="Tìm theo tên..."
+                    searchLoading={loading && Boolean(filters.search)}
+                />
             </div>
 
-            <TemplateToolbar
-                searchValue={searchValue}
-                typeFilter={typeFilter}
-                sortValue={sortValue}
-                loading={loading}
-                hasActiveFilters={hasActiveFilters}
-                onSearchChange={setSearchValue}
-                onTypeFilterChange={setTypeFilter}
-                onSortChange={setSortValue}
-                onRefresh={fetchTemplates}
-                onResetFilters={handleResetFilters}
-            />
+            <div className={cx('tableCard')}>
+                <div className={cx('tableScroll')}>
+                    <table className={cx('table')}>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên mẫu CV</th>
+                                <th>Lượt dùng</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {templates.map((template, index) => (
+                                <tr key={template.id || template.code}>
+                                    <td className={cx('idCell')}>
+                                        {getTemplateDisplayId({
+                                            index,
+                                            page,
+                                            limit,
+                                        })}
+                                    </td>
+                                    <td>
+                                        <div className={cx('templateInfo')}>
+                                            <img
+                                                src={template.preview_url}
+                                                alt={template.name}
+                                                className={cx('preview')}
+                                            />
+                                            <span
+                                                className={cx('templateName')}
+                                            >
+                                                {template.name}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className={cx('numberCell')}>
+                                        {formatNumber(template.used_count)}
+                                    </td>
+                                    <td>
+                                        <span
+                                            className={cx('statusBadge', {
+                                                active: template.is_active,
+                                                inactive: !template.is_active,
+                                            })}
+                                        >
+                                            {template.is_active
+                                                ? 'Hoạt động'
+                                                : 'Tạm ngưng'}
+                                        </span>
+                                    </td>
+                                    <td className={cx('dateCell')}>
+                                        {formatDate(template.createdAt)}
+                                    </td>
+                                    <td>
+                                        <div className={cx('actions')}>
+                                            <button
+                                                type="button"
+                                                className={cx('iconButton')}
+                                                aria-label={`Xem ${template.name}`}
+                                                title="Xem"
+                                            >
+                                                <Eye />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={cx('iconButton')}
+                                                aria-label={`Sửa ${template.name}`}
+                                                title="Sửa"
+                                            >
+                                                <Pencil />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={cx(
+                                                    'iconButton',
+                                                    'dangerButton',
+                                                )}
+                                                aria-label={`Xóa ${template.name}`}
+                                                title="Xóa"
+                                            >
+                                                <Trash2 />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
 
-            <TemplateTable
-                templates={paginatedTemplates}
-                loading={loading}
-                total={filteredTemplates.length}
-                displayTotal={tableDisplayTotal}
-                page={currentPage}
-                pageSize={TEMPLATE_PAGE_SIZE}
-                onPageChange={setCurrentPage}
-                onEdit={handleOpenEdit}
-                onDelete={handleOpenDelete}
-                onPreview={handleOpenPreview}
-            />
+                            {!loading && !templates.length ? (
+                                <tr>
+                                    <td className={cx('emptyCell')} colSpan="6">
+                                        Chưa có mẫu CV nào.
+                                    </td>
+                                </tr>
+                            ) : null}
+                        </tbody>
+                    </table>
 
-            <TemplateStatsCards stats={stats} />
+                    {loading ? (
+                        <div className={cx('loadingOverlay')}>
+                            <span className={cx('loader')} />
+                            <span>Đang tải danh sách mẫu CV...</span>
+                        </div>
+                    ) : null}
+                </div>
 
-            <DeleteTemplateModal
-                template={deleteTarget}
-                submitting={submitting}
-                onClose={handleCloseDelete}
-                onConfirm={handleDeleteTemplate}
-            />
-        </section>
+                <div className={cx('tableFooter')}>
+                    <p>
+                        Hiển thị {startItem} - {endItem} của {totalItems} mẫu CV
+                    </p>
+
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        disabled={loading}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            </div>
+        </div>
     );
 }
 

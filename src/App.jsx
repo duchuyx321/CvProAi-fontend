@@ -45,7 +45,7 @@ function App() {
                     return {
                         path: item.path,
                         element: (
-                            <ProtectedRoute role="User">
+                            <ProtectedRoute role="USER">
                                 <Layout>
                                     <Page />
                                 </Layout>
@@ -65,7 +65,7 @@ function App() {
                     return {
                         path: item.path,
                         element: (
-                            <ProtectedRoute role="Admin">
+                            <ProtectedRoute role="ADMIN">
                                 <Layout>
                                     <Page />
                                 </Layout>
