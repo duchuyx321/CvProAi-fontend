@@ -90,7 +90,10 @@ const PublicRouter = [
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },
-    // user router
+];
+
+// user router
+const UserRouter = [
     {
         path: config.router.dashboard,
         component: Dashboard,
@@ -176,7 +179,10 @@ const PublicRouter = [
         component: PaymentSuccess,
         layout: DetailLayout,
     },
-    // admin router
+];
+
+// admin router
+const AdminRouter = [
     {
         path: config.router.manageTemplates,
         component: ManageTemplates,
@@ -197,13 +203,6 @@ const PublicRouter = [
     //     component: TemplateEditor,
     //     layout: DetailLayout,
     // },
-];
-
-// user router
-const UserRouter = [];
-
-// admin router
-const AdminRouter = [
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
