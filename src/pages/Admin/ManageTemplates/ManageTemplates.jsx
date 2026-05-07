@@ -67,6 +67,9 @@ function ManageTemplates() {
                 setUsingMockData(true);
                 setTemplates(MOCK_ADMIN_TEMPLATES);
                 setDisplayTotal(MOCK_TEMPLATE_TOTAL);
+                toast.warning(
+                    result?.message || 'Không thể tải dữ liệu mẫu CV',
+                );
                 return;
             }
 
@@ -91,7 +94,7 @@ function ManageTemplates() {
             setUsingMockData(true);
             setTemplates(MOCK_ADMIN_TEMPLATES);
             setDisplayTotal(MOCK_TEMPLATE_TOTAL);
-            toast.warning('Không thể tải dữ liệu mẫu CV, đang dùng dữ liệu mẫu.');
+            toast.error('Không thể tải dữ liệu mẫu CV');
         } finally {
             setLoading(false);
         }

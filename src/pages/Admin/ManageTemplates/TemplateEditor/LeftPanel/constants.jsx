@@ -1,4 +1,4 @@
-// src/pages/Admin/ManageTemplates/TemplateEditor/constants.jsx
+// src/pages/Admin/ManageTemplates/TemplateEditor/LeftPanel/constants.jsx
 
 export const LAYOUT_OPTIONS = [
     { value: 'oneColumn', label: 'One Column' },

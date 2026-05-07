@@ -30,12 +30,7 @@ import {
     getTemplateRecordId,
     getTemplateUsageCount,
 } from '../utils';
-import { DEFAULT_EDITOR } from '../TemplateEditor/constants';
-import {
-    TEMPLATE_PREVIEW_CONTENT,
-    buildEditorPreviewCv,
-    buildEditorPreviewTemplate,
-} from '../TemplateEditor/templateSchema';
+import { TEMPLATE_PREVIEW_CONTENT } from '../TemplateEditor/RightPreview/templateSchema';
 
 import styles from './TemplatePreview.module.scss';
 
@@ -63,56 +58,6 @@ const fetchTemplateByIdentifier = async (identifier) => {
     const template = getResponseTemplate(byCode);
     if (!template) throw new Error('Không tìm thấy mẫu CV');
     return template;
-};
-
-const hasRenderableConfig = (template) => {
-    return Boolean(
-        template?.config?.zones &&
-            template?.config?.sections &&
-            Object.keys(template.config.zones).length > 0,
-    );
-};
-
-const buildPreviewArtifacts = (template, adminConfig) => {
-    if (hasRenderableConfig(template)) {
-        const previewTemplate = {
-            ...(template || {}),
-            content: template?.content || TEMPLATE_PREVIEW_CONTENT,
-        };
-
-        return {
-            previewTemplate,
-            previewCv: {
-                id: 'admin-template-preview',
-                title: template?.name || 'Preview CV Template',
-                code: template?.code || 'ADMIN_PREVIEW',
-                template_code: template?.code || 'ADMIN_PREVIEW',
-                template_id: getTemplateRecordId(template),
-                content: TEMPLATE_PREVIEW_CONTENT,
-                template_content: TEMPLATE_PREVIEW_CONTENT,
-                config: template?.config || {},
-            },
-        };
-    }
-
-    const editor = {
-        ...DEFAULT_EDITOR,
-        name: template?.name || DEFAULT_EDITOR.name,
-        code: template?.code || DEFAULT_EDITOR.code,
-        layout: adminConfig.layout,
-        primaryColor: adminConfig.primaryColor,
-        fontFamily: adminConfig.fontFamily,
-        spacing: adminConfig.spacing,
-        sections: {
-            ...DEFAULT_EDITOR.sections,
-            ...(adminConfig.sections || {}),
-        },
-    };
-
-    return {
-        previewTemplate: buildEditorPreviewTemplate(editor, template),
-        previewCv: buildEditorPreviewCv(editor, template),
-    };
 };
 
 function TemplatePreview() {
@@ -182,9 +127,39 @@ function TemplatePreview() {
         [template],
     );
 
-    const { previewTemplate, previewCv } = useMemo(
-        () => buildPreviewArtifacts(template, adminConfig),
-        [template, adminConfig],
+    const previewTemplate = useMemo(
+        () => ({
+            id: template?.template_id || getTemplateRecordId(template),
+            code: template?.template_code || template?.code || 'DEV_01',
+            name: template?.title || template?.name || 'Preview CV Template',
+            content:
+                template?.template_content ||
+                template?.content ||
+                TEMPLATE_PREVIEW_CONTENT,
+            config: template?.config,
+        }),
+        [template],
+    );
+
+    const previewCv = useMemo(
+        () => ({
+            ...template,
+            id: getTemplateRecordId(template) || 'admin-template-preview',
+            title: template?.title || template?.name || 'Preview CV Template',
+            template_id:
+                template?.template_id || getTemplateRecordId(template),
+            template_code: template?.template_code || template?.code || 'DEV_01',
+            template_content:
+                template?.template_content ||
+                template?.content ||
+                TEMPLATE_PREVIEW_CONTENT,
+            content:
+                template?.content ||
+                template?.template_content ||
+                TEMPLATE_PREVIEW_CONTENT,
+            config: template?.config,
+        }),
+        [template],
     );
 
     const handleBack = () => {
@@ -304,18 +279,6 @@ function TemplatePreview() {
 
             <div className={cx('mainGrid')}>
                 <div className={cx('previewArea')}>
-                    <div className={cx('canvas')}>
-                        <div
-                            className={cx('renderedPreview')}
-                            style={{ transform: `scale(${zoom / 100})` }}
-                        >
-                            <CvPreview
-                                template={previewTemplate}
-                                cv={previewCv}
-                            />
-                        </div>
-                    </div>
-
                     <div className={cx('zoomBar')}>
                         <button type="button" onClick={handleZoomOut}>
                             <FiMinus />
@@ -328,6 +291,18 @@ function TemplatePreview() {
                         <button type="button" onClick={handleResetZoom}>
                             <FiMaximize2 />
                         </button>
+                    </div>
+
+                    <div className={cx('canvas')}>
+                        <div
+                            className={cx('renderedPreview')}
+                            style={{ transform: `scale(${zoom / 100})` }}
+                        >
+                            <CvPreview
+                                template={previewTemplate}
+                                cv={previewCv}
+                            />
+                        </div>
                     </div>
                 </div>
 

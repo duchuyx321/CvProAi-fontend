@@ -1,3 +1,5 @@
+// src/pages/Admin/ManageTemplates/TemplateEditor/RightPreview/templateSchema.jsx
+
 const SPACING_THEME = {
     compact: {
         itemGap: 8,

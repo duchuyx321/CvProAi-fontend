@@ -183,7 +183,7 @@ const PublicRouter = [
     {
         path: config.router.createTemplate,
         component: TemplateEditor,
-        layout: null,
+        layout: DetailLayout,
     },
     {
         path: config.router.previewTemplate,
@@ -193,7 +193,7 @@ const PublicRouter = [
     {
         path: config.router.editTemplate,
         component: TemplateEditor,
-        layout: null,
+        layout: DetailLayout,
     },
 ];
 

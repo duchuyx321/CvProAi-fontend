@@ -13,11 +13,11 @@ import {
 } from '~/services/cv-teamplate.service';
 
 import { getTemplateRecordId } from '../utils';
-import { DEFAULT_EDITOR, STARTER_PRESETS } from './constants';
+import { DEFAULT_EDITOR, STARTER_PRESETS } from './LeftPanel/constants';
 import {
     buildEditorTemplateConfig,
     getEditorSectionsFromConfig,
-} from './templateSchema';
+} from './RightPreview/templateSchema';
 
 const buildInitialEditor = (template, templateId) => {
     if (!template) {

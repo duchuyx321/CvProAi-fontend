@@ -1,7 +1,7 @@
 import { normalizeTemplateToCreateCv } from '~/utils/cv-editor.bootstrap';
 import { validateTemplateConfig } from '~/utils/cv-section.schema';
 
-import { buildEditorTemplateConfig } from '../TemplateEditor/templateSchema';
+import { buildEditorTemplateConfig } from '../TemplateEditor/RightPreview/templateSchema';
 
 const CHECK_STATUS = {
     PASS: 'pass',

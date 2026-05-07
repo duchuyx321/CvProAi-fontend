@@ -20,7 +20,7 @@ import {
     SECTION_OPTIONS,
     SPACING_OPTIONS,
     STARTER_PRESETS,
-} from '../constants';
+} from './constants';
 
 import styles from './LeftPanel.module.scss';
 
