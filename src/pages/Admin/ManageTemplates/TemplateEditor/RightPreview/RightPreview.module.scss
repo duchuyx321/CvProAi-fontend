@@ -1,0 +1,325 @@
+.previewPanel {
+    position: sticky;
+    top: 18px;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 92px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #dbe4ee;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.08);
+    justify-self: center;
+}
+
+// ==================== PREVIEW HEADER ====================
+.previewHeader {
+    flex-shrink: 0;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 18px;
+    border-bottom: 1px solid #edf2f7;
+    background: #ffffff;
+}
+
+.previewTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    strong {
+        color: #0f172a;
+        font-size: 15px;
+        font-weight: 900;
+    }
+}
+
+.badge {
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 900;
+
+    &.active {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    &.premium {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    &.active.premium {
+        background: linear-gradient(90deg, #ecfdf5, #fff7ed);
+        color: #ea580c;
+    }
+}
+
+.previewActions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.zoomGroup {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #f8fafc;
+
+    button {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #334155;
+        cursor: pointer;
+        transition: background 0.2s ease;
+
+        &:hover {
+            background: #eef2ff;
+            color: #635bff;
+        }
+    }
+
+    span {
+        min-width: 44px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 900;
+        text-align: center;
+    }
+}
+
+.downloadBtn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+
+    &:hover {
+        background: #1e293b;
+    }
+}
+
+// ==================== CANVAS ====================
+.canvas {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 20px 56px;
+    background: #f8fafc;
+}
+
+.renderedPreview {
+    transform-origin: top center;
+
+    :global(.previewShell) {
+        min-height: auto;
+        background: transparent;
+    }
+
+    :global(.page) {
+        box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+    }
+}
+
+// ==================== PAPER ====================
+.paper {
+    position: relative;
+    width: 595px;
+    min-height: 842px;
+    padding: 48px 56px;
+    transform-origin: top center;
+    background: #ffffff;
+    color: #0f172a;
+    font-family: var(--editor-font), Inter, sans-serif;
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+
+    h1 {
+        margin: 0;
+        color: #111827;
+        font-size: 36px;
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+
+    &.compact .cvSection {
+        margin-bottom: 20px;
+    }
+
+    &.comfortable .cvSection {
+        margin-bottom: 28px;
+    }
+
+    &.loose .cvSection {
+        margin-bottom: 38px;
+    }
+
+    &.oneColumn .cvContent {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cvHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+
+    p {
+        margin: 12px 0 0;
+        color: var(--primary-color);
+        font-size: 14px;
+        font-weight: 950;
+        line-height: 1.35;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    ul {
+        margin: 2px 0 0;
+        padding: 0;
+        list-style: none;
+        text-align: right;
+
+        li {
+            margin-bottom: 4px;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    }
+}
+
+.mainLine {
+    height: 3px;
+    margin: 32px 0 28px;
+    background: var(--primary-color);
+}
+
+.cvContent {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 38px;
+}
+
+.cvSection {
+    h2 {
+        margin: 0 0 14px;
+        color: var(--primary-color);
+        font-size: 12px;
+        font-weight: 950;
+        letter-spacing: 0.18em;
+    }
+
+    h3 {
+        margin: 0 0 4px;
+        color: #111827;
+        font-size: 14px;
+        font-weight: 950;
+    }
+
+    strong {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--primary-color);
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+    p {
+        margin: 0;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.65;
+    }
+}
+
+.jobItem {
+    margin-bottom: 20px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    span {
+        padding: 6px 9px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+}
+
+.levelBar {
+    height: 5px;
+    margin: 6px 0 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+
+    span {
+        width: 72%;
+        height: 100%;
+        display: block;
+        border-radius: inherit;
+        background: var(--primary-color);
+    }
+}
+
+// ==================== RESPONSIVE ====================
+@media (max-width: 1100px) {
+    .previewPanel {
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .previewHeader {
+        height: auto;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 16px;
+    }
+
+    .canvas {
+        padding: 30px 16px 60px;
+    }
+
+    .paper {
+        width: 100%;
+        max-width: 500px;
+        padding: 36px;
+    }
+}

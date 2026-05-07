@@ -35,10 +35,10 @@ function App() {
                 }),
 
                 ...UserRouter.map((item) => {
-                    let Layout = item.layout || DefaultLayout;
-                    if (item.layout) {
-                        Layout = item.layout;
-                    }
+                    let Layout =
+                        item.layout === null
+                            ? Fragment
+                            : item.layout || DefaultLayout;
 
                     const Page = item.component;
 
@@ -55,10 +55,10 @@ function App() {
                 }),
 
                 ...AdminRouter.map((item) => {
-                    let Layout = item.layout || AdminLayout;
-                    if (item.layout) {
-                        Layout = item.layout;
-                    }
+                    let Layout =
+                        item.layout === null
+                            ? Fragment
+                            : item.layout || AdminLayout;
 
                     const Page = item.component;
 

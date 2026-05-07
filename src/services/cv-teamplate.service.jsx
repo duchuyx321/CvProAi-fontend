@@ -1681,6 +1681,28 @@ export const getCvTemplateDetail = async (code) => {
     }
 };
 
+export const getCvTemplateById = async (id) => {
+    if (!id) {
+        throw new Error('Thiếu id template');
+    }
+
+    try {
+        const result = await Response.GET(`cv-templates/${id}`);
+        if (!result?.success) {
+            return {
+                success: false,
+                message: 'Không tìm thấy mẫu CV',
+                data: null,
+            };
+        }
+
+        return result;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
 export const getCvDetailBySlug = async (slug) => {
     if (!slug) {
         throw new Error('Thiếu slug CV');
@@ -1731,6 +1753,49 @@ export const downloadCvPdfBySlug = async (cvId, htmlText, cssText) => {
             htmlText,
             cssText,
         });
+        return result;
+    } catch (error) {
+        console.log({ error });
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};
+export const createCvTemplate = async (data) => {
+    try {
+        const result = await Response.POST('cv-templates', data);
+        return result;
+    } catch (error) {
+        console.log({ error });
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};
+
+export const updateCvTemplate = async (id, data) => {
+    if (!id) {
+        throw new Error('Thiếu id template');
+    }
+
+    try {
+        const result = await Response.PUT(`cv-templates/${id}`, data);
+        return result;
+    } catch (error) {
+        console.log({ error });
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};
+
+export const deleteCvTemplate = async (id) => {
+    if (!id) {
+        throw new Error('Thiếu id template');
+    }
+
+    try {
+        const result = await Response.DELETE(`cv-templates/${id}`);
         return result;
     } catch (error) {
         console.log({ error });
