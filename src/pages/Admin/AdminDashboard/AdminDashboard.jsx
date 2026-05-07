@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
     FiAlertCircle,
@@ -6,39 +7,20 @@ import {
     FiChevronDown,
     FiCreditCard,
     FiDownload,
-    FiFileText,
-    FiGrid,
-    FiLogOut,
     FiRefreshCw,
-    FiSettings,
-    FiShoppingCart,
-    FiUsers,
 } from 'react-icons/fi';
 import { HiOutlineSparkles } from 'react-icons/hi2';
+import { LuDownload, LuFileText, LuUsers } from 'react-icons/lu';
+import { RiMoneyDollarCircleLine } from 'react-icons/ri';
+
+import { config } from '~/config';
 import styles from './AdminDashboard.module.scss';
-import { getAdminDashboard } from '~/services/admin-dashboard.service';
+import {
+    exportAdminDashboardReport,
+    getAdminDashboard,
+} from '~/services/admin-dashboard.service';
 
 const cx = classNames.bind(styles);
-
-const NAV_ITEMS = [
-    { icon: FiGrid, label: 'Trang tổng quan', active: true },
-    { icon: FiUsers, label: 'Quản lý tài khoản' },
-    { icon: FiFileText, label: 'Quản lý mẫu CV' },
-    { icon: HiOutlineSparkles, label: 'Quản lý gói dịch vụ' },
-    { icon: FiShoppingCart, label: 'Quản lý đơn hàng' },
-    { icon: FiSettings, label: 'Cài đặt' },
-];
-
-function getTodayValue() {
-    return new Date().toISOString().split('T')[0];
-}
-
-function getCurrentMonthValue() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    return `${year}-${month}`;
-}
 
 function formatNumber(value) {
     if (value === null || value === undefined || value === '') return '0';
@@ -50,27 +32,50 @@ function formatMoney(value) {
     return `${new Intl.NumberFormat('vi-VN').format(Number(value) || 0)}đ`;
 }
 
-function SidebarNav() {
-    return (
-        <nav className={cx('nav')}>
-            {NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
+function formatMoneyShort(value) {
+    const amount = Number(value) || 0;
 
-                return (
-                    <button
-                        key={item.label}
-                        type="button"
-                        className={cx('navItem', { active: item.active })}
-                    >
-                        <span className={cx('navIcon')}>
-                            <Icon />
-                        </span>
-                        <span>{item.label}</span>
-                    </button>
-                );
-            })}
-        </nav>
-    );
+    if (amount >= 1000000) {
+        return `${(amount / 1000000).toFixed(1).replace('.0', '')}tr`;
+    }
+
+    if (amount >= 1000) {
+        return `${new Intl.NumberFormat('vi-VN').format(amount / 1000)}k`;
+    }
+
+    return `${amount}`;
+}
+
+function formatGrowthPercent(value) {
+    if (value === null || value === undefined) return '+0%';
+    const numberValue = Number(value) || 0;
+    return `${numberValue >= 0 ? '+' : ''}${numberValue}%`;
+}
+
+function formatRelativeTime(dateString) {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffMinutes < 1) return 'Vừa xong';
+    if (diffMinutes < 60) return `${diffMinutes} phút trước`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) return `${diffDays} ngày trước`;
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
 function StatCard({ icon: Icon, label, value, change }) {
@@ -105,8 +110,9 @@ function TrendChart({ chartData = [] }) {
         if (safeChartData.length === 0) return '';
 
         const width = 600;
-        const height = 260;
-        const stepX = safeChartData.length > 1 ? width / (safeChartData.length - 1) : 0;
+        const height = 220;
+        const stepX =
+            safeChartData.length > 1 ? width / (safeChartData.length - 1) : 0;
 
         return safeChartData
             .map((item, index) => {
@@ -114,24 +120,17 @@ function TrendChart({ chartData = [] }) {
                 const rawValue = Number(item?.[key]) || 0;
                 const y = height - (rawValue / maxValue) * height;
 
-                if (index === 0) {
-                    return `M${x},${y}`;
-                }
-
+                if (index === 0) return `M${x},${y}`;
                 return `L${x},${y}`;
             })
             .join(' ');
     };
 
-    const usersPath = buildPath('users');
-    const cvsPath = buildPath('cvs');
-    const aiRunsPath = buildPath('aiRuns');
-
     return (
-        <div className={cx('chartBox')}>
-            <div className={cx('chartHeader')}>
+        <div className={cx('panel')}>
+            <div className={cx('panelHeader')}>
                 <h3>Tăng trưởng hoạt động hệ thống</h3>
-                <button type="button" className={cx('ghostIconBtn')}>
+                <button type="button" className={cx('ghostBtn')}>
                     ...
                 </button>
             </div>
@@ -152,35 +151,37 @@ function TrendChart({ chartData = [] }) {
 
                     <svg
                         className={cx('chartSvg')}
-                        viewBox="0 0 600 260"
+                        viewBox="0 0 600 220"
                         preserveAspectRatio="none"
                     >
-                        {usersPath ? (
-                            <path d={usersPath} className={cx('lineBlue')} />
-                        ) : null}
-                        {cvsPath ? (
-                            <path d={cvsPath} className={cx('lineCyan')} />
-                        ) : null}
-                        {aiRunsPath ? (
-                            <path d={aiRunsPath} className={cx('linePurple')} />
-                        ) : null}
+                        <path d={buildPath('users')} className={cx('lineBlue')} />
+                        <path d={buildPath('cvs')} className={cx('lineCyan')} />
+                        <path
+                            d={buildPath('aiRuns')}
+                            className={cx('linePurple')}
+                        />
                     </svg>
 
                     <div className={cx('xAxis')}>
-                        {safeChartData.length > 0
-                            ? safeChartData.map((item, index) => (
-                                  <span key={`${item?.label || 'label'}-${index}`}>
-                                      {item?.label || `M${index + 1}`}
-                                  </span>
-                              ))
-                            : ['W1', 'W2', 'W3', 'W4'].map((item) => (
-                                  <span key={item}>{item}</span>
-                              ))}
+                        {safeChartData.length > 0 ? (
+                            safeChartData.map((item, index) => (
+                                <span key={`${item?.label || 'label'}-${index}`}>
+                                    {item?.label || `W${index + 1}`}
+                                </span>
+                            ))
+                        ) : (
+                            <>
+                                <span>W1</span>
+                                <span>W2</span>
+                                <span>W3</span>
+                                <span>W4</span>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className={cx('chartLegend')}>
+            <div className={cx('legend')}>
                 <span className={cx('legendItem')}>
                     <i className={cx('dot', 'blue')} />
                     Người dùng
@@ -198,16 +199,113 @@ function TrendChart({ chartData = [] }) {
     );
 }
 
+function RevenueDonut({ chartPieData = {} }) {
+    const totalRevenue = Number(chartPieData?.totalRevenues) || 0;
+    const totalPremiums = Number(chartPieData?.totalPremiums) || 0;
+    const totalAddons = Number(chartPieData?.totalAddons) || 0;
+    const otherRevenue = Number(chartPieData?.totalOthers) || 0;
+
+    const radius = 52;
+    const circumference = 2 * Math.PI * radius;
+
+    const premiumPercent = totalRevenue > 0 ? totalPremiums / totalRevenue : 0;
+    const addonPercent = totalRevenue > 0 ? totalAddons / totalRevenue : 0;
+    const otherPercent = totalRevenue > 0 ? otherRevenue / totalRevenue : 0;
+
+    const premiumLength = circumference * premiumPercent;
+    const addonLength = circumference * addonPercent;
+    const otherLength = circumference * otherPercent;
+
+    return (
+        <div className={cx('panel')}>
+            <div className={cx('panelHeader')}>
+                <h3>Doanh thu theo gói</h3>
+            </div>
+
+            <div className={cx('donutWrap')}>
+                <div className={cx('donutChart')}>
+                    <svg viewBox="0 0 140 140" className={cx('donutSvg')}>
+                        <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            className={cx('donutTrack')}
+                        />
+
+                        <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            className={cx('donutPremium')}
+                            strokeDasharray={`${premiumLength} ${circumference}`}
+                            strokeDashoffset="0"
+                        />
+
+                        <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            className={cx('donutAddon')}
+                            strokeDasharray={`${addonLength} ${circumference}`}
+                            strokeDashoffset={-premiumLength}
+                        />
+
+                        <circle
+                            cx="70"
+                            cy="70"
+                            r={radius}
+                            className={cx('donutOther')}
+                            strokeDasharray={`${otherLength} ${circumference}`}
+                            strokeDashoffset={-(premiumLength + addonLength)}
+                        />
+                    </svg>
+
+                    <div className={cx('donutCenter')}>
+                        <span>TỔNG DOANH THU</span>
+                        <strong>{formatMoneyShort(totalRevenue)}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div className={cx('revenueList')}>
+                <div className={cx('revenueItem')}>
+                    <span className={cx('revenueLabel')}>
+                        <i className={cx('dot', 'blue')} />
+                        Premium Monthly
+                    </span>
+                    <strong>{formatMoneyShort(totalPremiums)}</strong>
+                </div>
+
+                <div className={cx('revenueItem')}>
+                    <span className={cx('revenueLabel')}>
+                        <i className={cx('dot', 'cyan')} />
+                        AI Add-on
+                    </span>
+                    <strong>{formatMoneyShort(totalAddons)}</strong>
+                </div>
+
+                <div className={cx('revenueItem')}>
+                    <span className={cx('revenueLabel')}>
+                        <i className={cx('dot', 'gray')} />
+                        Khác
+                    </span>
+                    <strong>{formatMoneyShort(otherRevenue)}</strong>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function RecentOrdersTable({ orders = [] }) {
     const safeOrders = Array.isArray(orders) ? orders : [];
 
     return (
-        <div className={cx('card', 'tableCard')}>
-            <div className={cx('tableHeader')}>
-                <h3 className={cx('cardTitle')}>Giao dịch gần đây</h3>
-                <button type="button" className={cx('linkBtn')}>
+        <div className={cx('panel', 'tablePanel')}>
+            <div className={cx('panelHeader')}>
+                <h3>Giao dịch gần đây</h3>
+                <Link to={config.router.manageOrders} className={cx('linkBtn')}>
                     Xem tất cả
-                </button>
+                </Link>
             </div>
 
             <div className={cx('tableWrap')}>
@@ -258,64 +356,43 @@ function RecentOrdersTable({ orders = [] }) {
 }
 
 export default function AdminDashboard() {
-    const [filterType, setFilterType] = useState('range');
-    const [selectedRangeLabel, setSelectedRangeLabel] = useState('30 ngày gần nhất');
-    const [selectedDay, setSelectedDay] = useState(getTodayValue());
-    const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue());
+    const [filterType, setFilterType] = useState('30d');
+    const [selectedRangeLabel, setSelectedRangeLabel] =
+        useState('30 ngày gần nhất');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
     const [isOpenFilter, setIsOpenFilter] = useState(false);
 
     const [stats, setStats] = useState([]);
-    const [revenueItems, setRevenueItems] = useState([]);
-    const [aiKeywords, setAiKeywords] = useState([]);
     const [recentOrders, setRecentOrders] = useState([]);
     const [chartData, setChartData] = useState([]);
+    const [chartPieData, setChartPieData] = useState({});
     const [subscriptionData, setSubscriptionData] = useState({
         premiumUpgradeRate: '0%',
         paymentSuccessRate: '0%',
         pendingOrders: 0,
         failedPayments: 0,
     });
-    const [aiSummary, setAiSummary] = useState({
-        avgMatchScore: '0%',
-        successRate: '0%',
-        errorCount: 0,
-    });
 
     const [loading, setLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const filterRef = useRef(null);
 
     const filterParams = useMemo(() => {
-        if (filterType === 'day') {
+        if (filterType === 'custom') {
             return {
-                type: 'day',
-                day: selectedDay,
-            };
-        }
-
-        if (filterType === 'month') {
-            return {
-                type: 'month',
-                month: selectedMonth,
-            };
-        }
-
-        if (fromDate && toDate) {
-            return {
-                type: 'range',
-                fromDate,
-                toDate,
+                from: fromDate,
+                to: toDate,
             };
         }
 
         return {
-            type: 'preset',
-            preset: '30_days',
+            range: filterType,
         };
-    }, [filterType, selectedDay, selectedMonth, fromDate, toDate]);
+    }, [filterType, fromDate, toDate]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -330,81 +407,94 @@ export default function AdminDashboard() {
         };
     }, []);
 
-    const mapStats = (overview = {}) => {
+    const mapStats = (summary = {}) => {
         return [
             {
                 id: 1,
-                icon: FiUsers,
+                icon: LuUsers,
                 label: 'Tổng người dùng',
-                value: formatNumber(overview?.totalUsers),
-                change: overview?.usersGrowth || '+0%',
+                value: formatNumber(summary?.total_users?.value),
+                change: formatGrowthPercent(summary?.total_users?.growth_percent),
             },
             {
                 id: 2,
-                icon: FiFileText,
+                icon: LuFileText,
                 label: 'CV đã tạo',
-                value: formatNumber(overview?.totalCvs),
-                change: overview?.cvsGrowth || '+0%',
+                value: formatNumber(summary?.total_cvs?.value),
+                change: formatGrowthPercent(summary?.total_cvs?.growth_percent),
             },
             {
                 id: 3,
                 icon: HiOutlineSparkles,
                 label: 'Lượt phân tích AI',
-                value: formatNumber(overview?.totalAiRuns),
-                change: overview?.aiRunsGrowth || '+0%',
+                value: formatNumber(summary?.total_aiRuns?.value),
+                change: formatGrowthPercent(summary?.total_aiRuns?.growth_percent),
             },
             {
                 id: 4,
-                icon: FiDownload,
+                icon: LuDownload,
                 label: 'CV đã export',
-                value: formatNumber(overview?.totalExports),
-                change: overview?.exportsGrowth || '+0%',
+                value: formatNumber(summary?.total_exports?.value),
+                change: formatGrowthPercent(summary?.total_exports?.growth_percent),
             },
             {
                 id: 5,
-                icon: FiShoppingCart,
+                icon: FiCreditCard,
                 label: 'Đơn hàng thành công',
-                value: formatNumber(overview?.totalSuccessOrders),
-                change: overview?.ordersGrowth || '+0%',
+                value: formatNumber(summary?.total_success_payments?.value),
+                change: formatGrowthPercent(
+                    summary?.total_success_payments?.growth_percent,
+                ),
             },
             {
                 id: 6,
-                icon: FiCreditCard,
+                icon: RiMoneyDollarCircleLine,
                 label: 'Tổng doanh thu',
-                value: formatMoney(overview?.totalRevenue),
-                change: overview?.revenueGrowth || '+0%',
+                value: formatMoneyShort(summary?.total_amount?.value),
+                change: formatGrowthPercent(summary?.total_amount?.growth_percent),
             },
         ];
-    };
-
-    const mapRevenueItems = (items = []) => {
-        return (Array.isArray(items) ? items : []).map((item) => ({
-            label: item?.label || item?.name || 'Không rõ',
-            value: formatMoney(item?.value || item?.revenue || 0),
-            width: `${item?.percent || 0}%`,
-        }));
     };
 
     const mapRecentOrders = (items = []) => {
         return (Array.isArray(items) ? items : []).map((item) => {
             let statusType = 'warning';
+            let statusText = item?.status || '';
 
-            if (item?.status === 'ĐÃ THANH TOÁN' || item?.status === 'SUCCESS') {
+            if (item?.status === 'PAID') {
                 statusType = 'success';
+                statusText = 'ĐÃ THANH TOÁN';
             }
 
-            if (item?.status === 'THẤT BẠI' || item?.status === 'FAILED') {
+            if (item?.status === 'PENDING') {
+                statusType = 'warning';
+                statusText = 'ĐANG CHỜ';
+            }
+
+            if (item?.status === 'CANCELED' || item?.status === 'FAILED') {
                 statusType = 'danger';
+                statusText = 'THẤT BẠI';
+            }
+
+            let planName = '';
+            if (item?.order_type === 'BOTH') {
+                const plan = item?.plan?.name || '';
+                const addon = item?.addon_package?.name || '';
+                planName = [plan, addon].filter(Boolean).join(' + ');
+            } else if (item?.plan?.name) {
+                planName = item.plan.name;
+            } else if (item?.addon_package?.name) {
+                planName = item.addon_package.name;
             }
 
             return {
-                id: item?.id || '',
-                email: item?.email || item?.userEmail || '',
-                plan: item?.plan || item?.packageName || '',
-                amount: formatMoney(item?.amount || 0),
-                status: item?.statusText || item?.status || '',
+                id: item?.order_code || item?.id || '',
+                email: item?.user?.email || '',
+                plan: planName || 'Không rõ',
+                amount: formatMoney(item?.amount_cents),
+                status: statusText,
                 statusType,
-                time: item?.time || item?.createdAtLabel || '',
+                time: formatRelativeTime(item?.createdAt || item?.created_at),
             };
         });
     };
@@ -412,15 +502,23 @@ export default function AdminDashboard() {
     const mapChartData = (items = []) => {
         return (Array.isArray(items) ? items : []).map((item) => ({
             label: item?.label || '',
-            users: Number(item?.users) || 0,
-            cvs: Number(item?.cvs) || 0,
-            aiRuns: Number(item?.aiRuns) || 0,
+            users: Number(item?.users?.value) || 0,
+            cvs: Number(item?.cvs?.value) || 0,
+            aiRuns: Number(item?.aiRuns?.value) || 0,
         }));
     };
 
-    const fetchDashboardData = async (params = filterParams) => {
+    const fetchDashboardData = async (
+        params = filterParams,
+        showRefresh = false,
+    ) => {
         try {
-            setLoading(true);
+            if (showRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
+
             setErrorMessage('');
 
             const res = await getAdminDashboard(params);
@@ -434,39 +532,32 @@ export default function AdminDashboard() {
 
             const dashboardData = res?.data || {};
 
-            setStats(mapStats(dashboardData?.overview));
-            setRevenueItems(mapRevenueItems(dashboardData?.revenueByPlan));
-            setAiKeywords(
-                Array.isArray(dashboardData?.aiKeywords)
-                    ? dashboardData.aiKeywords
-                    : [],
-            );
-            setRecentOrders(mapRecentOrders(dashboardData?.recentOrders));
-            setChartData(mapChartData(dashboardData?.activityChart));
+            setStats(mapStats(dashboardData?.summary));
+            setChartData(mapChartData(dashboardData?.chartLineData));
+            setChartPieData(dashboardData?.chartPieData || {});
 
             setSubscriptionData({
-                premiumUpgradeRate:
-                    dashboardData?.subscription?.premiumUpgradeRate || '0%',
-                paymentSuccessRate:
-                    dashboardData?.subscription?.paymentSuccessRate || '0%',
-                pendingOrders:
-                    dashboardData?.subscription?.pendingOrders || 0,
-                failedPayments:
-                    dashboardData?.subscription?.failedPayments || 0,
+                premiumUpgradeRate: `${
+                    dashboardData?.chartProgress?.premiumRate || 0
+                }%`,
+                paymentSuccessRate: `${
+                    dashboardData?.chartProgress?.paymentPaidRate || 0
+                }%`,
+                pendingOrders: dashboardData?.chartProgress?.pending || 0,
+                failedPayments: dashboardData?.chartProgress?.canceled || 0,
             });
 
-            setAiSummary({
-                avgMatchScore:
-                    dashboardData?.aiSummary?.avgMatchScore || '0%',
-                successRate:
-                    dashboardData?.aiSummary?.successRate || '0%',
-                errorCount:
-                    dashboardData?.aiSummary?.errorCount || 0,
-            });
+            setRecentOrders(
+                mapRecentOrders(dashboardData?.payments?.data?.data || []).slice(
+                    0,
+                    4,
+                ),
+            );
         } catch {
             setErrorMessage('Có lỗi xảy ra khi tải dashboard');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -475,30 +566,23 @@ export default function AdminDashboard() {
     }, [filterParams]);
 
     const handleResetFilter = () => {
-        const today = getTodayValue();
-        const currentMonth = getCurrentMonthValue();
-
-        setFilterType('range');
+        setFilterType('30d');
         setSelectedRangeLabel('30 ngày gần nhất');
-        setSelectedDay(today);
-        setSelectedMonth(currentMonth);
         setFromDate('');
         setToDate('');
         setIsOpenFilter(false);
     };
 
     const handleApplyFilter = () => {
-        if (filterType === 'day') {
-            if (!selectedDay) return;
-            setSelectedRangeLabel('Theo ngày');
-        }
-
-        if (filterType === 'month') {
-            if (!selectedMonth) return;
-            setSelectedRangeLabel('Theo tháng');
-        }
-
-        if (filterType === 'range') {
+        if (filterType === '7d') {
+            setSelectedRangeLabel('7 ngày gần nhất');
+        } else if (filterType === '30d') {
+            setSelectedRangeLabel('30 ngày gần nhất');
+        } else if (filterType === 'month') {
+            setSelectedRangeLabel('Tháng này');
+        } else if (filterType === 'year') {
+            setSelectedRangeLabel('Năm nay');
+        } else if (filterType === 'custom') {
             if (!fromDate || !toDate) return;
             if (fromDate > toDate) return;
             setSelectedRangeLabel('Khoảng thời gian');
@@ -507,407 +591,291 @@ export default function AdminDashboard() {
         setIsOpenFilter(false);
     };
 
-    const handleRefresh = () => {
-        fetchDashboardData(filterParams);
+    const handleRefresh = async () => {
+        await fetchDashboardData(filterParams, true);
     };
+
+    const handleExportReport = async () => {
+        setExporting(true);
+        const exportPromise = fetchApi(filterParams,"excel");
+        await toast.promise(exportPromise, {
+            pending: 'Đang tải xuống...',
+            success: {
+                render() {
+                    return 'Tải xuống thành công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
+        setExporting(false);
+    };
+    const fetchApi = async (filterParams, format) => {
+        const result = await exportAdminDashboardReport(filterParams, format);
+                console.log({ result });
+        const blob = new Blob([blobData], {
+            type: 'application/pdf',
+        });
+
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'dashboard-report.pdf';
+
+        document.body.appendChild(link);
+        link.click();
+
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return true;
+    }
 
     return (
         <div className={cx('page')}>
-            <aside className={cx('sidebar')}>
-                <div className={cx('brand')}>
-                    <div className={cx('brandLogo')}>CV</div>
-                    <div>
-                        <h2 className={cx('brandName')}>CVProAI</h2>
-                        <p className={cx('brandSub')}>Hệ thống quản trị</p>
-                    </div>
+            <div className={cx('headerRow')}>
+                <div>
+                    <h1 className={cx('pageTitle')}>Báo cáo & Thống kê</h1>
+                    <p className={cx('pageDesc')}>
+                        Theo dõi người dùng, CV, AI analysis,
+                        <br />
+                        đơn hàng và doanh thu của hệ thống.
+                    </p>
                 </div>
 
-                <SidebarNav />
+                <div className={cx('actions')}>
+                    <div className={cx('filterDropdown')} ref={filterRef}>
+                        <button
+                            type="button"
+                            className={cx('filterBtn')}
+                            onClick={() => setIsOpenFilter((prev) => !prev)}
+                            disabled={loading || refreshing}
+                        >
+                            <FiCalendar />
+                            <span>{selectedRangeLabel}</span>
+                            <FiChevronDown />
+                        </button>
 
-                <button type="button" className={cx('logoutBtn')}>
-                    <FiLogOut />
-                    <span>Đăng xuất</span>
-                </button>
-            </aside>
+                        {isOpenFilter && (
+                            <div className={cx('filterPanel')}>
+                                <div className={cx('filterTabs')}>
+                                    <button
+                                        type="button"
+                                        className={cx('filterTab', {
+                                            active: filterType === '7d',
+                                        })}
+                                        onClick={() => setFilterType('7d')}
+                                    >
+                                        7 ngày
+                                    </button>
 
-            <main className={cx('main')}>
-                <div className={cx('topbar')}>
-                    <h1 className={cx('pageTitle')}>Trang thống kê</h1>
+                                    <button
+                                        type="button"
+                                        className={cx('filterTab', {
+                                            active: filterType === '30d',
+                                        })}
+                                        onClick={() => setFilterType('30d')}
+                                    >
+                                        30 ngày
+                                    </button>
 
-                    <button type="button" className={cx('userBtn')}>
-                        <span className={cx('avatar')}>QT</span>
-                        <span>Quản trị viên</span>
-                        <FiChevronDown />
-                    </button>
-                </div>
+                                    <button
+                                        type="button"
+                                        className={cx('filterTab', {
+                                            active: filterType === 'month',
+                                        })}
+                                        onClick={() => setFilterType('month')}
+                                    >
+                                        Tháng
+                                    </button>
 
-                <section className={cx('content')}>
-                    <div className={cx('headingRow')}>
-                        <div>
-                            <h2 className={cx('headingTitle')}>
-                                Báo cáo & Thống kê
-                            </h2>
-                            <p className={cx('headingDesc')}>
-                                Theo dõi người dùng, CV, AI analysis,
-                                <br />
-                                đơn hàng và doanh thu theo thời gian.
-                            </p>
-                        </div>
+                                    <button
+                                        type="button"
+                                        className={cx('filterTab', {
+                                            active: filterType === 'year',
+                                        })}
+                                        onClick={() => setFilterType('year')}
+                                    >
+                                        Năm
+                                    </button>
 
-                        <div className={cx('headingActions')}>
-                            <div className={cx('filterDropdown')} ref={filterRef}>
-                                <button
-                                    type="button"
-                                    className={cx('filterBtn')}
-                                    onClick={() =>
-                                        setIsOpenFilter((prev) => !prev)
-                                    }
-                                >
-                                    <FiCalendar />
-                                    <span>{selectedRangeLabel}</span>
-                                    <FiChevronDown />
-                                </button>
+                                    <button
+                                        type="button"
+                                        className={cx('filterTab', {
+                                            active: filterType === 'custom',
+                                        })}
+                                        onClick={() => setFilterType('custom')}
+                                    >
+                                        Khoảng thời gian
+                                    </button>
+                                </div>
 
-                                {isOpenFilter && (
-                                    <div className={cx('filterPanel')}>
-                                        <div className={cx('filterTabs')}>
-                                            <button
-                                                type="button"
-                                                className={cx('filterTab', {
-                                                    active: filterType === 'day',
-                                                })}
-                                                onClick={() => setFilterType('day')}
-                                            >
-                                                Theo ngày
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className={cx('filterTab', {
-                                                    active:
-                                                        filterType === 'month',
-                                                })}
-                                                onClick={() =>
-                                                    setFilterType('month')
+                                {filterType === 'custom' && (
+                                    <div className={cx('filterBody')}>
+                                        <div className={cx('filterRange')}>
+                                            <input
+                                                type="date"
+                                                className={cx('filterInput')}
+                                                value={fromDate}
+                                                onChange={(event) =>
+                                                    setFromDate(
+                                                        event.target.value,
+                                                    )
                                                 }
-                                            >
-                                                Theo tháng
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className={cx('filterTab', {
-                                                    active:
-                                                        filterType === 'range',
-                                                })}
-                                                onClick={() =>
-                                                    setFilterType('range')
+                                            />
+                                            <input
+                                                type="date"
+                                                className={cx('filterInput')}
+                                                value={toDate}
+                                                onChange={(event) =>
+                                                    setToDate(event.target.value)
                                                 }
-                                            >
-                                                Khoảng thời gian
-                                            </button>
-                                        </div>
-
-                                        <div className={cx('filterBody')}>
-                                            {filterType === 'day' && (
-                                                <input
-                                                    type="date"
-                                                    className={cx('filterInput')}
-                                                    value={selectedDay}
-                                                    onChange={(event) =>
-                                                        setSelectedDay(
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                />
-                                            )}
-
-                                            {filterType === 'month' && (
-                                                <input
-                                                    type="month"
-                                                    className={cx('filterInput')}
-                                                    value={selectedMonth}
-                                                    onChange={(event) =>
-                                                        setSelectedMonth(
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                />
-                                            )}
-
-                                            {filterType === 'range' && (
-                                                <div
-                                                    className={cx('filterRange')}
-                                                >
-                                                    <input
-                                                        type="date"
-                                                        className={cx(
-                                                            'filterInput',
-                                                        )}
-                                                        value={fromDate}
-                                                        onChange={(event) =>
-                                                            setFromDate(
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                    />
-                                                    <input
-                                                        type="date"
-                                                        className={cx(
-                                                            'filterInput',
-                                                        )}
-                                                        value={toDate}
-                                                        onChange={(event) =>
-                                                            setToDate(
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className={cx('filterActions')}>
-                                            <button
-                                                type="button"
-                                                className={cx('filterReset')}
-                                                onClick={handleResetFilter}
-                                            >
-                                                Đặt lại
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                className={cx('filterApply')}
-                                                onClick={handleApplyFilter}
-                                            >
-                                                Áp dụng
-                                            </button>
+                                            />
                                         </div>
                                     </div>
                                 )}
+
+                                <div className={cx('filterActions')}>
+                                    <button
+                                        type="button"
+                                        className={cx('filterReset')}
+                                        onClick={handleResetFilter}
+                                    >
+                                        Đặt lại
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className={cx('filterApply')}
+                                        onClick={handleApplyFilter}
+                                    >
+                                        Áp dụng
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        className={cx('ghostActionBtn')}
+                        onClick={() =>handleExportReport()}
+                        disabled={exporting}
+                    >
+                        <FiDownload />
+                        <span>
+                            {exporting ? 'Đang xuất...' : 'Xuất báo cáo'}
+                        </span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={cx('primaryActionBtn')}
+                        onClick={handleRefresh}
+                        disabled={refreshing || loading}
+                    >
+                        <FiRefreshCw />
+                        <span>
+                            {refreshing || loading ? 'Đang tải...' : 'Làm mới'}
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            {errorMessage ? (
+                <div className={cx('stateBox')}>
+                    <FiAlertCircle className={cx('stateIcon')} />
+                    <h3>Không tải được dashboard</h3>
+                    <p>{errorMessage}</p>
+                </div>
+            ) : loading ? (
+                <div className={cx('stateBox')}>
+                    <h3>Đang tải dữ liệu dashboard...</h3>
+                </div>
+            ) : (
+                <>
+                    <div className={cx('statsGrid')}>
+                        {stats.map((item) => (
+                            <StatCard
+                                key={item.id}
+                                icon={item.icon}
+                                label={item.label}
+                                value={item.value}
+                                change={item.change}
+                            />
+                        ))}
+                    </div>
+
+                    <div className={cx('topGrid')}>
+                        <TrendChart chartData={chartData} />
+                        <RevenueDonut chartPieData={chartPieData} />
+                    </div>
+
+                    <div className={cx('panel')}>
+                        <div className={cx('panelHeader')}>
+                            <h3>Subscription & Payment</h3>
+                        </div>
+
+                        <div className={cx('progressBlock')}>
+                            <div className={cx('progressRow')}>
+                                <div className={cx('progressHeader')}>
+                                    <span>Tỷ lệ nâng cấp Premium</span>
+                                    <strong>
+                                        {subscriptionData.premiumUpgradeRate}
+                                    </strong>
+                                </div>
+                                <div className={cx('progressTrack')}>
+                                    <div
+                                        className={cx('progressBar', 'purpleBar')}
+                                        style={{
+                                            width: subscriptionData.premiumUpgradeRate,
+                                        }}
+                                    />
+                                </div>
                             </div>
 
-                            <button type="button" className={cx('outlineBtn')}>
-                                <FiDownload />
-                                <span>Xuất báo cáo</span>
-                            </button>
+                            <div className={cx('progressRow')}>
+                                <div className={cx('progressHeader')}>
+                                    <span>Tỷ lệ thanh toán thành công</span>
+                                    <strong className={cx('greenText')}>
+                                        {subscriptionData.paymentSuccessRate}
+                                    </strong>
+                                </div>
+                                <div className={cx('progressTrack')}>
+                                    <div
+                                        className={cx('progressBar', 'greenBar')}
+                                        style={{
+                                            width: subscriptionData.paymentSuccessRate,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                            <button
-                                type="button"
-                                className={cx('primaryBtn')}
-                                onClick={handleRefresh}
-                            >
-                                <FiRefreshCw />
-                                <span>Làm mới</span>
-                            </button>
+                        <div className={cx('paymentMeta')}>
+                            <span className={cx('legendItem')}>
+                                <i className={cx('dot', 'orange')} />
+                                Đơn hàng đang chờ
+                                <strong>{subscriptionData.pendingOrders}</strong>
+                            </span>
+
+                            <span className={cx('legendItem')}>
+                                <i className={cx('dot', 'red')} />
+                                Thanh toán thất bại
+                                <strong>{subscriptionData.failedPayments}</strong>
+                            </span>
                         </div>
                     </div>
 
-                    {errorMessage ? (
-                        <div className={cx('dashboardState')}>
-                            <FiAlertCircle className={cx('stateIcon')} />
-                            <h3>Không tải được dashboard</h3>
-                            <p>{errorMessage}</p>
-                            <button
-                                type="button"
-                                className={cx('retryBtn')}
-                                onClick={handleRefresh}
-                            >
-                                Thử lại
-                            </button>
-                        </div>
-                    ) : loading ? (
-                        <div className={cx('dashboardState')}>
-                            <h3>Đang tải dữ liệu dashboard...</h3>
-                        </div>
-                    ) : (
-                        <>
-                            <div className={cx('statsGrid')}>
-                                {stats.map((item) => (
-                                    <StatCard
-                                        key={item.id}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        value={item.value}
-                                        change={item.change}
-                                    />
-                                ))}
-                            </div>
-
-                            <div className={cx('middleGrid')}>
-                                <TrendChart chartData={chartData} />
-
-                                <div className={cx('card')}>
-                                    <h3 className={cx('cardTitle')}>
-                                        Doanh thu theo gói
-                                    </h3>
-
-                                    <div className={cx('revenueList')}>
-                                        {revenueItems.length > 0 ? (
-                                            revenueItems.map((item) => (
-                                                <div
-                                                    key={item.label}
-                                                    className={cx('revenueItem')}
-                                                >
-                                                    <div className={cx('revenueRow')}>
-                                                        <span>{item.label}</span>
-                                                        <strong>{item.value}</strong>
-                                                    </div>
-
-                                                    <div className={cx('progressTrack')}>
-                                                        <div
-                                                            className={cx('progressBar')}
-                                                            style={{
-                                                                width: item.width,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className={cx('emptyText')}>
-                                                Chưa có dữ liệu doanh thu theo gói
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={cx('smallGrid')}>
-                                <div className={cx('card')}>
-                                    <h3 className={cx('cardTitle')}>
-                                        Hiệu suất AI Analysis
-                                    </h3>
-
-                                    <div className={cx('metricsGrid')}>
-                                        <div>
-                                            <span className={cx('miniLabel')}>
-                                                Match Score trung bình
-                                            </span>
-                                            <strong className={cx('miniValue')}>
-                                                {aiSummary.avgMatchScore}
-                                            </strong>
-                                        </div>
-
-                                        <div>
-                                            <span className={cx('miniLabel')}>
-                                                Tỷ lệ phân tích thành công
-                                            </span>
-                                            <strong
-                                                className={cx('miniValue', 'green')}
-                                            >
-                                                {aiSummary.successRate}
-                                            </strong>
-                                        </div>
-
-                                        <div>
-                                            <span className={cx('miniLabel')}>
-                                                Lượt AI lỗi
-                                            </span>
-                                            <strong
-                                                className={cx('miniValue', 'red')}
-                                            >
-                                                {aiSummary.errorCount}
-                                            </strong>
-                                        </div>
-                                    </div>
-
-                                    <div className={cx('tagTitle')}>
-                                        Từ khóa thiếu phổ biến
-                                    </div>
-
-                                    <div className={cx('tagList')}>
-                                        {aiKeywords.length > 0 ? (
-                                            aiKeywords.map((tag) => (
-                                                <span key={tag} className={cx('tag')}>
-                                                    {tag}
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className={cx('emptyText')}>
-                                                Chưa có dữ liệu
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className={cx('card')}>
-                                    <h3 className={cx('cardTitle')}>
-                                        Subscription & Payment
-                                    </h3>
-
-                                    <div className={cx('subscriptionItem')}>
-                                        <div className={cx('revenueRow')}>
-                                            <span>Tỷ lệ nâng cấp Premium</span>
-                                            <strong>
-                                                {subscriptionData.premiumUpgradeRate}
-                                            </strong>
-                                        </div>
-
-                                        <div className={cx('progressTrack')}>
-                                            <div
-                                                className={cx(
-                                                    'progressBar',
-                                                    'purpleBar',
-                                                )}
-                                                style={{
-                                                    width:
-                                                        subscriptionData.premiumUpgradeRate,
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className={cx('subscriptionItem')}>
-                                        <div className={cx('revenueRow')}>
-                                            <span>Tỷ lệ thanh toán thành công</span>
-                                            <strong className={cx('green')}>
-                                                {subscriptionData.paymentSuccessRate}
-                                            </strong>
-                                        </div>
-
-                                        <div className={cx('progressTrack')}>
-                                            <div
-                                                className={cx(
-                                                    'progressBar',
-                                                    'greenBar',
-                                                )}
-                                                style={{
-                                                    width:
-                                                        subscriptionData.paymentSuccessRate,
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className={cx('paymentLegend')}>
-                                        <span className={cx('legendItem')}>
-                                            <i className={cx('dot', 'orange')} />
-                                            Đơn hàng đang chờ
-                                            <strong>
-                                                {subscriptionData.pendingOrders}
-                                            </strong>
-                                        </span>
-
-                                        <span className={cx('legendItem')}>
-                                            <i className={cx('dot', 'red')} />
-                                            Thanh toán thất bại
-                                            <strong>
-                                                {subscriptionData.failedPayments}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <RecentOrdersTable orders={recentOrders} />
-                        </>
-                    )}
-                </section>
-            </main>
+                    <RecentOrdersTable orders={recentOrders} />
+                </>
+            )}
         </div>
     );
 }
