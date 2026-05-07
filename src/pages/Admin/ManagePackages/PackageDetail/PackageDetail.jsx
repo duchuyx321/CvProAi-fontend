@@ -1,6 +1,6 @@
 import classNames from 'classnames/bind';
 import { useCallback } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Button from '~/components/Button';
 import { config } from '~/config';
 import { BasicInfoCard, BenefitsCard } from './components';
@@ -11,10 +11,12 @@ const cx = classNames.bind(styles);
 
 function PackageDetail() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { packageId } = useParams();
     const [searchParams] = useSearchParams();
 
     const isReadOnly = searchParams.get('mode') === 'view';
+    const routePackage = location.state?.package || null;
 
     const managePackagesRoute =
         config?.router?.managePackages || '/admin/packages';
@@ -43,6 +45,7 @@ function PackageDetail() {
         packageId,
         isReadOnly,
         onNotFound: handleBackToList,
+        routePackage,
     });
 
     const handleCancel = useCallback(() => {

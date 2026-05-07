@@ -179,12 +179,16 @@ const PublicRouter = [
         layout: DetailLayout,
     },
 
+];
+
+const UserRouter = [];
+
+const AdminRouter = [
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
         layout: AdminLayout,
     },
-    // admin
     {
         path: config.router.manageUsers,
         component: ManageUsers,
@@ -226,9 +230,5 @@ const PublicRouter = [
         layout: AdminLayout,
     },
 ];
-
-
-const UserRouter = [];
-const AdminRouter = [];
 
 export { PublicRouter, UserRouter, AdminRouter };

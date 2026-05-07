@@ -6,6 +6,7 @@ import React, {
     useMemo,
     useState,
 } from 'react';
+import { logout as logoutApi } from '~/services/auth.service';
 import { getProfile } from '~/services/profile.service';
 
 const AuthContext = createContext(null);
@@ -30,6 +31,16 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('accessToken');
         setUser(null);
     }, []);
+
+    const logout = useCallback(async () => {
+        try {
+            await logoutApi();
+        } catch {
+            // ignore API errors — always clear local state
+        } finally {
+            clearAuthState();
+        }
+    }, [clearAuthState]);
 
     const initializeAuth = useCallback(async () => {
         const token = localStorage.getItem('accessToken');
@@ -78,12 +89,13 @@ export const AuthProvider = ({ children }) => {
             user,
             setUser,
             clearAuthState,
+            logout,
             isAuthenticated: !!user,
             isLoading,
             isInitialized,
             initializeAuth,
         }),
-        [user, isLoading, isInitialized, initializeAuth, clearAuthState],
+        [user, isLoading, isInitialized, initializeAuth, clearAuthState, logout],
     );
 
     return (

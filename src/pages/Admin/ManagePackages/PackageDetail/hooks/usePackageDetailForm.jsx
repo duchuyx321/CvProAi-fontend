@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import { getPackages, updatePackage } from '~/services/managePackageService';
-import { DEFAULT_FORM_DATA, FALLBACK_PACKAGES } from '../constants';
+import { getPackageDetail, updatePackage } from '~/services/managePackageService';
+import { DEFAULT_FORM_DATA, FALLBACK_PACKAGES } from '../../constants';
 import {
     buildBenefitsPreview,
     buildUpdatePayload,
     createFormSnapshot,
     findPackageById,
-    getPackageCollection,
     normalizePackageDetail,
     toDigitsOnly,
     validatePackageDetailForm,
@@ -17,6 +16,7 @@ export function usePackageDetailForm({
     packageId,
     isReadOnly,
     onNotFound,
+    routePackage,
 }) {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -39,50 +39,58 @@ export function usePackageDetailForm({
     const isDirty = currentSnapshot !== savedSnapshot;
 
     const loadPackageDetail = useCallback(async () => {
-        setLoading(true);
+        if (routePackage) {
+            const normalizedPackage = normalizePackageDetail(routePackage);
+            const nextSnapshot = createFormSnapshot(normalizedPackage);
+            setSavedSnapshot(nextSnapshot);
+            setFormData(normalizedPackage);
+            setLoading(false);
+        }
 
         try {
-            const response = await getPackages();
-            const packageItems = getPackageCollection(response);
-            const effectiveItems =
-                Array.isArray(packageItems) && packageItems.length > 0
-                    ? packageItems
-                    : FALLBACK_PACKAGES;
+            if (!routePackage) setLoading(true);
+            const response = await getPackageDetail(packageId);
+            const raw =
+                response?.data?.item ??
+                response?.data?.data ??
+                response?.data ??
+                response;
 
-            const foundPackage = findPackageById(effectiveItems, packageId);
-
-            if (!foundPackage) {
-                toast.error('Không tìm thấy gói dịch vụ.');
-                onNotFound?.();
+            if (!raw || response?.success === false) {
+                const fallback = findPackageById(FALLBACK_PACKAGES, packageId);
+                if (!fallback) {
+                    if (!routePackage) {
+                        toast.error('Không tìm thấy gói dịch vụ.');
+                        onNotFound?.();
+                    }
+                    return;
+                }
+                const normalizedPackage = normalizePackageDetail(fallback);
+                const nextSnapshot = createFormSnapshot(normalizedPackage);
+                setSavedSnapshot(nextSnapshot);
+                setFormData(normalizedPackage);
                 return;
             }
 
-            const normalizedPackage = normalizePackageDetail(foundPackage);
+            const normalizedPackage = normalizePackageDetail(raw);
             const nextSnapshot = createFormSnapshot(normalizedPackage);
-
             setSavedSnapshot(nextSnapshot);
             setFormData(normalizedPackage);
-        } catch (error) {
-            const foundFallbackPackage = findPackageById(
-                FALLBACK_PACKAGES,
-                packageId
-            );
-
-            if (!foundFallbackPackage) {
+        } catch {
+            const fallback = findPackageById(FALLBACK_PACKAGES, packageId);
+            if (fallback) {
+                const normalizedPackage = normalizePackageDetail(fallback);
+                const nextSnapshot = createFormSnapshot(normalizedPackage);
+                setSavedSnapshot(nextSnapshot);
+                setFormData(normalizedPackage);
+            } else if (!routePackage) {
                 toast.error('Không thể tải chi tiết gói dịch vụ.');
                 onNotFound?.();
-                return;
             }
-
-            const normalizedPackage = normalizePackageDetail(foundFallbackPackage);
-            const nextSnapshot = createFormSnapshot(normalizedPackage);
-
-            setSavedSnapshot(nextSnapshot);
-            setFormData(normalizedPackage);
         } finally {
             setLoading(false);
         }
-    }, [onNotFound, packageId]);
+    }, [onNotFound, packageId, routePackage]);
 
     useEffect(() => {
         loadPackageDetail();
