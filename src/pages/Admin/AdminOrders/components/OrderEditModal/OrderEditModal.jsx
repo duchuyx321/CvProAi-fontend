@@ -9,11 +9,11 @@ import styles from './OrderEditModal.module.scss';
 const cx = classNames.bind(styles);
 
 function formatDateTime(value) {
-    if (!value) return '';
+    if (!value) return '--';
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return '--';
 
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
@@ -22,6 +22,16 @@ function formatDateTime(value) {
         hour: '2-digit',
         minute: '2-digit',
     }).format(date);
+}
+
+function formatCurrency(value, currency = 'VND') {
+    const formattedValue = new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+
+    if (currency === 'VND') {
+        return `${formattedValue}đ`;
+    }
+
+    return `${formattedValue} ${currency}`;
 }
 
 function ReadonlyRow({ label, value, strongValue = false }) {
@@ -42,8 +52,10 @@ function FieldGroup({ label, children }) {
     );
 }
 
-function OrderEditModal({ order, plans, statusOptions, editForm, onChange }) {
+function OrderEditModal({ order, statusOptions, editForm, onChange }) {
     if (!order) return null;
+
+    const isPaidStatus = editForm.status === 'PAID';
 
     return (
         <div className={cx('wrapper')}>
@@ -75,85 +87,112 @@ function OrderEditModal({ order, plans, statusOptions, editForm, onChange }) {
 
                 <div className={cx('sectionBody')}>
                     <div className={cx('fieldGrid')}>
-                        <FieldGroup label="Trạng thái">
-                            <select
-                                name="status"
-                                value={editForm.status}
-                                onChange={onChange}
-                            >
-                                {statusOptions.map((status) => (
-                                    <option key={status.value} value={status.value}>
-                                        {status.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </FieldGroup>
-
                         <FieldGroup label="Mã đơn hàng">
                             <input
                                 value={order.order_code || ''}
                                 readOnly
                             />
                         </FieldGroup>
+
+                        <FieldGroup label="ID thanh toán">
+                            <input
+                                value={order.id || ''}
+                                readOnly
+                            />
+                        </FieldGroup>
                     </div>
 
-                    <FieldGroup label="Gói dịch vụ">
-                        <select
-                            name="plan_name"
-                            value={editForm.plan_name}
-                            onChange={onChange}
-                        >
-                            {plans.map((plan) => (
-                                <option key={plan.value} value={plan.value}>
-                                    {plan.label}
-                                </option>
-                            ))}
-                        </select>
-                    </FieldGroup>
+                    <div className={cx('fieldGrid')}>
+                        <FieldGroup label="Loại đơn">
+                            <input
+                                value={order.order_type || ''}
+                                readOnly
+                            />
+                        </FieldGroup>
 
-                    <FieldGroup label="Số tiền">
-                        <input
-                            name="amount_cents"
-                            value={editForm.amount_cents}
-                            onChange={onChange}
-                            inputMode="numeric"
-                            placeholder="Nhập số tiền"
-                        />
-                    </FieldGroup>
+                        <FieldGroup label="Gói dịch vụ">
+                            <input
+                                value={order.plan?.name || ''}
+                                readOnly
+                            />
+                        </FieldGroup>
+                    </div>
+
+                    <div className={cx('fieldGrid')}>
+                        <FieldGroup label="Gói add-on">
+                            <input
+                                value={order.addon_package?.name || ''}
+                                readOnly
+                            />
+                        </FieldGroup>
+
+                        <FieldGroup label="Số tiền">
+                            <input
+                                value={formatCurrency(order.amount_cents, order.currency)}
+                                readOnly
+                            />
+                        </FieldGroup>
+                    </div>
                 </div>
             </section>
 
             <section className={cx('section')}>
                 <div className={cx('sectionTitle')}>
                     <FiCreditCard />
-                    <span>Thông tin thanh toán</span>
+                    <span>Cập nhật thanh toán</span>
                 </div>
 
                 <div className={cx('sectionBody')}>
-                    <div className={cx('fieldGrid')}>
-                        <FieldGroup label="Phương thức thanh toán">
+                    <FieldGroup label="Trạng thái">
+                        <select
+                            name="status"
+                            value={editForm.status}
+                            onChange={onChange}
+                        >
+                            {statusOptions.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                    {status.label}
+                                </option>
+                            ))}
+                        </select>
+                    </FieldGroup>
+
+                    {isPaidStatus && (
+                        <FieldGroup label="Mã giao dịch từ cổng thanh toán">
                             <input
-                                name="payment_method"
-                                value={editForm.payment_method}
+                                name="provider_transaction_id"
+                                value={editForm.provider_transaction_id}
                                 onChange={onChange}
-                                placeholder="Backend chưa trả payment_method"
+                                placeholder="Nhập mã giao dịch từ cổng thanh toán"
                             />
                         </FieldGroup>
+                    )}
 
+                    <FieldGroup label="Lý do cập nhật">
+                        <textarea
+                            name="reason"
+                            value={editForm.reason}
+                            onChange={onChange}
+                            placeholder="Nhập lý do cập nhật trạng thái"
+                            rows="3"
+                        />
+                    </FieldGroup>
+
+                    <div className={cx('fieldGrid')}>
                         <FieldGroup label="Thời gian tạo">
                             <input
                                 value={formatDateTime(order.createdAt)}
                                 readOnly
                             />
                         </FieldGroup>
-                    </div>
 
-                    <FieldGroup label="Thời gian thanh toán">
-                        <input
-                            value={formatDateTime(order.paid_at)}
-                            readOnly
-                        />
-                    </FieldGroup>
+                        <FieldGroup label="Thời gian thanh toán">
+                            <input
+                                value={formatDateTime(order.paid_at)}
+                                readOnly
+                            />
+                        </FieldGroup>
+                    </div>
                 </div>
             </section>
         </div>

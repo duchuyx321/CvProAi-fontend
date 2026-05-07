@@ -182,7 +182,6 @@ const PublicRouter = [
         component: AdminDashboard,
         layout: AdminLayout,
     },
-   
 ];
 
 // user router

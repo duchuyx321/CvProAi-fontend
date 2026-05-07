@@ -12,7 +12,7 @@ export const getPaymentHistory = async ({ page = 1, limit = 10 } = {}) => {
     }
 };
 
-export const getOrders = async (params = {}) => {
+export const getAllOrders = async (params = {}) => {
     try {
         const query = new URLSearchParams();
 
@@ -35,14 +35,39 @@ export const getOrders = async (params = {}) => {
     }
 };
 
-export const editOrder = async (code, data) => {
+export const getOrderDetail = async (code) => {
     try {
         if (!code) {
             throw new Error('Thiếu mã đơn hàng');
         }
 
         const safeCode = encodeURIComponent(code);
-        const res = await Response.PATCH(`admin/payments/edit/${safeCode}`, data);
+        const res = await Response.GET(`admin/payments/${safeCode}`);
+
+        return res;
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+export const editOrder = async (code, id, data) => {
+    try {
+        if (!code) {
+            throw new Error('Thiếu mã đơn hàng');
+        }
+
+        if (!id) {
+            throw new Error('Thiếu ID đơn hàng');
+        }
+
+        const safeCode = encodeURIComponent(code);
+        const safeId = encodeURIComponent(id);
+
+        const res = await Response.PATCH(
+            `admin/payments/edit/${safeCode}?id=${safeId}`,
+            data,
+        );
 
         return res;
     } catch (error) {

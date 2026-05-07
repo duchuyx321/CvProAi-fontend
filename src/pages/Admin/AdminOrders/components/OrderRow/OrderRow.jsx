@@ -18,6 +18,10 @@ const STATUS_META = {
         label: 'Failed',
         className: 'failed',
     },
+    CANCELED: {
+        label: 'Canceled',
+        className: 'cancelled',
+    },
     CANCELLED: {
         label: 'Cancelled',
         className: 'cancelled',

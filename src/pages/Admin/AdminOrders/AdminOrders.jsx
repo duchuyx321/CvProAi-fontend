@@ -7,7 +7,7 @@ import OrderRow from './components/OrderRow';
 import OrderDetailModal from './components/OrderDetailModal';
 import OrderEditModal from './components/OrderEditModal';
 import styles from './AdminOrders.module.scss';
-import { getOrders } from '~/services/history.service';
+import { editOrder, getAllOrders, getOrderDetail } from '~/services/history.service';
 import { useDebounce } from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
@@ -28,8 +28,8 @@ const ORDER_STATUS_OPTIONS = [
         value: 'FAILED',
     },
     {
-        label: 'Cancelled',
-        value: 'CANCELLED',
+        label: 'Canceled',
+        value: 'CANCELED',
     },
 ];
 
@@ -54,7 +54,10 @@ function AdminOrders() {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+
     const [isLoading, setIsLoading] = useState(false);
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const debouncedSearchValue = useDebounce(searchValue, 500);
 
@@ -63,8 +66,8 @@ function AdminOrders() {
 
     const [editForm, setEditForm] = useState({
         status: '',
-        plan_name: '',
-        amount_cents: '',
+        provider_transaction_id: '',
+        reason: '',
     });
 
     const fetchOrders = async (page = 1) => {
@@ -84,13 +87,13 @@ function AdminOrders() {
                 queryParams.to = toDate;
             }
 
-            const result = await getOrders(queryParams);
+            const result = await getAllOrders(queryParams);
 
             if (!result.success) {
                 throw new Error(
                     result.message ||
-                    result.messsage ||
-                    'Không thể lấy danh sách đơn hàng',
+                        result.messsage ||
+                        'Không thể lấy danh sách đơn hàng',
                 );
             }
 
@@ -125,34 +128,13 @@ function AdminOrders() {
 
     useEffect(() => {
         const hasLocalFilter =
-            debouncedSearchValue.trim() || statusFilter !== 'ALL';
+            Boolean(debouncedSearchValue.trim()) || statusFilter !== 'ALL';
 
         if (!hasLocalFilter) return;
         if (pagination.page === 1) return;
 
         fetchOrders(1);
     }, [debouncedSearchValue, statusFilter]);
-
-    const planOptions = useMemo(() => {
-        const uniquePlanNames = [
-            ...new Set(
-                orders
-                    .map((order) => order.plan?.name)
-                    .filter(Boolean),
-            ),
-        ];
-
-        return [
-            {
-                label: 'Tất cả các gói',
-                value: 'ALL',
-            },
-            ...uniquePlanNames.map((planName) => ({
-                label: planName,
-                value: planName,
-            })),
-        ];
-    }, [orders]);
 
     const filteredOrders = useMemo(() => {
         const keyword = debouncedSearchValue.trim().toLowerCase();
@@ -226,9 +208,39 @@ function AdminOrders() {
         setToDate('');
     };
 
-    const handleViewOrder = (order) => {
-        setSelectedOrder(order);
-        setModalMode('view');
+    const handleViewOrder = async (order) => {
+        try {
+            setSelectedOrder(order);
+            setModalMode('view');
+            setIsDetailLoading(true);
+
+            const result = await getOrderDetail(order.order_code);
+
+            if (!result.success) {
+                throw new Error(
+                    result.message ||
+                        result.messsage ||
+                        'Không thể lấy chi tiết đơn hàng',
+                );
+            }
+
+            const detailData = result.data?.data || result.data || order;
+
+            setSelectedOrder(detailData);
+        } catch (error) {
+            console.log(error);
+
+            const errorMessage =
+                error.response?.data?.error?.[0] ||
+                error.response?.data?.message ||
+                error.response?.data?.messsage ||
+                error.message ||
+                'Không thể lấy chi tiết đơn hàng';
+
+            alert(errorMessage);
+        } finally {
+            setIsDetailLoading(false);
+        }
     };
 
     const handleEditOrder = (order) => {
@@ -237,8 +249,8 @@ function AdminOrders() {
 
         setEditForm({
             status: order.status || '',
-            plan_name: order.plan?.name || '',
-            amount_cents: order.amount_cents || '',
+            provider_transaction_id: order.provider_transaction_id || '',
+            reason: '',
         });
     };
 
@@ -251,11 +263,13 @@ function AdminOrders() {
     const handleCloseModal = () => {
         setSelectedOrder(null);
         setModalMode(null);
+        setIsDetailLoading(false);
+        setIsSaving(false);
 
         setEditForm({
             status: '',
-            plan_name: '',
-            amount_cents: '',
+            provider_transaction_id: '',
+            reason: '',
         });
     };
 
@@ -268,33 +282,82 @@ function AdminOrders() {
         }));
     };
 
-    const handleSaveOrder = () => {
-        if (!selectedOrder) return;
+    const handleSaveOrder = async () => {
+        if (!selectedOrder || isSaving) return;
 
-        const amountValue = editForm.amount_cents.trim();
-
-        if (!amountValue || Number.isNaN(Number(amountValue)) || Number(amountValue) < 0) {
-            alert('Số tiền không hợp lệ');
+        if (!editForm.status) {
+            alert('Vui lòng chọn trạng thái');
             return;
         }
 
-        setOrders((prevOrders) => {
-            return prevOrders.map((order) => {
-                if (order.id !== selectedOrder.id) return order;
+        if (editForm.status === selectedOrder.status) {
+            alert('Trạng thái mới đang trùng với trạng thái hiện tại.');
+            return;
+        }
 
-                return {
-                    ...order,
-                    status: editForm.status,
-                    amount_cents: amountValue,
-                    plan: {
-                        ...order.plan,
-                        name: editForm.plan_name,
-                    },
-                };
+        if (editForm.status === 'PAID' && !editForm.provider_transaction_id.trim()) {
+            alert('Vui lòng nhập mã giao dịch từ cổng thanh toán');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+
+            const payload = {
+                status: editForm.status,
+                reason: editForm.reason.trim(),
+            };
+
+            if (editForm.status === 'PAID') {
+                payload.provider_transaction_id = editForm.provider_transaction_id.trim();
+            }
+
+            const result = await editOrder(
+                selectedOrder.order_code,
+                selectedOrder.id,
+                payload,
+            );
+
+            if (!result.success) {
+                throw new Error(
+                    result.message ||
+                        result.messsage ||
+                        'Không thể cập nhật đơn hàng',
+                );
+            }
+
+            const updatedOrder = result.data?.data || result.data || {};
+
+            setOrders((prevOrders) => {
+                return prevOrders.map((order) => {
+                    if (order.id !== selectedOrder.id) return order;
+
+                    return {
+                        ...order,
+                        ...updatedOrder,
+                        status: updatedOrder.status || payload.status,
+                        provider_transaction_id:
+                            updatedOrder.provider_transaction_id ||
+                            payload.provider_transaction_id,
+                    };
+                });
             });
-        });
 
-        handleCloseModal();
+            handleCloseModal();
+        } catch (error) {
+            console.log(error);
+
+            const errorMessage =
+                error.response?.data?.error?.[0] ||
+                error.response?.data?.message ||
+                error.response?.data?.messsage ||
+                error.message ||
+                'Cập nhật đơn hàng thất bại';
+
+            alert(errorMessage);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const getModalTitle = () => {
@@ -308,6 +371,10 @@ function AdminOrders() {
         if (!selectedOrder || !modalMode) return null;
 
         if (modalMode === 'view') {
+            if (isDetailLoading) {
+                return <p>Đang tải chi tiết đơn hàng...</p>;
+            }
+
             return <OrderDetailModal order={selectedOrder} />;
         }
 
@@ -315,7 +382,6 @@ function AdminOrders() {
             return (
                 <OrderEditModal
                     order={selectedOrder}
-                    plans={planOptions.filter((plan) => plan.value !== 'ALL')}
                     statusOptions={ORDER_STATUS_OPTIONS}
                     editForm={editForm}
                     onChange={handleEditFormChange}
@@ -333,8 +399,9 @@ function AdminOrders() {
                     type="button"
                     className={cx('modalSaveButton')}
                     onClick={handleSaveOrder}
+                    disabled={isSaving}
                 >
-                    Lưu thay đổi
+                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                 </Button>
             );
         }
@@ -346,6 +413,7 @@ function AdminOrders() {
                         type="button"
                         className={cx('modalEditButton')}
                         onClick={handleSwitchToEditModal}
+                        disabled={isDetailLoading}
                     >
                         Chỉnh sửa
                     </Button>
@@ -374,6 +442,7 @@ function AdminOrders() {
             <div className={cx('filterCard')}>
                 <label className={cx('filterGroup')}>
                     <span>Tìm kiếm</span>
+
                     <input
                         type="search"
                         value={searchValue}
@@ -384,6 +453,7 @@ function AdminOrders() {
 
                 <label className={cx('filterGroup')}>
                     <span>Trạng thái</span>
+
                     <select
                         value={statusFilter}
                         onChange={(event) => setStatusFilter(event.target.value)}
@@ -398,6 +468,7 @@ function AdminOrders() {
 
                 <label className={cx('filterGroup')}>
                     <span>Từ ngày</span>
+
                     <input
                         type="date"
                         value={fromDate}
@@ -408,6 +479,7 @@ function AdminOrders() {
 
                 <label className={cx('filterGroup')}>
                     <span>Đến ngày</span>
+
                     <input
                         type="date"
                         value={toDate}

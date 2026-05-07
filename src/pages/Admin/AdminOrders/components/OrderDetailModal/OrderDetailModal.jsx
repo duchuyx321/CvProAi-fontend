@@ -21,6 +21,10 @@ const STATUS_META = {
         label: 'Failed',
         className: 'failed',
     },
+    CANCELED: {
+        label: 'Canceled',
+        className: 'cancelled',
+    },
     CANCELLED: {
         label: 'Cancelled',
         className: 'cancelled',
@@ -158,13 +162,33 @@ function OrderDetailModal({ order }) {
 
                 <div className={cx('sectionBody')}>
                     <DetailRow
-                        label="Phương thức thanh toán"
-                        value={order.payment_method}
+                        label="Nhà cung cấp"
+                        value={order.provider}
+                    />
+
+                    <DetailRow
+                        label="Mã giao dịch"
+                        value={order.provider_transaction_id}
+                    />
+
+                    <DetailRow
+                        label="Mô tả"
+                        value={order.description}
+                    />
+
+                    <DetailRow
+                        label="Lý do cập nhật"
+                        value={order.metadata?.reason}
                     />
 
                     <DetailRow
                         label="Thời gian thanh toán"
                         value={formatDateTime(order.paid_at)}
+                    />
+
+                    <DetailRow
+                        label="Cập nhật lần cuối"
+                        value={formatDateTime(order.updatedAt)}
                     />
                 </div>
             </section>
