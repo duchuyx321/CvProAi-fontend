@@ -14,13 +14,11 @@ import Dashboard from '~/pages/User/Dashboard';
 import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
-import UpgradePremium from '~/pages/User/UpgradePremium';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
-// import TemplatePreview from '~/pages/Admin/ManageTemplates/TemplatePreview';
-// import TemplateEditor from '~/pages/Admin/ManageTemplates/TemplateEditor';
+
 import AdminSettings from '~/pages/Admin/AdminSettings';
 import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
@@ -36,7 +34,9 @@ import PaymentSuccess from '~/pages/User/PaymentSuccess';
 import UpgradeOptionsPage from '~/pages/User/UpgradeOptionsPage';
 import CreateCv from '~/pages/User/CreateCv';
 import EditCv from '~/pages/User/EditCv';
+
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
+import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
 
 // public router
 const PublicRouter = [
@@ -91,7 +91,10 @@ const PublicRouter = [
         layout: PublicLayout,
         layoutProps: { hideHeader: true, hideFooter: true },
     },
-    // user router
+];
+
+// user router
+const UserRouter = [
     {
         path: config.router.dashboard,
         component: Dashboard,
@@ -177,41 +180,7 @@ const PublicRouter = [
         component: PaymentSuccess,
         layout: DetailLayout,
     },
-    // admin router
-    {
-        path: config.router.manageTemplates,
-        component: ManageTemplates,
-        layout: AdminLayout,
-    },
-    // {
-    //     path: config.router.createTemplate,
-    //     component: TemplateEditor,
-    //     layout: DetailLayout,
-    // },
-    // {
-    //     path: config.router.previewTemplate,
-    //     component: TemplatePreview,
-    //     layout: AdminLayout,
-    // },
-    // {
-    //     path: config.router.editTemplate,
-    //     component: TemplateEditor,
-    //     layout: DetailLayout,
-    // },
-     {
-        path: config.router.manageUsers,
-        component: ManageUsers,
-        layout: AdminLayout,
-    },
-    {
-        path: config.router.manageUsersDetail,
-        component: UserDetailInfo,
-        layout: DetailLayout,
-    },
 ];
-
-// user router
-const UserRouter = [];
 
 // admin router
 const AdminRouter = [
@@ -221,9 +190,24 @@ const AdminRouter = [
         layout: AdminLayout,
     },
     {
+        path: config.router.manageTemplates,
+        component: ManageTemplates,
+        layout: AdminLayout,
+    },
+    {
+        path: config.router.previewTemplate,
+        component: ManageTemplateDetail,
+        layout: DetailLayout,
+    },
+    {
         path: config.router.manageUsers,
         component: ManageUsers,
         layout: AdminLayout,
+    },
+    {
+        path: config.router.manageUsersDetail,
+        component: UserDetailInfo,
+        layout: DetailLayout,
     },
     {
         path: config.router.manageOrders,
@@ -243,4 +227,3 @@ const AdminRouter = [
 ];
 
 export { PublicRouter, UserRouter, AdminRouter };
-
