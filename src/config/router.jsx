@@ -11,7 +11,7 @@ export const router = {
     cvSample: '/cv-templates',
     CvDetail: '/cv-templates/:code',
     pricing: '/pricing',
-    // createCV: '/create-cv',
+
     // User
     dashboard: '/dashboard',
     cvTemplates: '/user/cv-templates',
@@ -33,12 +33,15 @@ export const router = {
     payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
     upgradeOptions: '/upgrade-options/:slug',
+
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
     manageTemplates: '/admin/templates',
+    createTemplate: '/admin/templates/new',
+    previewTemplate: '/admin/templates/:templateId/preview',
+    editTemplate: '/admin/templates/:templateId/edit',
     adminSettings: '/admin/settings',
-    manageOrders: '/admin/orders',
     managePackages: '/admin/packages',
-    adminOrders: '/admin/orders'
+    adminOrders: '/admin/orders',
 };

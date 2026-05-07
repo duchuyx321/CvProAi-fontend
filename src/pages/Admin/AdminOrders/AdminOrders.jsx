@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import Modal from '~/components/Modal';
 import Button from '~/components/Button';
+import GenericAdminToolbar from '~/components/GenericAdminToolbar';
+import Pagination from '~/components/Pagination';
 import OrderRow from './components/OrderRow';
 import OrderDetailModal from './components/OrderDetailModal';
 import OrderEditModal from './components/OrderEditModal';
 import styles from './AdminOrders.module.scss';
 import { editOrder, getAllOrders, getOrderDetail } from '~/services/history.service';
-import { useDebounce } from '~/hooks/useDebounce';
 
 const cx = classNames.bind(styles);
 
@@ -41,6 +41,29 @@ const ORDER_STATUS_FILTER_OPTIONS = [
     ...ORDER_STATUS_OPTIONS,
 ];
 
+// Tạm để 1 option mặc định để dùng đúng GenericAdminToolbar.
+// Khi backend confirm sort_by/sort_order hợp lệ thì thêm option ở đây.
+const ORDER_SORT_OPTIONS = [
+    {
+        label: 'Mặc định',
+        sort_by: '',
+        sort_order: '',
+    },
+];
+
+// Chỉ dùng "Tùy chỉnh" để gửi from/to cho an toàn.
+// Các range như 7d/30d chỉ nên thêm khi backend confirm value hợp lệ.
+const ORDER_RANGE_OPTIONS = [
+    {
+        label: 'Tất cả thời gian',
+        value: 'all',
+    },
+    {
+        label: 'Tùy chỉnh',
+        value: 'custom',
+    },
+];
+
 function AdminOrders() {
     const [orders, setOrders] = useState([]);
     const [pagination, setPagination] = useState({
@@ -50,16 +73,17 @@ function AdminOrders() {
         total_pages: 1,
     });
 
-    const [searchValue, setSearchValue] = useState('');
+    const [toolbarParams, setToolbarParams] = useState({
+        search: '',
+        sort: null,
+        range: 'all',
+    });
+
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
-    const debouncedSearchValue = useDebounce(searchValue, 500);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [modalMode, setModalMode] = useState(null);
@@ -79,12 +103,16 @@ function AdminOrders() {
                 limit: DEFAULT_LIMIT,
             };
 
-            if (fromDate) {
-                queryParams.from = fromDate;
-            }
+            const range = toolbarParams.range;
 
-            if (toDate) {
-                queryParams.to = toDate;
+            if (range && typeof range === 'object') {
+                if (range.from) {
+                    queryParams.from = range.from;
+                }
+
+                if (range.to) {
+                    queryParams.to = range.to;
+                }
             }
 
             const result = await getAllOrders(queryParams);
@@ -124,20 +152,28 @@ function AdminOrders() {
 
     useEffect(() => {
         fetchOrders(1);
-    }, [fromDate, toDate]);
+    }, [toolbarParams.range]);
 
     useEffect(() => {
         const hasLocalFilter =
-            Boolean(debouncedSearchValue.trim()) || statusFilter !== 'ALL';
+            Boolean(toolbarParams.search.trim()) || statusFilter !== 'ALL';
 
         if (!hasLocalFilter) return;
         if (pagination.page === 1) return;
 
         fetchOrders(1);
-    }, [debouncedSearchValue, statusFilter]);
+    }, [toolbarParams.search, statusFilter]);
+
+    const handleToolbarChange = useCallback((nextParams) => {
+        setToolbarParams({
+            search: nextParams.search || '',
+            sort: nextParams.sort || null,
+            range: nextParams.range || 'all',
+        });
+    }, []);
 
     const filteredOrders = useMemo(() => {
-        const keyword = debouncedSearchValue.trim().toLowerCase();
+        const keyword = toolbarParams.search.trim().toLowerCase();
 
         return orders.filter((order) => {
             const isMatchStatus =
@@ -160,14 +196,14 @@ function AdminOrders() {
 
             return isMatchStatus && isMatchSearch;
         });
-    }, [orders, statusFilter, debouncedSearchValue]);
+    }, [orders, statusFilter, toolbarParams.search]);
 
     const currentPage = pagination.page || 1;
     const backendTotalItems = pagination.total_items || 0;
     const backendTotalPages = Math.max(1, pagination.total_pages || 1);
 
     const hasLocalFilter =
-        Boolean(debouncedSearchValue.trim()) || statusFilter !== 'ALL';
+        Boolean(toolbarParams.search.trim()) || statusFilter !== 'ALL';
 
     const displayCurrentPage = hasLocalFilter ? 1 : currentPage;
     const displayTotalItems = hasLocalFilter ? filteredOrders.length : backendTotalItems;
@@ -183,29 +219,10 @@ function AdminOrders() {
 
     const isModalOpen = Boolean(selectedOrder && modalMode);
 
-    const handlePrevPage = () => {
-        if (hasLocalFilter || currentPage <= 1 || isLoading) return;
-
-        fetchOrders(currentPage - 1);
-    };
-
-    const handleNextPage = () => {
-        if (hasLocalFilter || currentPage >= backendTotalPages || isLoading) return;
-
-        fetchOrders(currentPage + 1);
-    };
-
-    const handleGoToPage = (page) => {
+    const handlePageChange = (page) => {
         if (hasLocalFilter || page === currentPage || isLoading) return;
 
         fetchOrders(page);
-    };
-
-    const handleResetFilters = () => {
-        setSearchValue('');
-        setStatusFilter('ALL');
-        setFromDate('');
-        setToDate('');
     };
 
     const handleViewOrder = async (order) => {
@@ -439,18 +456,18 @@ function AdminOrders() {
                 <p>Theo dõi và quản lý các giao dịch thanh toán từ người dùng.</p>
             </div>
 
-            <div className={cx('filterCard')}>
-                <label className={cx('filterGroup')}>
-                    <span>Tìm kiếm</span>
+            <GenericAdminToolbar
+                searchPlaceholder="Tìm theo mã đơn, email, tên..."
+                sortOptions={ORDER_SORT_OPTIONS}
+                rangeOptions={ORDER_RANGE_OPTIONS}
+                defaultSortBy=""
+                defaultSortOrder=""
+                defaultRange="all"
+                searchLoading={isLoading}
+                onChange={handleToolbarChange}
+            />
 
-                    <input
-                        type="search"
-                        value={searchValue}
-                        placeholder="Mã đơn, email, tên..."
-                        onChange={(event) => setSearchValue(event.target.value)}
-                    />
-                </label>
-
+            <div className={cx('statusFilterBar')}>
                 <label className={cx('filterGroup')}>
                     <span>Trạng thái</span>
 
@@ -465,38 +482,6 @@ function AdminOrders() {
                         ))}
                     </select>
                 </label>
-
-                <label className={cx('filterGroup')}>
-                    <span>Từ ngày</span>
-
-                    <input
-                        type="date"
-                        value={fromDate}
-                        max={toDate || undefined}
-                        onChange={(event) => setFromDate(event.target.value)}
-                    />
-                </label>
-
-                <label className={cx('filterGroup')}>
-                    <span>Đến ngày</span>
-
-                    <input
-                        type="date"
-                        value={toDate}
-                        min={fromDate || undefined}
-                        onChange={(event) => setToDate(event.target.value)}
-                    />
-                </label>
-
-                <div className={cx('filterActions')}>
-                    <Button
-                        type="button"
-                        className={cx('resetFilterButton')}
-                        onClick={handleResetFilters}
-                    >
-                        Làm mới
-                    </Button>
-                </div>
             </div>
 
             <div className={cx('tableCard')}>
@@ -540,50 +525,12 @@ function AdminOrders() {
                         Hiển thị {showingFrom}-{showingTo} của {displayTotalItems} đơn hàng
                     </p>
 
-                    <div className={cx('pagination')}>
-                        <button
-                            type="button"
-                            disabled={
-                                hasLocalFilter ||
-                                displayCurrentPage <= 1 ||
-                                isLoading
-                            }
-                            onClick={handlePrevPage}
-                            aria-label="Trang trước"
-                        >
-                            <FiChevronLeft />
-                        </button>
-
-                        {Array.from(
-                            { length: displayTotalPages },
-                            (_, index) => index + 1,
-                        ).map((page) => (
-                            <button
-                                key={page}
-                                type="button"
-                                disabled={hasLocalFilter || isLoading}
-                                className={cx({
-                                    activePage: displayCurrentPage === page,
-                                })}
-                                onClick={() => handleGoToPage(page)}
-                            >
-                                {page}
-                            </button>
-                        ))}
-
-                        <button
-                            type="button"
-                            disabled={
-                                hasLocalFilter ||
-                                displayCurrentPage >= displayTotalPages ||
-                                isLoading
-                            }
-                            onClick={handleNextPage}
-                            aria-label="Trang sau"
-                        >
-                            <FiChevronRight />
-                        </button>
-                    </div>
+                    <Pagination
+                        currentPage={displayCurrentPage}
+                        totalPages={displayTotalPages}
+                        disabled={hasLocalFilter || isLoading}
+                        onPageChange={handlePageChange}
+                    />
                 </div>
             </div>
 

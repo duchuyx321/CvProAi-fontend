@@ -27,22 +27,18 @@
     }
 }
 
-.filterCard {
-    margin-bottom: 18px;
+.statusFilterBar {
+    margin: 14px 0 18px;
     padding: 12px;
     border: 1px solid #dbe3ef;
     border-radius: 12px;
     background-color: #ffffff;
-    display: grid;
-    grid-template-columns: minmax(260px, 1.45fr) minmax(160px, 0.85fr) minmax(
-            150px,
-            0.8fr
-        ) minmax(150px, 0.8fr) minmax(110px, 0.45fr);
-    align-items: end;
-    gap: 12px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .filterGroup {
+    width: 220px;
     min-width: 0;
 
     span {
@@ -77,39 +73,6 @@
         &::placeholder {
             color: #94a3b8;
         }
-    }
-}
-
-.filterActions {
-    min-width: 0;
-    display: flex;
-    align-items: flex-end;
-}
-
-.resetFilterButton {
-    width: 100%;
-    height: 38px;
-    padding: 0 12px;
-    border: 1px solid #dbe3ef;
-    border-radius: 8px;
-    background-color: #ffffff;
-    color: #475569;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 800;
-    line-height: 1.25;
-    cursor: pointer;
-    transition:
-        background-color 0.18s ease,
-        border-color 0.18s ease,
-        color 0.18s ease;
-
-    &:hover {
-        border-color: #bfdbfe;
-        background-color: #eff6ff;
-        color: #2563eb;
     }
 }
 
@@ -235,48 +198,12 @@
         color: #94a3b8;
         font-size: 13px;
         line-height: 1.25;
+        white-space: nowrap;
     }
-}
-
-.pagination {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    button {
-        min-width: 32px;
-        height: 32px;
-        border: 0;
-        border-radius: 8px;
-        background-color: transparent;
-        color: #0f172a;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        font-weight: 700;
-        cursor: pointer;
-
-        &:disabled {
-            color: #cbd5e1;
-            cursor: not-allowed;
-        }
-
-        svg {
-            width: 16px;
-            height: 16px;
-        }
-    }
-}
-
-.activePage {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
 }
 
 .modalCloseButton,
 .modalSaveButton,
-.modalDeleteButton,
 .modalEditButton {
     height: 38px;
     padding: 0 14px;
@@ -284,6 +211,11 @@
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
+
+    &:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
 }
 
 .modalCloseButton {
@@ -291,7 +223,7 @@
     background-color: #ffffff;
     color: #475569;
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: #f8fafc;
     }
 }
@@ -301,7 +233,7 @@
     background-color: #2563eb;
     color: #ffffff;
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: #1d4ed8;
     }
 }
@@ -314,28 +246,8 @@
     align-items: center;
     gap: 8px;
 
-    &:hover {
+    &:hover:not(:disabled) {
         background-color: #5147e8;
-    }
-}
-
-.modalDeleteButton {
-    border: 1px solid #dc2626;
-    background-color: #dc2626;
-    color: #ffffff;
-
-    &:hover {
-        background-color: #b91c1c;
-    }
-}
-
-@media (max-width: 1200px) {
-    .filterCard {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .filterActions {
-        align-items: flex-end;
     }
 }
 
@@ -365,12 +277,21 @@
         }
     }
 
-    .filterCard {
-        grid-template-columns: 1fr;
+    .statusFilterBar {
+        justify-content: stretch;
+    }
+
+    .filterGroup {
+        width: 100%;
     }
 
     .table,
     .tableFooter {
         min-width: 780px;
+    }
+
+    .tableFooter {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }

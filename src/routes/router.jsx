@@ -20,7 +20,6 @@ import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 import AdminSettings from '~/pages/Admin/AdminSettings';
-// import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
@@ -165,7 +164,6 @@ const PublicRouter = [
         component: History,
         layout: DetailLayout,
     },
-
     {
         path: config.router.payment,
         component: Payment,
@@ -176,10 +174,14 @@ const PublicRouter = [
         component: PaymentSuccess,
         layout: DetailLayout,
     },
-
     {
         path: config.router.adminDashboard,
         component: AdminDashboard,
+        layout: AdminLayout,
+    },
+    {
+        path: config.router.adminOrders,
+        component: AdminOrders,
         layout: AdminLayout,
     },
 ];
@@ -199,11 +201,11 @@ const AdminRouter = [
         component: ManageTemplates,
         layout: AdminLayout,
     },
-    {
-        path: config.router.adminOrders,
-        component: AdminOrders,
-        layout: AdminLayout,
-    },
+    // {
+    //     path: config.router.adminOrders,
+    //     component: AdminOrders,
+    //     layout: AdminLayout,
+    // },
     {
         path: config.router.managePackages,
         component: ManagePackages,

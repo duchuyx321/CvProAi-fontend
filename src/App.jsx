@@ -35,17 +35,17 @@ function App() {
                 }),
 
                 ...UserRouter.map((item) => {
-                    let Layout = item.layout || DefaultLayout;
-                    if (item.layout) {
-                        Layout = item.layout;
-                    }
+                    let Layout =
+                        item.layout === null
+                            ? Fragment
+                            : item.layout || DefaultLayout;
 
                     const Page = item.component;
 
                     return {
                         path: item.path,
                         element: (
-                            <ProtectedRoute role="User">
+                            <ProtectedRoute role="USER">
                                 <Layout>
                                     <Page />
                                 </Layout>
@@ -55,17 +55,17 @@ function App() {
                 }),
 
                 ...AdminRouter.map((item) => {
-                    let Layout = item.layout || AdminLayout;
-                    if (item.layout) {
-                        Layout = item.layout;
-                    }
+                    let Layout =
+                        item.layout === null
+                            ? Fragment
+                            : item.layout || AdminLayout;
 
                     const Page = item.component;
 
                     return {
                         path: item.path,
                         element: (
-                            <ProtectedRoute role="Admin">
+                            <ProtectedRoute role="ADMIN">
                                 <Layout>
                                     <Page />
                                 </Layout>
