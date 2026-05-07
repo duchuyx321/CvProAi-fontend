@@ -1,18 +1,99 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
-import Modal from '~/components/Modal';
+
 import Button from '~/components/Button';
 import GenericAdminToolbar from '~/components/GenericAdminToolbar';
 import Pagination from '~/components/Pagination';
+import Modal from '~/components/Modal';
+
 import OrderRow from './components/OrderRow';
 import OrderDetailModal from './components/OrderDetailModal';
 import OrderEditModal from './components/OrderEditModal';
+
+import {
+    editOrder,
+    getAllOrders,
+    getOrderDetail,
+} from '~/services/history.service';
+
 import styles from './AdminOrders.module.scss';
-import { editOrder, getAllOrders, getOrderDetail } from '~/services/history.service';
 
 const cx = classNames.bind(styles);
 
-const DEFAULT_LIMIT = 8;
+const PAGE_SIZE = 8;
+
+const PaymentSortBy = {
+    CREATED_AT: 'createdAt',
+    PAID_AT: 'paid_at',
+    AMOUNT: 'amount_cents',
+};
+
+const SortOrder = {
+    ASC: 'ASC',
+    DESC: 'DESC',
+};
+
+const SORT_OPTIONS = [
+    {
+        label: 'Tạo mới nhất',
+        sort_by: PaymentSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Tạo cũ nhất',
+        sort_by: PaymentSortBy.CREATED_AT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Thanh toán mới nhất',
+        sort_by: PaymentSortBy.PAID_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Số tiền cao nhất',
+        sort_by: PaymentSortBy.AMOUNT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Số tiền thấp nhất',
+        sort_by: PaymentSortBy.AMOUNT,
+        sort_order: SortOrder.ASC,
+    },
+];
+
+const RANGE_OPTIONS = [
+    {
+        label: '7 ngày qua',
+        value: '7d',
+    },
+    {
+        label: '30 ngày qua',
+        value: '30d',
+    },
+    {
+        label: '90 ngày qua',
+        value: '90d',
+    },
+    {
+        label: 'Tháng này',
+        value: 'month',
+    },
+    {
+        label: 'Năm nay',
+        value: 'year',
+    },
+    {
+        label: 'Tùy chỉnh',
+        value: 'custom',
+    },
+];
+
+const DEFAULT_META = {
+    page: 1,
+    limit: PAGE_SIZE,
+    total_items: 0,
+    total_pages: 1,
+};
 
 const ORDER_STATUS_OPTIONS = [
     {
@@ -27,66 +108,55 @@ const ORDER_STATUS_OPTIONS = [
         label: 'Failed',
         value: 'FAILED',
     },
-    {
-        label: 'Canceled',
-        value: 'CANCELED',
-    },
 ];
 
-const ORDER_STATUS_FILTER_OPTIONS = [
-    {
-        label: 'Tất cả trạng thái',
-        value: 'ALL',
-    },
-    ...ORDER_STATUS_OPTIONS,
-];
+function getPageFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = Number(params.get('page'));
 
-// Tạm để 1 option mặc định để dùng đúng GenericAdminToolbar.
-// Khi backend confirm sort_by/sort_order hợp lệ thì thêm option ở đây.
-const ORDER_SORT_OPTIONS = [
-    {
-        label: 'Mặc định',
-        sort_by: '',
-        sort_order: '',
-    },
-];
+    return pageParam > 0 ? pageParam : 1;
+}
 
-// Chỉ dùng "Tùy chỉnh" để gửi from/to cho an toàn.
-// Các range như 7d/30d chỉ nên thêm khi backend confirm value hợp lệ.
-const ORDER_RANGE_OPTIONS = [
-    {
-        label: 'Tất cả thời gian',
-        value: 'all',
-    },
-    {
-        label: 'Tùy chỉnh',
-        value: 'custom',
-    },
-];
+function syncPageToUrl(nextPage, replace = false) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(nextPage));
+
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    const method = replace ? 'replaceState' : 'pushState';
+
+    window.history[method](null, '', nextUrl);
+}
+
+function getErrorMessage(error, fallbackMessage) {
+    return (
+        error.response?.data?.error?.[0] ||
+        error.response?.data?.message ||
+        error.response?.data?.messsage ||
+        error.message ||
+        fallbackMessage
+    );
+}
 
 function AdminOrders() {
+    const [page, setPage] = useState(getPageFromUrl);
     const [orders, setOrders] = useState([]);
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: DEFAULT_LIMIT,
-        total_items: 0,
-        total_pages: 1,
-    });
+    const [meta, setMeta] = useState(DEFAULT_META);
+    const [loading, setLoading] = useState(false);
 
-    const [toolbarParams, setToolbarParams] = useState({
+    const [filters, setFilters] = useState({
         search: '',
-        sort: null,
-        range: 'all',
+        sort_by: PaymentSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+        range: '30d',
+        from: '',
+        to: '',
     });
-
-    const [statusFilter, setStatusFilter] = useState('ALL');
-
-    const [isLoading, setIsLoading] = useState(false);
-    const [isDetailLoading, setIsDetailLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [modalMode, setModalMode] = useState(null);
+
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [editForm, setEditForm] = useState({
         status: '',
@@ -94,136 +164,138 @@ function AdminOrders() {
         reason: '',
     });
 
-    const fetchOrders = async (page = 1) => {
-        try {
-            setIsLoading(true);
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const pageParam = Number(params.get('page'));
 
-            const queryParams = {
-                page,
-                limit: DEFAULT_LIMIT,
-            };
-
-            const range = toolbarParams.range;
-
-            if (range && typeof range === 'object') {
-                if (range.from) {
-                    queryParams.from = range.from;
-                }
-
-                if (range.to) {
-                    queryParams.to = range.to;
-                }
-            }
-
-            const result = await getAllOrders(queryParams);
-
-            if (!result.success) {
-                throw new Error(
-                    result.message ||
-                        result.messsage ||
-                        'Không thể lấy danh sách đơn hàng',
-                );
-            }
-
-            const ordersData = result.data?.data || [];
-            const metaData = result.data?.meta || {};
-
-            setOrders(ordersData);
-            setPagination({
-                page: metaData.page || page,
-                limit: metaData.limit || DEFAULT_LIMIT,
-                total_items: metaData.total_items || ordersData.length,
-                total_pages: metaData.total_pages || 1,
-            });
-        } catch (error) {
-            console.log(error);
-
-            setOrders([]);
-            setPagination({
-                page: 1,
-                limit: DEFAULT_LIMIT,
-                total_items: 0,
-                total_pages: 1,
-            });
-        } finally {
-            setIsLoading(false);
+        if (!params.get('page') || pageParam <= 0 || Number.isNaN(pageParam)) {
+            syncPageToUrl(1, true);
+            setPage(1);
         }
-    };
-
-    useEffect(() => {
-        fetchOrders(1);
-    }, [toolbarParams.range]);
-
-    useEffect(() => {
-        const hasLocalFilter =
-            Boolean(toolbarParams.search.trim()) || statusFilter !== 'ALL';
-
-        if (!hasLocalFilter) return;
-        if (pagination.page === 1) return;
-
-        fetchOrders(1);
-    }, [toolbarParams.search, statusFilter]);
-
-    const handleToolbarChange = useCallback((nextParams) => {
-        setToolbarParams({
-            search: nextParams.search || '',
-            sort: nextParams.sort || null,
-            range: nextParams.range || 'all',
-        });
     }, []);
 
-    const filteredOrders = useMemo(() => {
-        const keyword = toolbarParams.search.trim().toLowerCase();
+    useEffect(() => {
+        let ignore = false;
 
-        return orders.filter((order) => {
-            const isMatchStatus =
-                statusFilter === 'ALL' || order.status === statusFilter;
+        const fetchOrders = async () => {
+            try {
+                setLoading(true);
 
-            const searchableText = [
-                order.order_code,
-                order.user?.full_name,
-                order.user?.email,
-                order.plan?.name,
-                order.addon_package?.name,
-                order.order_type,
-                order.status,
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase();
+                const payload = {
+                    page,
+                    limit: PAGE_SIZE,
+                    search: filters.search,
+                    sort_by: filters.sort_by,
+                    sort_order: filters.sort_order,
+                };
 
-            const isMatchSearch = !keyword || searchableText.includes(keyword);
+                if (filters.range === 'custom') {
+                    payload.from = filters.from;
+                    payload.to = filters.to;
+                } else {
+                    payload.range = filters.range;
+                }
 
-            return isMatchStatus && isMatchSearch;
-        });
-    }, [orders, statusFilter, toolbarParams.search]);
+                const result = await getAllOrders(payload);
 
-    const currentPage = pagination.page || 1;
-    const backendTotalItems = pagination.total_items || 0;
-    const backendTotalPages = Math.max(1, pagination.total_pages || 1);
+                if (ignore) return;
 
-    const hasLocalFilter =
-        Boolean(toolbarParams.search.trim()) || statusFilter !== 'ALL';
+                if (!result.success) {
+                    throw new Error(
+                        result.message ||
+                            result.messsage ||
+                            'Không thể lấy danh sách đơn hàng',
+                    );
+                }
 
-    const displayCurrentPage = hasLocalFilter ? 1 : currentPage;
-    const displayTotalItems = hasLocalFilter ? filteredOrders.length : backendTotalItems;
-    const displayTotalPages = hasLocalFilter ? 1 : backendTotalPages;
+                setOrders(
+                    Array.isArray(result.data?.data) ? result.data.data : [],
+                );
 
-    const showingFrom = filteredOrders.length
-        ? (displayCurrentPage - 1) * DEFAULT_LIMIT + 1
-        : 0;
+                setMeta(result.data?.meta || DEFAULT_META);
+            } catch (error) {
+                if (ignore) return;
 
-    const showingTo = filteredOrders.length
-        ? showingFrom + filteredOrders.length - 1
-        : 0;
+                console.log(error);
+                setOrders([]);
+                setMeta(DEFAULT_META);
+            } finally {
+                if (!ignore) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchOrders();
+
+        return () => {
+            ignore = true;
+        };
+    }, [
+        page,
+        filters.search,
+        filters.sort_by,
+        filters.sort_order,
+        filters.range,
+        filters.from,
+        filters.to,
+    ]);
+
+    const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
+    const totalItems = Number(meta?.total_items) || orders.length;
+    const limit = Number(meta?.limit) || PAGE_SIZE;
+    const startItem = totalItems ? (page - 1) * limit + 1 : 0;
+    const endItem = totalItems ? Math.min(page * limit, totalItems) : 0;
 
     const isModalOpen = Boolean(selectedOrder && modalMode);
 
-    const handlePageChange = (page) => {
-        if (hasLocalFilter || page === currentPage || isLoading) return;
+    const handlePageChange = useCallback(
+        (newPage) => {
+            if (newPage < 1 || newPage > totalPages || newPage === page) {
+                return;
+            }
 
-        fetchOrders(page);
-    };
+            setPage(newPage);
+            syncPageToUrl(newPage);
+        },
+        [page, totalPages],
+    );
+
+    const handleToolbarChange = useCallback(
+        ({ search, sort, range }) => {
+            const nextFilters = {
+                search: search || '',
+                sort_by: sort?.sort_by || PaymentSortBy.CREATED_AT,
+                sort_order: sort?.sort_order || SortOrder.DESC,
+                range: '',
+                from: '',
+                to: '',
+            };
+
+            if (typeof range === 'string') {
+                nextFilters.range = range;
+            } else {
+                nextFilters.range = 'custom';
+                nextFilters.from = range?.from || '';
+                nextFilters.to = range?.to || '';
+            }
+
+            const isSame =
+                filters.search === nextFilters.search &&
+                filters.sort_by === nextFilters.sort_by &&
+                filters.sort_order === nextFilters.sort_order &&
+                filters.range === nextFilters.range &&
+                filters.from === nextFilters.from &&
+                filters.to === nextFilters.to;
+
+            if (isSame) return;
+
+            setFilters(nextFilters);
+            setPage(1);
+            syncPageToUrl(1, true);
+        },
+        [filters],
+    );
 
     const handleViewOrder = async (order) => {
         try {
@@ -246,15 +318,7 @@ function AdminOrders() {
             setSelectedOrder(detailData);
         } catch (error) {
             console.log(error);
-
-            const errorMessage =
-                error.response?.data?.error?.[0] ||
-                error.response?.data?.message ||
-                error.response?.data?.messsage ||
-                error.message ||
-                'Không thể lấy chi tiết đơn hàng';
-
-            alert(errorMessage);
+            alert(getErrorMessage(error, 'Không thể lấy chi tiết đơn hàng'));
         } finally {
             setIsDetailLoading(false);
         }
@@ -326,7 +390,8 @@ function AdminOrders() {
             };
 
             if (editForm.status === 'PAID') {
-                payload.provider_transaction_id = editForm.provider_transaction_id.trim();
+                payload.provider_transaction_id =
+                    editForm.provider_transaction_id.trim();
             }
 
             const result = await editOrder(
@@ -363,15 +428,7 @@ function AdminOrders() {
             handleCloseModal();
         } catch (error) {
             console.log(error);
-
-            const errorMessage =
-                error.response?.data?.error?.[0] ||
-                error.response?.data?.message ||
-                error.response?.data?.messsage ||
-                error.message ||
-                'Cập nhật đơn hàng thất bại';
-
-            alert(errorMessage);
+            alert(getErrorMessage(error, 'Cập nhật đơn hàng thất bại'));
         } finally {
             setIsSaving(false);
         }
@@ -451,84 +508,82 @@ function AdminOrders() {
 
     return (
         <div className={cx('wrapper')}>
-            <div className={cx('header')}>
-                <h1>Quản lý đơn hàng</h1>
-                <p>Theo dõi và quản lý các giao dịch thanh toán từ người dùng.</p>
-            </div>
+            <header>
+                <div className={cx('title')}>
+                    <h3>Quản lý đơn hàng</h3>
+                    <p>
+                        Theo dõi và quản lý các giao dịch thanh toán từ người
+                        dùng.
+                    </p>
+                </div>
+            </header>
 
-            <GenericAdminToolbar
-                searchPlaceholder="Tìm theo mã đơn, email, tên..."
-                sortOptions={ORDER_SORT_OPTIONS}
-                rangeOptions={ORDER_RANGE_OPTIONS}
-                defaultSortBy=""
-                defaultSortOrder=""
-                defaultRange="all"
-                searchLoading={isLoading}
-                onChange={handleToolbarChange}
-            />
-
-            <div className={cx('statusFilterBar')}>
-                <label className={cx('filterGroup')}>
-                    <span>Trạng thái</span>
-
-                    <select
-                        value={statusFilter}
-                        onChange={(event) => setStatusFilter(event.target.value)}
-                    >
-                        {ORDER_STATUS_FILTER_OPTIONS.map((status) => (
-                            <option key={status.value} value={status.value}>
-                                {status.label}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+            <div className={cx('toolbar')}>
+                <GenericAdminToolbar
+                    sortOptions={SORT_OPTIONS}
+                    rangeOptions={RANGE_OPTIONS}
+                    defaultSortBy={PaymentSortBy.CREATED_AT}
+                    defaultSortOrder={SortOrder.DESC}
+                    defaultRange="30d"
+                    onChange={handleToolbarChange}
+                    searchPlaceholder="Tìm theo mã đơn, email, tên..."
+                    searchLoading={loading && Boolean(filters.search)}
+                />
             </div>
 
             <div className={cx('tableCard')}>
-                <table className={cx('table')}>
-                    <thead>
-                        <tr>
-                            <th>Mã đơn</th>
-                            <th>Người dùng</th>
-                            <th>Gói dịch vụ</th>
-                            <th>Giá</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                            <th>Hành động</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {filteredOrders.map((order) => (
-                            <OrderRow
-                                key={order.id}
-                                order={order}
-                                onView={handleViewOrder}
-                                onEdit={handleEditOrder}
-                            />
-                        ))}
-
-                        {!filteredOrders.length && (
+                <div className={cx('tableScroll')}>
+                    <table className={cx('table')}>
+                        <thead>
                             <tr>
-                                <td colSpan="7" className={cx('emptyCell')}>
-                                    {isLoading
-                                        ? 'Đang tải danh sách đơn hàng...'
-                                        : 'Không tìm thấy đơn hàng phù hợp.'}
-                                </td>
+                                <th>Mã đơn</th>
+                                <th>Người dùng</th>
+                                <th>Gói dịch vụ</th>
+                                <th>Giá</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody>
+                            {orders.map((order) => (
+                                <OrderRow
+                                    key={order.id}
+                                    order={order}
+                                    onView={handleViewOrder}
+                                    onEdit={handleEditOrder}
+                                />
+                            ))}
+
+                            {!loading && !orders.length ? (
+                                <tr>
+                                    <td colSpan="7" className={cx('emptyCell')}>
+                                        Không tìm thấy đơn hàng phù hợp.
+                                    </td>
+                                </tr>
+                            ) : null}
+                        </tbody>
+                    </table>
+
+                    {loading ? (
+                        <div className={cx('loadingOverlay')}>
+                            <span className={cx('loader')} />
+                            <span>Đang tải danh sách đơn hàng...</span>
+                        </div>
+                    ) : null}
+                </div>
 
                 <div className={cx('tableFooter')}>
                     <p>
-                        Hiển thị {showingFrom}-{showingTo} của {displayTotalItems} đơn hàng
+                        Hiển thị {startItem} - {endItem} của {totalItems} đơn
+                        hàng
                     </p>
 
                     <Pagination
-                        currentPage={displayCurrentPage}
-                        totalPages={displayTotalPages}
-                        disabled={hasLocalFilter || isLoading}
+                        currentPage={page}
+                        totalPages={totalPages}
+                        disabled={loading}
                         onPageChange={handlePageChange}
                     />
                 </div>
@@ -538,7 +593,9 @@ function AdminOrders() {
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 title={getModalTitle()}
-                description={selectedOrder ? `Mã đơn ${selectedOrder.order_code}` : ''}
+                description={
+                    selectedOrder ? `Mã đơn ${selectedOrder.order_code}` : ''
+                }
                 size="lg"
                 footer={renderModalFooter()}
             >
