@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
+import { toast } from 'react-toastify';
 
 import Button from '~/components/Button';
 import GenericAdminToolbar from '~/components/GenericAdminToolbar';
@@ -19,18 +20,17 @@ import {
 import styles from './AdminOrders.module.scss';
 
 const cx = classNames.bind(styles);
-
 const PAGE_SIZE = 8;
-
-const PaymentSortBy = {
-    CREATED_AT: 'createdAt',
-    PAID_AT: 'paid_at',
-    AMOUNT: 'amount_cents',
-};
 
 const SortOrder = {
     ASC: 'ASC',
     DESC: 'DESC',
+};
+
+const PaymentSortBy = {
+    CREATED_AT: 'createdAt',
+    UPDATED_AT: 'updatedAt',
+    TITLE: 'title',
 };
 
 const SORT_OPTIONS = [
@@ -45,47 +45,33 @@ const SORT_OPTIONS = [
         sort_order: SortOrder.ASC,
     },
     {
-        label: 'Thanh toán mới nhất',
-        sort_by: PaymentSortBy.PAID_AT,
+        label: 'Cập nhật mới nhất',
+        sort_by: PaymentSortBy.UPDATED_AT,
         sort_order: SortOrder.DESC,
     },
     {
-        label: 'Số tiền cao nhất',
-        sort_by: PaymentSortBy.AMOUNT,
-        sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Số tiền thấp nhất',
-        sort_by: PaymentSortBy.AMOUNT,
+        label: 'Cập nhật cũ nhất',
+        sort_by: PaymentSortBy.UPDATED_AT,
         sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Tiêu đề: A → Z',
+        sort_by: PaymentSortBy.TITLE,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Tiêu đề: Z → A',
+        sort_by: PaymentSortBy.TITLE,
+        sort_order: SortOrder.DESC,
     },
 ];
 
 const RANGE_OPTIONS = [
-    {
-        label: '7 ngày qua',
-        value: '7d',
-    },
-    {
-        label: '30 ngày qua',
-        value: '30d',
-    },
-    {
-        label: '90 ngày qua',
-        value: '90d',
-    },
-    {
-        label: 'Tháng này',
-        value: 'month',
-    },
-    {
-        label: 'Năm nay',
-        value: 'year',
-    },
-    {
-        label: 'Tùy chỉnh',
-        value: 'custom',
-    },
+    { label: '7 ngày qua', value: '7d' },
+    { label: '30 ngày qua', value: '30d' },
+    { label: 'Tháng này', value: 'month' },
+    { label: 'Năm nay', value: 'year' },
+    { label: 'Tùy chỉnh', value: 'custom' },
 ];
 
 const DEFAULT_META = {
@@ -93,6 +79,21 @@ const DEFAULT_META = {
     limit: PAGE_SIZE,
     total_items: 0,
     total_pages: 1,
+};
+
+const DEFAULT_FILTERS = {
+    search: '',
+    sort_by: PaymentSortBy.CREATED_AT,
+    sort_order: SortOrder.DESC,
+    range: '30d',
+    from: '',
+    to: '',
+};
+
+const DEFAULT_EDIT_FORM = {
+    status: '',
+    provider_transaction_id: '',
+    reason: '',
 };
 
 const ORDER_STATUS_OPTIONS = [
@@ -119,12 +120,17 @@ function getPageFromUrl() {
 
 function syncPageToUrl(nextPage, replace = false) {
     const params = new URLSearchParams(window.location.search);
+
     params.set('page', String(nextPage));
 
     const nextUrl = `${window.location.pathname}?${params.toString()}`;
     const method = replace ? 'replaceState' : 'pushState';
 
     window.history[method](null, '', nextUrl);
+}
+
+function getApiMessage(response, fallbackMessage) {
+    return response?.message || response?.messsage || fallbackMessage;
 }
 
 function getErrorMessage(error, fallbackMessage) {
@@ -137,20 +143,81 @@ function getErrorMessage(error, fallbackMessage) {
     );
 }
 
+function normalizeToolbarFilters({ search, sort, range }) {
+    const nextFilters = {
+        search: search || '',
+        sort_by: sort?.sort_by || DEFAULT_FILTERS.sort_by,
+        sort_order: sort?.sort_order || DEFAULT_FILTERS.sort_order,
+        range: '',
+        from: '',
+        to: '',
+    };
+
+    if (typeof range === 'string') {
+        nextFilters.range = range;
+        return nextFilters;
+    }
+
+    nextFilters.range = 'custom';
+    nextFilters.from = range?.from || '';
+    nextFilters.to = range?.to || '';
+
+    return nextFilters;
+}
+
+function isSameFilters(currentFilters, nextFilters) {
+    return (
+        currentFilters.search === nextFilters.search &&
+        currentFilters.sort_by === nextFilters.sort_by &&
+        currentFilters.sort_order === nextFilters.sort_order &&
+        currentFilters.range === nextFilters.range &&
+        currentFilters.from === nextFilters.from &&
+        currentFilters.to === nextFilters.to
+    );
+}
+
+function buildOrderListPayload({ page, filters }) {
+    const payload = {
+        page,
+        limit: PAGE_SIZE,
+        search: filters.search,
+        sort_by: filters.sort_by,
+        sort_order: filters.sort_order,
+    };
+
+    if (filters.range === 'custom') {
+        payload.from = filters.from;
+        payload.to = filters.to;
+    } else {
+        payload.range = filters.range;
+    }
+
+    return payload;
+}
+
+function getOrderListFromResponse(response) {
+    return Array.isArray(response?.data?.data) ? response.data.data : [];
+}
+
+function getMetaFromResponse(response) {
+    return response?.data?.meta || DEFAULT_META;
+}
+
+function getDetailDataFromResponse(response, fallbackOrder) {
+    return response?.data?.data || response?.data || fallbackOrder;
+}
+
+function getUpdatedOrderFromResponse(response) {
+    return response?.data?.data || response?.data || {};
+}
+
 function AdminOrders() {
     const [page, setPage] = useState(getPageFromUrl);
     const [orders, setOrders] = useState([]);
     const [meta, setMeta] = useState(DEFAULT_META);
     const [loading, setLoading] = useState(false);
 
-    const [filters, setFilters] = useState({
-        search: '',
-        sort_by: PaymentSortBy.CREATED_AT,
-        sort_order: SortOrder.DESC,
-        range: '30d',
-        from: '',
-        to: '',
-    });
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [modalMode, setModalMode] = useState(null);
@@ -158,11 +225,7 @@ function AdminOrders() {
     const [isDetailLoading, setIsDetailLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [editForm, setEditForm] = useState({
-        status: '',
-        provider_transaction_id: '',
-        reason: '',
-    });
+    const [editForm, setEditForm] = useState(DEFAULT_EDIT_FORM);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -181,42 +244,40 @@ function AdminOrders() {
             try {
                 setLoading(true);
 
-                const payload = {
+                const payload = buildOrderListPayload({
                     page,
-                    limit: PAGE_SIZE,
-                    search: filters.search,
-                    sort_by: filters.sort_by,
-                    sort_order: filters.sort_order,
-                };
+                    filters,
+                });
 
-                if (filters.range === 'custom') {
-                    payload.from = filters.from;
-                    payload.to = filters.to;
-                } else {
-                    payload.range = filters.range;
-                }
-
-                const result = await getAllOrders(payload);
+                const response = await getAllOrders(payload);
 
                 if (ignore) return;
 
-                if (!result.success) {
-                    throw new Error(
-                        result.message ||
-                            result.messsage ||
+                if (!response?.success) {
+                    toast.warning(
+                        getApiMessage(
+                            response,
                             'Không thể lấy danh sách đơn hàng',
+                        ),
                     );
+
+                    setOrders([]);
+                    setMeta(DEFAULT_META);
+                    return;
                 }
 
-                setOrders(
-                    Array.isArray(result.data?.data) ? result.data.data : [],
-                );
-
-                setMeta(result.data?.meta || DEFAULT_META);
+                setOrders(getOrderListFromResponse(response));
+                setMeta(getMetaFromResponse(response));
             } catch (error) {
                 if (ignore) return;
 
-                console.log(error);
+                toast.error(
+                    getErrorMessage(
+                        error,
+                        'Có lỗi xảy ra khi tải danh sách đơn hàng',
+                    ),
+                );
+
                 setOrders([]);
                 setMeta(DEFAULT_META);
             } finally {
@@ -263,32 +324,13 @@ function AdminOrders() {
 
     const handleToolbarChange = useCallback(
         ({ search, sort, range }) => {
-            const nextFilters = {
-                search: search || '',
-                sort_by: sort?.sort_by || PaymentSortBy.CREATED_AT,
-                sort_order: sort?.sort_order || SortOrder.DESC,
-                range: '',
-                from: '',
-                to: '',
-            };
+            const nextFilters = normalizeToolbarFilters({
+                search,
+                sort,
+                range,
+            });
 
-            if (typeof range === 'string') {
-                nextFilters.range = range;
-            } else {
-                nextFilters.range = 'custom';
-                nextFilters.from = range?.from || '';
-                nextFilters.to = range?.to || '';
-            }
-
-            const isSame =
-                filters.search === nextFilters.search &&
-                filters.sort_by === nextFilters.sort_by &&
-                filters.sort_order === nextFilters.sort_order &&
-                filters.range === nextFilters.range &&
-                filters.from === nextFilters.from &&
-                filters.to === nextFilters.to;
-
-            if (isSame) return;
+            if (isSameFilters(filters, nextFilters)) return;
 
             setFilters(nextFilters);
             setPage(1);
@@ -303,22 +345,20 @@ function AdminOrders() {
             setModalMode('view');
             setIsDetailLoading(true);
 
-            const result = await getOrderDetail(order.order_code);
+            const response = await getOrderDetail(order.order_code);
 
-            if (!result.success) {
-                throw new Error(
-                    result.message ||
-                        result.messsage ||
-                        'Không thể lấy chi tiết đơn hàng',
+            if (!response?.success) {
+                toast.warning(
+                    getApiMessage(response, 'Không thể lấy chi tiết đơn hàng'),
                 );
+                return;
             }
 
-            const detailData = result.data?.data || result.data || order;
-
-            setSelectedOrder(detailData);
+            setSelectedOrder(getDetailDataFromResponse(response, order));
         } catch (error) {
-            console.log(error);
-            alert(getErrorMessage(error, 'Không thể lấy chi tiết đơn hàng'));
+            toast.error(
+                getErrorMessage(error, 'Có lỗi xảy ra khi tải chi tiết đơn hàng'),
+            );
         } finally {
             setIsDetailLoading(false);
         }
@@ -346,12 +386,7 @@ function AdminOrders() {
         setModalMode(null);
         setIsDetailLoading(false);
         setIsSaving(false);
-
-        setEditForm({
-            status: '',
-            provider_transaction_id: '',
-            reason: '',
-        });
+        setEditForm(DEFAULT_EDIT_FORM);
     };
 
     const handleEditFormChange = (event) => {
@@ -367,17 +402,20 @@ function AdminOrders() {
         if (!selectedOrder || isSaving) return;
 
         if (!editForm.status) {
-            alert('Vui lòng chọn trạng thái');
+            toast.warning('Vui lòng chọn trạng thái');
             return;
         }
 
         if (editForm.status === selectedOrder.status) {
-            alert('Trạng thái mới đang trùng với trạng thái hiện tại.');
+            toast.warning('Trạng thái mới đang trùng với trạng thái hiện tại.');
             return;
         }
 
-        if (editForm.status === 'PAID' && !editForm.provider_transaction_id.trim()) {
-            alert('Vui lòng nhập mã giao dịch từ cổng thanh toán');
+        if (
+            editForm.status === 'PAID' &&
+            !editForm.provider_transaction_id.trim()
+        ) {
+            toast.warning('Vui lòng nhập mã giao dịch từ cổng thanh toán');
             return;
         }
 
@@ -394,24 +432,23 @@ function AdminOrders() {
                     editForm.provider_transaction_id.trim();
             }
 
-            const result = await editOrder(
+            const response = await editOrder(
                 selectedOrder.order_code,
                 selectedOrder.id,
                 payload,
             );
 
-            if (!result.success) {
-                throw new Error(
-                    result.message ||
-                        result.messsage ||
-                        'Không thể cập nhật đơn hàng',
+            if (!response?.success) {
+                toast.warning(
+                    getApiMessage(response, 'Không thể cập nhật đơn hàng'),
                 );
+                return;
             }
 
-            const updatedOrder = result.data?.data || result.data || {};
+            const updatedOrder = getUpdatedOrderFromResponse(response);
 
-            setOrders((prevOrders) => {
-                return prevOrders.map((order) => {
+            setOrders((prevOrders) =>
+                prevOrders.map((order) => {
                     if (order.id !== selectedOrder.id) return order;
 
                     return {
@@ -422,13 +459,16 @@ function AdminOrders() {
                             updatedOrder.provider_transaction_id ||
                             payload.provider_transaction_id,
                     };
-                });
-            });
+                }),
+            );
+
+            toast.success(
+                getApiMessage(response, 'Cập nhật đơn hàng thành công'),
+            );
 
             handleCloseModal();
         } catch (error) {
-            console.log(error);
-            alert(getErrorMessage(error, 'Cập nhật đơn hàng thất bại'));
+            toast.error(getErrorMessage(error, 'Cập nhật đơn hàng thất bại'));
         } finally {
             setIsSaving(false);
         }
@@ -522,9 +562,9 @@ function AdminOrders() {
                 <GenericAdminToolbar
                     sortOptions={SORT_OPTIONS}
                     rangeOptions={RANGE_OPTIONS}
-                    defaultSortBy={PaymentSortBy.CREATED_AT}
-                    defaultSortOrder={SortOrder.DESC}
-                    defaultRange="30d"
+                    defaultSortBy={DEFAULT_FILTERS.sort_by}
+                    defaultSortOrder={DEFAULT_FILTERS.sort_order}
+                    defaultRange={DEFAULT_FILTERS.range}
                     onChange={handleToolbarChange}
                     searchPlaceholder="Tìm theo mã đơn, email, tên..."
                     searchLoading={loading && Boolean(filters.search)}
