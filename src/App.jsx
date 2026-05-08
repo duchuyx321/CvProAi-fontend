@@ -27,9 +27,11 @@ function App() {
                     return {
                         path: item.path,
                         element: (
-                            <Layout {...layoutProps}>
-                                <Page />
-                            </Layout>
+                            <ProtectedRoute publicOnly>
+                                <Layout {...layoutProps}>
+                                    <Page />
+                                </Layout>
+                            </ProtectedRoute>
                         ),
                     };
                 }),
