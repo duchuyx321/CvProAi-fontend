@@ -2,24 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-    FiActivity,
-    FiCalendar,
-    FiCheckCircle,
-    FiCpu,
-    FiCreditCard,
-    FiDownload,
-    FiFileText,
-    FiLock,
-    FiMail,
-    FiMapPin,
-    FiPhone,
-    FiRefreshCw,
-    FiShield,
-    FiUnlock,
-    FiUser,
-} from 'react-icons/fi';
+    Activity,
+    ArrowLeft,
+    Bot,
+    Calendar,
+    CheckCircle2,
+    Download,
+    FileText,
+    Info,
+    LockKeyhole,
+    Mail,
+    MapPin,
+    Phone,
+    RefreshCw,
+    Shield,
+    UnlockKeyhole,
+    UserRound,
+} from 'lucide-react';
 import { toast } from 'react-toastify';
 
+import Button from '~/components/Button';
 import { config } from '~/config';
 import {
     getAdminUserDetail,
@@ -32,6 +34,7 @@ import {
     formatCurrency,
     formatDate,
     formatDateTime,
+    formatNumber,
     getQuotaText,
     getUserDetailErrorMessage,
     normalizeAdminUserDetail,
@@ -39,14 +42,47 @@ import {
 
 const cx = classNames.bind(styles);
 
-const buildInitialLetters = (name = '') => {
+function buildInitialLetters(name = '') {
     return name
         .split(' ')
         .filter(Boolean)
         .slice(0, 2)
         .map((item) => item[0]?.toUpperCase())
         .join('');
-};
+}
+
+function getQuotaPercent(used, limit) {
+    if (!limit) return 0;
+    return Math.min(Math.round((used / limit) * 100), 100);
+}
+
+function getStatusUpdatePayload({ detail, payload, shouldLock }) {
+    return {
+        ...detail.raw,
+        ...(payload || {}),
+        is_locked: shouldLock,
+        isLocked: shouldLock,
+        is_banned: shouldLock,
+        isBanned: shouldLock,
+        status: shouldLock ? 'BANNED' : 'ACTIVE',
+        account_status: shouldLock ? 'BANNED' : 'ACTIVE',
+        accountStatus: shouldLock ? 'BANNED' : 'ACTIVE',
+        is_online:
+            payload?.is_online ??
+            payload?.isOnline ??
+            (shouldLock ? false : detail.isOnline),
+        audit_logs: [
+            {
+                action: shouldLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+                actor_name: 'Admin',
+                description: shouldLock
+                    ? 'Khóa tài khoản từ màn hình chi tiết'
+                    : 'Mở khóa tài khoản từ màn hình chi tiết',
+                created_at: new Date().toISOString(),
+            },
+        ].concat(detail.auditLogs || []),
+    };
+}
 
 function UserDetailInfo({
     user,
@@ -63,12 +99,12 @@ function UserDetailInfo({
         () => buildFallbackUserDetail(selectedUser),
         [selectedUser],
     );
+
     const [detail, setDetail] = useState(fallbackDetail);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isError, setIsError] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
-    const [isEmpty, setIsEmpty] = useState(false);
-    const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
+    const [empty, setEmpty] = useState(false);
+    const [submittingStatus, setSubmittingStatus] = useState(false);
     const [statusActionError, setStatusActionError] = useState('');
 
     const handleBack = () => {
@@ -81,21 +117,20 @@ function UserDetailInfo({
     };
 
     useEffect(() => {
-        let isCancelled = false;
+        let ignore = false;
 
-        const loadUserDetail = async () => {
+        const fetchUserDetail = async () => {
             if (!userId) {
-                setIsLoading(false);
-                setIsEmpty(true);
+                setLoading(false);
+                setEmpty(true);
                 return;
             }
 
-            setIsLoading(true);
-            setIsError(false);
-            setErrorMessage('');
-            setIsEmpty(false);
-
             try {
+                setLoading(true);
+                setErrorMessage('');
+                setEmpty(false);
+
                 const response = await fetchUserDetailAction(userId);
 
                 if (response?.success === false) {
@@ -114,55 +149,52 @@ function UserDetailInfo({
                     (typeof payload === 'object' &&
                         !Object.keys(payload).length)
                 ) {
-                    if (!isCancelled) {
-                        setIsEmpty(true);
+                    if (!ignore) {
+                        setEmpty(true);
                         setDetail(null);
                     }
                     return;
                 }
 
-                if (!isCancelled) {
+                if (!ignore) {
                     setDetail(normalizeAdminUserDetail(payload, selectedUser));
                 }
             } catch (error) {
-                if (isCancelled) return;
-
-                setIsError(true);
-                setErrorMessage(
-                    getUserDetailErrorMessage(
-                        error,
-                        'Không thể tải chi tiết người dùng',
-                    ),
-                );
+                if (!ignore) {
+                    setErrorMessage(
+                        getUserDetailErrorMessage(
+                            error,
+                            'Không thể tải chi tiết người dùng',
+                        ),
+                    );
+                }
             } finally {
-                if (!isCancelled) {
-                    setIsLoading(false);
+                if (!ignore) {
+                    setLoading(false);
                 }
             }
         };
 
-        loadUserDetail();
+        fetchUserDetail();
 
         return () => {
-            isCancelled = true;
+            ignore = true;
         };
     }, [fetchUserDetailAction, selectedUser, userId]);
 
     const handleToggleStatus = async () => {
-        if (!detail?.id || isSubmittingStatus) return;
+        if (!detail?.id || submittingStatus) return;
 
         const shouldLock = !detail.isLocked;
+        const targetUserId = detail.raw?.user_id || detail.raw?.id || detail.id;
 
-        setIsSubmittingStatus(true);
+        setSubmittingStatus(true);
         setStatusActionError('');
 
         try {
-            const response = await updateUserStatusAction(
-                detail?.raw?.user_id,
-                {
-                    action: shouldLock ? 'lock' : 'unlock',
-                },
-            );
+            const response = await updateUserStatusAction(targetUserId, {
+                action: shouldLock ? 'lock' : 'unlock',
+            });
 
             if (response?.success === false) {
                 throw new Error(
@@ -175,44 +207,17 @@ function UserDetailInfo({
                 );
             }
 
-            const payload = response?.data || response;
             const updatedDetail = normalizeAdminUserDetail(
-                {
-                    ...detail.raw,
-                    ...(payload || {}),
-                    is_locked: shouldLock,
-                     isLocked: shouldLock,
-                is_banned: shouldLock,
-                isBanned: shouldLock,
-                status: shouldLock ? 'BANNED' : 'ACTIVE',
-                account_status: shouldLock ? 'BANNED' : 'ACTIVE',
-                accountStatus: shouldLock ? 'BANNED' : 'ACTIVE',
-                    is_online:
-                        payload?.is_online ??
-                        payload?.isOnline ??
-                        (shouldLock ? false : detail.isOnline),
-                    audit_logs: [
-                        {
-                            action: shouldLock
-                                ? 'Khóa tài khoản'
-                                : 'Mở khóa tài khoản',
-                            actor_name: 'Admin',
-                            description: shouldLock
-                                ? 'Khóa tài khoản từ màn hình chi tiết'
-                                : 'Mở khóa tài khoản từ màn hình chi tiết',
-                            created_at: new Date().toISOString(),
-                        },
-                    ].concat(detail.auditLogs || []),
-                },
+                getStatusUpdatePayload({
+                    detail,
+                    payload: response?.data || response,
+                    shouldLock,
+                }),
                 detail,
             );
 
             setDetail(updatedDetail);
-
-            if (onUserStatusChange) {
-                onUserStatusChange(updatedDetail);
-            }
-
+            onUserStatusChange?.(updatedDetail);
             toast.success(
                 shouldLock
                     ? 'Đã khóa tài khoản người dùng'
@@ -227,268 +232,284 @@ function UserDetailInfo({
             setStatusActionError(message);
             toast.error(message);
         } finally {
-            setIsSubmittingStatus(false);
+            setSubmittingStatus(false);
         }
     };
 
-    if (isLoading && !detail) {
+    if (loading && !detail) {
         return (
-            <section className={cx('stateScreen')}>
-                <p>Đang tải chi tiết người dùng...</p>
+            <section className={cx('wrapper')}>
+                <div className={cx('inner')}>
+                    <div className={cx('loading')}>
+                        Đang tải chi tiết người dùng...
+                    </div>
+                </div>
             </section>
         );
     }
 
-    if (isError && !detail) {
+    if ((errorMessage && !detail) || empty || !detail) {
         return (
-            <section className={cx('stateScreen', 'error')}>
-                <h3>Không thể tải chi tiết người dùng</h3>
-                <p>{errorMessage}</p>
-                <button
-                    type="button"
-                    className={cx('retryButton')}
-                    onClick={handleBack}
-                >
-                    Quay lại danh sách
-                </button>
+            <section className={cx('wrapper')}>
+                <div className={cx('inner')}>
+                    <div className={cx('loading', { error: errorMessage })}>
+                        <h3>
+                            {errorMessage
+                                ? 'Không thể tải chi tiết người dùng'
+                                : 'Không có dữ liệu người dùng'}
+                        </h3>
+                        <p>
+                            {errorMessage ||
+                                'Không tìm thấy hồ sơ phù hợp để hiển thị chi tiết.'}
+                        </p>
+                        <Button outlineText onClick={handleBack}>
+                            Quay lại danh sách
+                        </Button>
+                    </div>
+                </div>
             </section>
         );
     }
 
-    if (isEmpty || !detail) {
-        return (
-            <section className={cx('stateScreen')}>
-                <h3>Không có dữ liệu người dùng</h3>
-                <p>Không tìm thấy hồ sơ phù hợp để hiển thị chi tiết.</p>
-                <button
-                    type="button"
-                    className={cx('retryButton')}
-                    onClick={handleBack}
-                >
-                    Quay lại danh sách
-                </button>
-            </section>
-        );
-    }
+    const aiQuotaPercent = getQuotaPercent(
+        detail.quotas.aiUsed,
+        detail.quotas.aiLimit,
+    );
+    const exportQuotaPercent = getQuotaPercent(
+        detail.quotas.exportUsed,
+        detail.quotas.exportLimit,
+    );
+    const initials = buildInitialLetters(detail.fullName) || 'U';
+    const statusIcon = detail.isLocked ? UnlockKeyhole : LockKeyhole;
+    const StatusIcon = submittingStatus ? RefreshCw : statusIcon;
 
-    const aiQuotaPercent = detail.quotas.aiLimit
-        ? Math.min(
-              Math.round((detail.quotas.aiUsed / detail.quotas.aiLimit) * 100),
-              100,
-          )
-        : 0;
-    const exportQuotaPercent = detail.quotas.exportLimit
-        ? Math.min(
-              Math.round(
-                  (detail.quotas.exportUsed / detail.quotas.exportLimit) * 100,
-              ),
-              100,
-          )
-        : 0;
+    const stats = [
+        {
+            key: 'cv',
+            icon: FileText,
+            tone: 'blue',
+            label: 'Số CV đã tạo',
+            value: formatNumber(detail.stats.cvCount),
+        },
+        {
+            key: 'ai',
+            icon: Bot,
+            tone: 'violet',
+            label: 'Số lần dùng AI',
+            value: formatNumber(detail.stats.aiUsageCount),
+            hint: `Đã dùng ${aiQuotaPercent}% hạn mức tháng`,
+        },
+        {
+            key: 'package',
+            icon: UserRound,
+            tone: 'amber',
+            label: 'Gói hiện tại',
+            value: detail.packageName,
+            hint: `Hết hạn: ${formatDate(detail.packageExpiredAt)}`,
+        },
+        {
+            key: 'provider',
+            icon: Shield,
+            tone: 'green',
+            label: 'Provider',
+            value: detail.provider,
+            hint: detail.emailVerified
+                ? 'Email đã xác thực'
+                : 'Email chưa xác thực',
+        },
+    ];
+
+    const infoRows = [
+        { label: 'Email', value: detail.email },
+        { label: 'Số điện thoại', value: detail.phone },
+        { label: 'Trạng thái', value: detail.statusLabel },
+        { label: 'Ngày đăng ký', value: formatDate(detail.registeredAt) },
+    ];
+
+    const contactRows = [
+        { icon: Mail, value: detail.email },
+        { icon: Phone, value: detail.phone },
+        {
+            icon: Calendar,
+            value: `Tham gia: ${formatDate(detail.registeredAt)}`,
+        },
+        { icon: MapPin, value: detail.location },
+    ];
 
     return (
         <section className={cx('wrapper')}>
-
-            {isError ? (
-                <div className={cx('warningBanner')}>
-                    <FiActivity />
-                    <span>{errorMessage}</span>
-                </div>
-            ) : null}
-
-            <div className={cx('hero')}>
-                <h1 className={cx('heroTitle')}>Hồ sơ người dùng</h1>
-                <p className={cx('heroMeta')}>
-                    ID: #{detail.id} • {detail.statusLabel} • Thành viên từ{' '}
-                    {formatDate(detail.registeredAt)}
-                </p>
-            </div>
-
-            <div className={cx('contentGrid')}>
-                <aside className={cx('sidebar')}>
-                    <article className={cx('profileCard')}>
-                        <div className={cx('avatar')}>
-                            {detail.avatarUrl ? (
-                                <img
-                                    src={detail.avatarUrl}
-                                    alt={detail.fullName}
-                                />
-                            ) : (
-                                <span>
-                                    {buildInitialLetters(detail.fullName) ||
-                                        'U'}
-                                </span>
-                            )}
-                        </div>
-
-                        <h2 className={cx('profileName')}>{detail.fullName}</h2>
-                        <p className={cx('profilePlan')}>
-                            Gói: {detail.packageName}
+            <div className={cx('inner')}>
+                <header className={cx('header')}>
+                    <div>
+                        <h1>Hồ sơ người dùng: {detail.fullName}</h1>
+                        <p>
+                            ID: #{detail.id} • {detail.statusLabel} • Thành viên
+                            từ {formatDate(detail.registeredAt)}
                         </p>
-
-                        <div className={cx('infoList')}>
-                            <p>
-                                <FiMail /> <span>{detail.email}</span>
-                            </p>
-                            <p>
-                                <FiPhone /> <span>{detail.phone}</span>
-                            </p>
-                            <p>
-                                <FiCalendar />{' '}
-                                <span>
-                                    Tham gia: {formatDate(detail.registeredAt)}
-                                </span>
-                            </p>
-                            <p>
-                                <FiMapPin /> <span>{detail.location}</span>
-                            </p>
-                        </div>
-                    </article>
-
-                    <article className={cx('actionCard')}>
-                        <h3 className={cx('cardTitle')}>
-                            <FiShield />
-                            <span>Hành động quản trị</span>
-                        </h3>
-
-                        <button
-                            type="button"
-                            className={cx('actionButton', {
-                                lock: !detail.isLocked,
-                                unlock: detail.isLocked,
-                            })}
-                            onClick={handleToggleStatus}
-                            disabled={isSubmittingStatus}
-                        >
-                            {isSubmittingStatus ? (
-                                <FiRefreshCw className={cx('spinning')} />
-                            ) : detail.isLocked ? (
-                                <FiUnlock />
-                            ) : (
-                                <FiLock />
-                            )}
-                            <span>
-                                {detail.isLocked
-                                    ? 'Mở khóa tài khoản'
-                                    : 'Khóa tài khoản'}
-                            </span>
-                        </button>
-
-                        {statusActionError ? (
-                            <p className={cx('actionError')}>
-                                {statusActionError}
-                            </p>
-                        ) : null}
-
-                        <div className={cx('auditList')}>
-                            <h4 className={cx('subTitle')}>Audit log</h4>
-
-                            {detail.auditLogs.length === 0 ? (
-                                <p className={cx('emptyText')}>
-                                    Chưa có audit log nào cho tài khoản này.
-                                </p>
-                            ) : (
-                                detail.auditLogs.map((log) => (
-                                    <div
-                                        key={log.id}
-                                        className={cx('auditItem')}
-                                    >
-                                        <strong>{log.action}</strong>
-                                        <span>{log.actor}</span>
-                                        <span>
-                                            {formatDateTime(log.timestamp)}
-                                        </span>
-                                        {log.note ? <p>{log.note}</p> : null}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </article>
-                </aside>
-
-                <div className={cx('mainContent')}>
-                    <div className={cx('statsGrid')}>
-                        <article className={cx('statCard')}>
-                            <span className={cx('statIcon', 'blue')}>
-                                <FiFileText />
-                            </span>
-                            <p className={cx('statLabel')}>Số CV đã tạo</p>
-                            <strong className={cx('statValue')}>
-                                {detail.stats.cvCount}
-                            </strong>
-                        </article>
-
-                        <article className={cx('statCard')}>
-                            <span className={cx('statIcon', 'violet')}>
-                                <FiCpu />
-                            </span>
-                            <p className={cx('statLabel')}>Số lần sử dụng AI</p>
-                            <strong className={cx('statValue')}>
-                                {detail.stats.aiUsageCount}
-                            </strong>
-                            <span className={cx('statHint')}>
-                                Đã dùng {aiQuotaPercent}% hạn mức tháng
-                            </span>
-                        </article>
-
-                        <article className={cx('statCard')}>
-                            <span className={cx('statIcon', 'amber')}>
-                                <FiUser />
-                            </span>
-                            <p className={cx('statLabel')}>Gói hiện tại</p>
-                            <strong className={cx('statValue')}>
-                                {detail.packageName}
-                            </strong>
-                            <span className={cx('statHint')}>
-                                Hết hạn: {formatDate(detail.packageExpiredAt)}
-                            </span>
-                        </article>
-
-                        <article className={cx('statCard')}>
-                            <span className={cx('statIcon', 'green')}>
-                                <FiCreditCard />
-                            </span>
-                            <p className={cx('statLabel')}>Tổng thanh toán</p>
-                            <strong className={cx('statValue')}>
-                                {formatCurrency(detail.stats.totalSpent)}
-                            </strong>
-                            <span className={cx('statHint')}>
-                                {detail.stats.totalTransactions} giao dịch
-                            </span>
-                        </article>
                     </div>
 
-                    <div className={cx('infoPanels')}>
-                        <article className={cx('panelCard')}>
-                            <h3 className={cx('panelTitle')}>
-                                Thông tin tài khoản & Trạng thái
-                            </h3>
-                            <div className={cx('panelGrid')}>
-                                <div>
-                                    <span>Email</span>
-                                    <strong>{detail.email}</strong>
-                                </div>
-                                <div>
-                                    <span>Số điện thoại</span>
-                                    <strong>{detail.phone}</strong>
-                                </div>
-                                <div>
-                                    <span>Trạng thái</span>
-                                    <strong>{detail.statusLabel}</strong>
-                                </div>
-                                <div>
-                                    <span>Ngày đăng ký</span>
-                                    <strong>
-                                        {formatDate(detail.registeredAt)}
-                                    </strong>
-                                </div>
-                            </div>
-                        </article>
+                    <div className={cx('headerActions')}>
+                        <Button
+                            outlineText
+                            leftIcon={<ArrowLeft aria-hidden="true" />}
+                            onClick={handleBack}
+                        >
+                            Quay lại
+                        </Button>
+                        <Button
+                            primary={!detail.isLocked}
+                            outlineText={detail.isLocked}
+                            className={cx('statusAction', {
+                                unlock: detail.isLocked,
+                            })}
+                            leftIcon={
+                                <StatusIcon
+                                    aria-hidden="true"
+                                    className={cx({
+                                        spinning: submittingStatus,
+                                    })}
+                                />
+                            }
+                            disabled={submittingStatus}
+                            onClick={handleToggleStatus}
+                        >
+                            {detail.isLocked
+                                ? 'Mở khóa tài khoản'
+                                : 'Khóa tài khoản'}
+                        </Button>
+                    </div>
+                </header>
 
-                        <article className={cx('panelCard')}>
-                            <h3 className={cx('panelTitle')}>
-                                Gói dịch vụ hiện tại & Quota sử dụng
-                            </h3>
+                {errorMessage ? (
+                    <div className={cx('warningBanner')}>
+                        <Activity />
+                        <span>{errorMessage}</span>
+                    </div>
+                ) : null}
+
+                {statusActionError ? (
+                    <div className={cx('warningBanner', 'dangerBanner')}>
+                        <Shield />
+                        <span>{statusActionError}</span>
+                    </div>
+                ) : null}
+
+                <div className={cx('content')}>
+                    <aside className={cx('sidebar')}>
+                        <section className={cx('card', 'profileCard')}>
+                            <div className={cx('avatar')}>
+                                {detail.avatarUrl ? (
+                                    <img
+                                        src={detail.avatarUrl}
+                                        alt={detail.fullName}
+                                    />
+                                ) : (
+                                    <span>{initials}</span>
+                                )}
+                            </div>
+
+                            <h2>{detail.fullName}</h2>
+                            <p>Gói: {detail.packageName}</p>
+
+                            <div className={cx('contactList')}>
+                                {contactRows.map((item) => {
+                                    const Icon = item.icon;
+
+                                    return (
+                                        <span key={item.value}>
+                                            <Icon />
+                                            {item.value}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </section>
+
+                        <section className={cx('card')}>
+                            <h2>
+                                <Shield />
+                                Audit log
+                            </h2>
+
+                            <div className={cx('auditList')}>
+                                {detail.auditLogs.length ? (
+                                    detail.auditLogs.map((log) => (
+                                        <div
+                                            key={log.id}
+                                            className={cx('auditItem')}
+                                        >
+                                            <strong>{log.action}</strong>
+                                            <span>{log.actor}</span>
+                                            <span>
+                                                {formatDateTime(log.timestamp)}
+                                            </span>
+                                            {log.note ? (
+                                                <p>{log.note}</p>
+                                            ) : null}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className={cx('emptyText')}>
+                                        Chưa có audit log nào cho tài khoản này.
+                                    </p>
+                                )}
+                            </div>
+                        </section>
+                    </aside>
+
+                    <main className={cx('mainContent')}>
+                        <section className={cx('statsGrid')}>
+                            {stats.map((item) => {
+                                const Icon = item.icon;
+
+                                return (
+                                    <article
+                                        key={item.key}
+                                        className={cx('statCard')}
+                                    >
+                                        <span
+                                            className={cx(
+                                                'statIcon',
+                                                item.tone,
+                                            )}
+                                        >
+                                            <Icon />
+                                        </span>
+                                        <p>{item.label}</p>
+                                        <strong>{item.value}</strong>
+                                        {item.hint ? (
+                                            <small>{item.hint}</small>
+                                        ) : null}
+                                    </article>
+                                );
+                            })}
+                        </section>
+
+                        <section className={cx('card')}>
+                            <h2>
+                                <Info />
+                                Thông tin tài khoản
+                            </h2>
+
+                            <div className={cx('propertyGrid')}>
+                                {infoRows.map((item) => (
+                                    <div
+                                        key={item.label}
+                                        className={cx('propertyItem')}
+                                    >
+                                        <span>{item.label}</span>
+                                        <strong>{item.value}</strong>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className={cx('card')}>
+                            <h2>
+                                <Activity />
+                                Quota sử dụng
+                            </h2>
+
                             <div className={cx('quotaList')}>
                                 <div className={cx('quotaItem')}>
                                     <div className={cx('quotaTop')}>
@@ -529,88 +550,96 @@ function UserDetailInfo({
                                     </div>
                                 </div>
                             </div>
-                        </article>
-                    </div>
+                        </section>
 
-                    <div className={cx('bottomGrid')}>
-                        <article className={cx('tableCard')}>
-                            <div className={cx('sectionHeader')}>
-                                <h3>Lịch sử giao dịch</h3>
-                                <span>
-                                    {detail.transactions.length} hoạt động
-                                </span>
-                            </div>
+                        <div className={cx('bottomGrid')}>
+                            <section className={cx('card')}>
+                                <div className={cx('sectionHeader')}>
+                                    <h2>
+                                        <CheckCircle2 />
+                                        Lịch sử giao dịch
+                                    </h2>
+                                    <span>
+                                        {formatNumber(
+                                            detail.transactions.length,
+                                        )}{' '}
+                                        hoạt động
+                                    </span>
+                                </div>
 
-                            {detail.transactions.length === 0 ? (
-                                <p className={cx('emptyText')}>
-                                    Chưa có giao dịch nào được ghi nhận.
-                                </p>
-                            ) : (
-                                <div className={cx('historyList')}>
-                                    {detail.transactions.map((transaction) => (
-                                        <div
-                                            key={transaction.id}
-                                            className={cx('historyItem')}
-                                        >
-                                            <div className={cx('historyIcon')}>
-                                                <FiCheckCircle />
-                                            </div>
-                                            <div
-                                                className={cx('historyContent')}
-                                            >
-                                                <strong>
-                                                    {transaction.title}
-                                                </strong>
-                                                <span>
-                                                    {formatDate(
-                                                        transaction.date,
+                                {detail.transactions.length ? (
+                                    <div className={cx('historyList')}>
+                                        {detail.transactions.map(
+                                            (transaction) => (
+                                                <div
+                                                    key={transaction.id}
+                                                    className={cx(
+                                                        'historyItem',
                                                     )}
-                                                    {transaction.reference
-                                                        ? ` • ${transaction.reference}`
-                                                        : ''}
-                                                </span>
-                                            </div>
-                                            <div
-                                                className={cx('historyAmount')}
-                                            >
-                                                {formatCurrency(
-                                                    transaction.amount,
-                                                    transaction.currency,
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </article>
+                                                >
+                                                    <div>
+                                                        <strong>
+                                                            {transaction.title}
+                                                        </strong>
+                                                        <span>
+                                                            {formatDate(
+                                                                transaction.date,
+                                                            )}
+                                                            {transaction.reference
+                                                                ? ` • ${transaction.reference}`
+                                                                : ''}
+                                                        </span>
+                                                    </div>
+                                                    <strong>
+                                                        {formatCurrency(
+                                                            transaction.amount,
+                                                            transaction.currency,
+                                                        )}
+                                                    </strong>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className={cx('emptyText')}>
+                                        Chưa có giao dịch nào được ghi nhận.
+                                    </p>
+                                )}
+                            </section>
 
-                        <article className={cx('tableCard')}>
-                            <div className={cx('sectionHeader')}>
-                                <h3>Thống kê số lượng CV / AI / Export</h3>
-                            </div>
+                            <section className={cx('card')}>
+                                <h2>
+                                    <Download />
+                                    Thống kê nhanh
+                                </h2>
 
-                            <div className={cx('metricsList')}>
-                                <div className={cx('metricRow')}>
-                                    <span>
-                                        <FiFileText /> Số CV đã tạo
-                                    </span>
-                                    <strong>{detail.stats.cvCount}</strong>
+                                <div className={cx('metricsList')}>
+                                    <div className={cx('metricRow')}>
+                                        <span>Số CV đã tạo</span>
+                                        <strong>
+                                            {formatNumber(detail.stats.cvCount)}
+                                        </strong>
+                                    </div>
+                                    <div className={cx('metricRow')}>
+                                        <span>Số lần dùng AI</span>
+                                        <strong>
+                                            {formatNumber(
+                                                detail.stats.aiUsageCount,
+                                            )}
+                                        </strong>
+                                    </div>
+                                    <div className={cx('metricRow')}>
+                                        <span>Tổng lượt export</span>
+                                        <strong>
+                                            {formatNumber(
+                                                detail.stats.exportCount,
+                                            )}
+                                        </strong>
+                                    </div>
                                 </div>
-                                <div className={cx('metricRow')}>
-                                    <span>
-                                        <FiCpu /> Số lần dùng AI
-                                    </span>
-                                    <strong>{detail.stats.aiUsageCount}</strong>
-                                </div>
-                                <div className={cx('metricRow')}>
-                                    <span>
-                                        <FiDownload /> Tổng lượt export
-                                    </span>
-                                    <strong>{detail.stats.exportCount}</strong>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
+                            </section>
+                        </div>
+                    </main>
                 </div>
             </div>
         </section>

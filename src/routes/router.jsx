@@ -16,7 +16,7 @@ import CvTemplates from '~/pages/User/CvTemplates';
 import MyCvs from '~/pages/User/MyCvs';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
-import ManageUsers from '~/pages/Admin/ManageUsers/ManageUsers';
+import ManageUsers from '~/pages/Admin/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
 
 import AdminSettings from '~/pages/Admin/AdminSettings';

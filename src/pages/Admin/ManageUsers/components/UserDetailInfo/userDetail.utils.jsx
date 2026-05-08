@@ -1,39 +1,16 @@
 import {
+    formatCurrency,
     formatDate,
+    formatDateTime,
+    formatNumber,
     getErrorMessage,
     getLatestUsageQuota,
     normalizeAdminUser,
-} from '../UserTable/userTable.utils';
+} from '../../manageUsers.utils';
 
 const toNumber = (value, fallback = 0) => {
     const nextValue = Number(value);
     return Number.isFinite(nextValue) ? nextValue : fallback;
-};
-
-export const formatDateTime = (value) => {
-    if (!value) return 'Chưa có dữ liệu';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
-    return new Intl.DateTimeFormat('vi-VN', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    }).format(date);
-};
-
-export const formatCurrency = (value, currency = 'VND') => {
-    const amount = Number(value);
-
-    if (!Number.isFinite(amount)) {
-        return '0đ';
-    }
-    return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 0,
-    }).format(amount);
 };
 
 const normalizeTransactions = (transactions = []) => {
@@ -102,7 +79,8 @@ export const buildFallbackUserDetail = (user) => {
 
     const normalizedUser = normalizeAdminUser(user.raw || user);
     const latestQuota =
-        normalizedUser.latestQuota || getLatestUsageQuota(user?.raw?.usage_quotas);
+        normalizedUser.latestQuota ||
+        getLatestUsageQuota(user?.raw?.usage_quotas);
 
     return {
         ...normalizedUser,
@@ -138,7 +116,8 @@ export const buildFallbackUserDetail = (user) => {
 };
 
 export const normalizeAdminUserDetail = (payload, fallbackUser = null) => {
-    const source = payload?.user || payload?.profile || payload?.account || payload;
+    const source =
+        payload?.user || payload?.profile || payload?.account || payload;
     const latestQuota = getLatestUsageQuota(source?.usage_quotas);
     const baseUser = normalizeAdminUser({
         ...(fallbackUser?.raw || fallbackUser || {}),
@@ -263,4 +242,4 @@ export const getQuotaText = (used, limit) => {
     return `${used}/${limit} lượt`;
 };
 
-export { formatDate };
+export { formatCurrency, formatDate, formatDateTime, formatNumber };
