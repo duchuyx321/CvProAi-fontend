@@ -10,6 +10,8 @@ import Pagination from '~/components/Pagination';
 import { getAllTemplate } from '~/services/admin-template.service';
 
 import styles from './ManageTemplates.module.scss';
+import { useNavigate } from 'react-router-dom';
+import { config } from '~/config';
 
 const cx = classNames.bind(styles);
 const PAGE_SIZE = 8;
@@ -119,6 +121,7 @@ function ManageTemplates() {
         from: '',
         to: '',
     });
+    const navigate = useNavigate();
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const pageParam = Number(params.get('page'));
@@ -327,6 +330,14 @@ function ManageTemplates() {
                                                 type="button"
                                                 className={cx('iconButton')}
                                                 aria-label={`Xem ${template.name}`}
+                                                onClick={() =>
+                                                    navigate(
+                                                        config.router.previewTemplate.replace(
+                                                            ':code',
+                                                            template.code,
+                                                        ),
+                                                    )
+                                                }
                                                 title="Xem"
                                             >
                                                 <Eye />
