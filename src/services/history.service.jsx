@@ -64,10 +64,7 @@ export const editOrder = async (code, id, data) => {
         const safeCode = encodeURIComponent(code);
         const safeId = encodeURIComponent(id);
 
-        const res = await Response.PATCH(
-            `admin/payments/edit/${safeCode}?id=${safeId}`,
-            data,
-        );
+        const res = await Response.PATCH(`admin/payments/edit/${safeId}`, data);
 
         return res;
     } catch (error) {
