@@ -1,127 +1,125 @@
 import classNames from 'classnames/bind';
-import { FiFileText } from 'react-icons/fi';
+import { FileText } from 'lucide-react';
+
+import Button from '~/components/Button';
 import styles from './AnalysisHistoryRow.module.scss';
 
 const cx = classNames.bind(styles);
 
-function ScoreBar({ value, status, analysisStatus }) {
-    const isValidScore = typeof value === 'number';
+const STATUS_META = {
+    COMPLETED: {
+        label: 'Hoàn thành',
+        className: 'completed',
+    },
+    PENDING: {
+        label: 'Đang chờ',
+        className: 'pending',
+    },
+    PROCESSING: {
+        label: 'Đang xử lý',
+        className: 'processing',
+    },
+    FAILED: {
+        label: 'Thất bại',
+        className: 'failed',
+    },
+};
 
-    if (status !== analysisStatus.SUCCESS || !isValidScore) {
-        return <span className={cx('scorePending')}>—</span>;
-    }
+function formatDate(value) {
+    if (!value) return '--';
 
-    const normalizedValue = Math.max(0, Math.min(100, value));
+    const date = new Date(value);
 
-    return (
-        <div className={cx('scoreBox')}>
-            <span className={cx('scoreText')}>{normalizedValue}%</span>
-            <div className={cx('scoreTrack')}>
-                <div
-                    className={cx('scoreFill', {
-                        high: normalizedValue >= 70,
-                        medium: normalizedValue >= 50 && normalizedValue < 70,
-                        low: normalizedValue < 50,
-                    })}
-                    style={{ width: `${normalizedValue}%` }}
-                />
-            </div>
-        </div>
-    );
+    if (Number.isNaN(date.getTime())) return '--';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
-function AnalysisStatusBadge({ status, analysisStatus }) {
-    const statusMap = {
-        [analysisStatus.QUEUED]: {
-            label: 'Đang chờ',
-            className: 'queued',
-        },
-        [analysisStatus.RUNNING]: {
-            label: 'Đang phân tích',
-            className: 'running',
-        },
-        [analysisStatus.SUCCESS]: {
-            label: 'Hoàn tất',
-            className: 'success',
-        },
-        [analysisStatus.FAILED]: {
-            label: 'Thất bại',
-            className: 'failed',
-        },
-    };
+function formatTime(value) {
+    if (!value) return '--';
 
-    const currentStatus = statusMap[status] || {
-        label: status || 'Không xác định',
-        className: 'queued',
-    };
+    const date = new Date(value);
 
-    return (
-        <div className={cx('statusBadge', currentStatus.className)}>
-            <span className={cx('statusDot')} />
-            <span className={cx('statusText')}>{currentStatus.label}</span>
-        </div>
-    );
+    if (Number.isNaN(date.getTime())) return '--';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
 }
 
-function AnalysisHistoryRow({ item = {}, analysisStatus }) {
-    const {
-        fileName = '—',
-        isBest = false,
-        role = '—',
-        analyzedAt = '—',
-        score = null,
-        keywords = [],
-        status,
-    } = item;
+function getScoreClassName(score) {
+    if (score >= 80) return 'high';
+    if (score >= 50) return 'medium';
 
-    const safeKeywords = Array.isArray(keywords) ? keywords : [];
+    return 'low';
+}
+
+function AnalysisHistoryRow({ item, onViewDetail }) {
+    const statusMeta = STATUS_META[item.status] || {
+        label: item.status || '--',
+        className: 'default',
+    };
+
+    const scoreClassName = getScoreClassName(Number(item.score));
 
     return (
-        <div className={cx('tableRow')}>
-            <div className={cx('cell', 'fileCell')}>
-                <FiFileText className={cx('fileIcon')} />
-                <div className={cx('fileInfo')}>
-                    <span className={cx('fileName')}>{fileName}</span>
-                    {isBest && <span className={cx('bestBadge')}>BEST SCORE</span>}
+        <tr className={cx('row')}>
+            <td>
+                <div className={cx('cvInfo')}>
+                    <div className={cx('fileIcon')}>
+                        <FileText />
+                    </div>
+
+                    <div className={cx('cvMeta')}>
+                        <strong>{item.file_name || '--'}</strong>
+                        <span>Vị trí: {item.position || '--'}</span>
+                    </div>
                 </div>
-            </div>
+            </td>
 
-            <div className={cx('cell', 'roleCell')}>{role}</div>
-
-            <div className={cx('cell', 'dateCell')}>{analyzedAt}</div>
-
-            <div className={cx('cell', 'scoreCell')}>
-                <ScoreBar
-                    value={score}
-                    status={status}
-                    analysisStatus={analysisStatus}
-                />
-            </div>
-
-            <div className={cx('cell', 'keywordCell')}>
-                <div className={cx('keywordList')}>
-                    {safeKeywords.length > 0 ? (
-                        safeKeywords.map((keyword, index) => (
-                            <span
-                                key={`${keyword}-${index}`}
-                                className={cx('keywordTag')}
-                            >
-                                {keyword}
-                            </span>
-                        ))
-                    ) : (
-                        <span className={cx('emptyKeywords')}>—</span>
-                    )}
+            <td>
+                <div className={cx('dateInfo')}>
+                    <strong>{formatDate(item.createdAt)}</strong>
+                    <span>{formatTime(item.createdAt)}</span>
                 </div>
-            </div>
+            </td>
 
-            <div className={cx('cell', 'statusCell')}>
-                <AnalysisStatusBadge
-                    status={status}
-                    analysisStatus={analysisStatus}
-                />
-            </div>
-        </div>
+            <td>
+                <div className={cx('scoreInfo', scoreClassName)}>
+                    <strong>{Number(item.score) || 0}%</strong>
+
+                    <div className={cx('scoreTrack')}>
+                        <span
+                            className={cx('scoreBar')}
+                            style={{
+                                width: `${Number(item.score) || 0}%`,
+                            }}
+                        />
+                    </div>
+                </div>
+            </td>
+
+            <td>
+                <span className={cx('statusBadge', statusMeta.className)}>
+                    {statusMeta.label}
+                </span>
+            </td>
+
+            <td>
+                <Button
+                    type="button"
+                    className={cx('detailButton')}
+                    onClick={() => onViewDetail?.(item)}
+                >
+                    Xem chi tiết
+                </Button>
+            </td>
+        </tr>
     );
 }
 
