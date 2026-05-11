@@ -11,7 +11,6 @@ export const router = {
     cvSample: '/cv-templates',
     CvDetail: '/cv-templates/:code',
     pricing: '/pricing',
-    // createCV: '/create-cv',
 
     // User
     dashboard: '/dashboard',
@@ -26,23 +25,24 @@ export const router = {
     aiAnalysis: '/ai-analysis',
     aiAnalysisResult_route: '/ai-analysis/result/',
     aiAnalysisResult: '/ai-analysis/result/:aiRunId',
-
     upgradePremium: '/upgrade-premium',
     profile: '/profile',
     security: '/security',
     package: '/package',
     history: '/history',
-    cvAnalysisHistory: '/cv-analysis-history',
-
     payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
     upgradeOptions: '/upgrade-options/:slug',
-
+    cvAnalysisHistory: '/cv-analysis-history',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
+    manageUsersDetail: '/admin/manage-users/:userId',
     manageTemplates: '/admin/templates',
+    createTemplate: '/admin/templates/create',
+    previewTemplate: '/admin/templates/preview/:code',
+    editTemplate: '/admin/templates/edit/:code',
     adminSettings: '/admin/settings',
-    manageOrders: '/admin/orders',
     managePackages: '/admin/packages',
+    adminOrders: '/admin/orders',
 };

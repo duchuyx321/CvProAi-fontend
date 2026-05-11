@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
+
+import { config } from '~/config';
 import GenericAdminToolbar from '~/components/GenericAdminToolbar';
 import Pagination from '~/components/Pagination';
+import { getAnalysisHistory } from '~/services/analysis-history.service';
 
 import AnalysisHistoryRow from './components/AnalysisHistoryRow';
 import styles from './CvAnalysisHistory.module.scss';
@@ -74,33 +77,6 @@ const DEFAULT_FILTERS = {
     to: '',
 };
 
-const MOCK_ANALYSIS_HISTORY = [
-    {
-        id: '1',
-        file_name: 'Senior_UX_Designer_2024.pdf',
-        position: 'UX/UI Designer',
-        score: 85,
-        status: 'COMPLETED',
-        createdAt: '2024-10-24T14:30:00.000Z',
-    },
-    {
-        id: '2',
-        file_name: 'Frontend_Dev_NguyenVanA.pdf',
-        position: 'Frontend Engineer',
-        score: 62,
-        status: 'COMPLETED',
-        createdAt: '2024-10-24T10:15:00.000Z',
-    },
-    {
-        id: '3',
-        file_name: 'Marketing_Manager_CV.pdf',
-        position: 'Marketing Manager',
-        score: 35,
-        status: 'COMPLETED',
-        createdAt: '2024-10-23T16:45:00.000Z',
-    },
-];
-
 function getPageFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const pageParam = Number(params.get('page'));
@@ -152,87 +128,11 @@ function isSameFilters(currentFilters, nextFilters) {
     );
 }
 
-function isInRange(item, filters) {
-    if (filters.range !== 'custom') return true;
-
-    const createdDate = new Date(item.createdAt);
-    const fromDate = filters.from ? new Date(filters.from) : null;
-    const toDate = filters.to ? new Date(filters.to) : null;
-
-    if (Number.isNaN(createdDate.getTime())) return false;
-    if (fromDate && createdDate < fromDate) return false;
-
-    if (toDate) {
-        const endOfToDate = new Date(toDate);
-        endOfToDate.setHours(23, 59, 59, 999);
-
-        if (createdDate > endOfToDate) return false;
-    }
-
-    return true;
-}
-
-function sortItems(items, filters) {
-    const sortedItems = [...items];
-
-    sortedItems.sort((a, b) => {
-        let firstValue = a[filters.sort_by];
-        let secondValue = b[filters.sort_by];
-
-        if (filters.sort_by === AnalysisSortBy.CREATED_AT) {
-            firstValue = new Date(a.createdAt).getTime();
-            secondValue = new Date(b.createdAt).getTime();
-        }
-
-        if (typeof firstValue === 'string') {
-            firstValue = firstValue.toLowerCase();
-        }
-
-        if (typeof secondValue === 'string') {
-            secondValue = secondValue.toLowerCase();
-        }
-
-        if (firstValue < secondValue) {
-            return filters.sort_order === SortOrder.ASC ? -1 : 1;
-        }
-
-        if (firstValue > secondValue) {
-            return filters.sort_order === SortOrder.ASC ? 1 : -1;
-        }
-
-        return 0;
-    });
-
-    return sortedItems;
-}
-
-function getFilteredItems(filters) {
-    const keyword = filters.search.trim().toLowerCase();
-
-    const filteredItems = MOCK_ANALYSIS_HISTORY.filter((item) => {
-        const searchableText = [
-            item.file_name,
-            item.position,
-            item.status,
-            String(item.score),
-        ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-
-        const isMatchSearch = !keyword || searchableText.includes(keyword);
-        const isMatchRange = isInRange(item, filters);
-
-        return isMatchSearch && isMatchRange;
-    });
-
-    return sortItems(filteredItems, filters);
-}
-
 function CvAnalysisHistory() {
     const navigate = useNavigate();
-    const [page, setPage] = useState(getPageFromUrl);
+
     const [histories, setHistories] = useState([]);
+    const [page, setPage] = useState(getPageFromUrl);
     const [meta, setMeta] = useState(DEFAULT_META);
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -254,23 +154,41 @@ function CvAnalysisHistory() {
             try {
                 setLoading(true);
 
-                // TODO: Khi có API thì thay block mock này bằng service call.
-                const allItems = getFilteredItems(filters);
-                const totalItems = allItems.length;
-                const totalPages = Math.max(Math.ceil(totalItems / PAGE_SIZE), 1);
-                const startIndex = (page - 1) * PAGE_SIZE;
-                const endIndex = startIndex + PAGE_SIZE;
-                const pagedItems = allItems.slice(startIndex, endIndex);
+                const payload = {
+                    page,
+                    limit: PAGE_SIZE,
+                    search: filters.search,
+                    sort_by: filters.sort_by,
+                    sort_order: filters.sort_order,
+                };
+
+                if (filters.range === 'custom') {
+                    payload.from = filters.from;
+                    payload.to = filters.to;
+                } else {
+                    payload.range = filters.range;
+                }
+
+                const response = await getAnalysisHistory(payload);
 
                 if (ignore) return;
 
-                setHistories(pagedItems);
-                setMeta({
-                    page,
-                    limit: PAGE_SIZE,
-                    total_items: totalItems,
-                    total_pages: totalPages,
-                });
+                const result = response?.data || response || {};
+
+                if (result?.status >= 400 || result?.success === false) {
+                    setHistories([]);
+                    setMeta(DEFAULT_META);
+                    return;
+                }
+
+                setHistories(Array.isArray(result?.data) ? result.data : []);
+                setMeta(result?.meta || DEFAULT_META);
+            } catch (error) {
+                if (!ignore) {
+                    console.error('Fetch analysis history failed:', error);
+                    setHistories([]);
+                    setMeta(DEFAULT_META);
+                }
             } finally {
                 if (!ignore) {
                     setLoading(false);
@@ -329,8 +247,7 @@ function CvAnalysisHistory() {
     );
 
     const handleViewDetail = (item) => {
-        console.log('View analysis detail:', item);
-        navigate(config)
+        navigate(config.router.aiAnalysisResult.replace(':aiRunId', item.id));
     };
 
     return (
