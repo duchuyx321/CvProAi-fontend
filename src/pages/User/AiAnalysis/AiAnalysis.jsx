@@ -14,39 +14,17 @@ import { validateJobDescriptionFile } from '~/utils/jobDescriptionFile.validator
 import styles from './AiAnalysis.module.scss';
 import { useNavigate } from 'react-router-dom';
 import { config } from '~/config';
+import { getDashboardOverview } from '~/services/dashboard.service';
 
 const cx = classNames.bind(styles);
-
-const MOCK_SAVED_CVS = [
-    {
-        id: 1,
-        fileName: 'CV_Frontend_React_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-04-10',
-        role: 'Frontend Developer',
-        location: 'Hồ Chí Minh',
-        level: '2 năm kinh nghiệm',
-    },
-    {
-        id: 2,
-        fileName: 'CV_NodeJS_Backend_NguyenVanA.pdf',
-        fileUrl: '#',
-        updatedAt: '2026-04-08',
-        role: 'Backend Developer',
-        location: 'Đà Nẵng',
-        level: '3 năm kinh nghiệm',
-    },
-];
-
 function AiAnalysis() {
     const [savedCVs, setSavedCVs] = useState([]);
     const [loadingSavedCVs, setLoadingSavedCVs] = useState(false);
     const [showSavedCVSection, setShowSavedCVSection] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
     const navigate = useNavigate();
-    // Chỉ còn 2 state chính
     const [cvInput, setCvInput] = useState({
-        type: null, // 'ID' | 'FILE'
+        type: null,
         cv_id: null,
         cv_file: null,
         name: '',
@@ -54,22 +32,36 @@ function AiAnalysis() {
     });
 
     const [jdInput, setJdInput] = useState({
-        type: 'TEXT', // 'TEXT' | 'FILE'
+        type: 'TEXT',
         jd_text: '',
         jd_file: null,
     });
 
     useEffect(() => {
-        loadMockCVCollection();
+        loadCVCollection();
     }, []);
 
-    const loadMockCVCollection = async () => {
+    const loadCVCollection = async () => {
         try {
             setLoadingSavedCVs(true);
-            await new Promise((resolve) => setTimeout(resolve, 400));
-            setSavedCVs(MOCK_SAVED_CVS);
+            const result = await getDashboardOverview();
+
+            if (result?.success && result?.data?.cvs) {
+                const cvs = result.data.cvs.map(cv => ({
+                    id: cv.id,
+                    fileName: cv.title || cv.name || 'CV chưa đặt tên',
+                    fileUrl: cv.fileUrl || '#',
+                    updatedAt: cv.updatedAt || '',
+                    role: cv.targetPosition || cv.jobTitle || 'Chưa cập nhật',
+                    location: cv.location || 'Chưa cập nhật',
+                    level: cv.level || 'Chưa cập nhật',
+                }));
+                setSavedCVs(cvs);
+            } else {
+                setSavedCVs([]);
+            }
         } catch (error) {
-            console.error('Load mock CV collection error:', error);
+            console.error('Load CV collection error:', error);
             toast.error('Không thể tải danh sách CV');
         } finally {
             setLoadingSavedCVs(false);
@@ -117,14 +109,14 @@ function AiAnalysis() {
         toast.success('Đã chọn CV từ máy tính');
     };
 
-    const handlePreviewMockCV = (cv, e) => {
-        e.stopPropagation();
-        toast.info(`Mock preview: ${cv.fileName}`);
-    };
-
-    const handleDownloadMockCV = (cv, e) => {
-        e.stopPropagation();
-        toast.info(`Mock download: ${cv.fileName}`);
+    const handleRemoveCV = () => {
+        setCvInput({
+            type: null,
+            cv_id: null,
+            cv_file: null,
+            name: '',
+            fileUrl: '',
+        });
     };
 
     const handleChangeJobDescriptionInputMode = (mode) => {
@@ -237,12 +229,10 @@ function AiAnalysis() {
                 },
             });
             console.log(result);
-            // navigate sang result ở đây
             setTimeout(() => {
-                // window.location.replace(config.router.home);
                 navigate(
                     `${config.router.aiAnalysisResult_route}${result.data.dataValues.id || result.data.id}`,
-                ); //dashboard
+                );
             }, 800);
         } catch (error) {
             console.error('Analyze CV error:', error);
@@ -254,26 +244,26 @@ function AiAnalysis() {
     const selectedCV =
         cvInput.type === 'ID'
             ? {
-                  id: cvInput.cv_id,
-                  name: cvInput.name,
-                  fileUrl: cvInput.fileUrl,
-                  source: 'saved',
-              }
+                id: cvInput.cv_id,
+                name: cvInput.name,
+                fileUrl: cvInput.fileUrl,
+                source: 'saved',
+            }
             : cvInput.type === 'FILE'
-              ? {
+                ? {
                     id: null,
                     name: cvInput.name,
                     file: cvInput.cv_file,
                     source: 'local',
                 }
-              : null;
+                : null;
 
     const selectedJobDescriptionFile = jdInput.jd_file
         ? {
-              name: jdInput.jd_file.name,
-              size: jdInput.jd_file.size,
-              file: jdInput.jd_file,
-          }
+            name: jdInput.jd_file.name,
+            size: jdInput.jd_file.size,
+            file: jdInput.jd_file,
+        }
         : null;
 
     return (
@@ -287,6 +277,7 @@ function AiAnalysis() {
                             showSavedCVSection={showSavedCVSection}
                             onToggleSavedCVSection={handleToggleSavedCVSection}
                             onUploadLocalCV={handleUploadLocalCV}
+                            onRemoveCV={handleRemoveCV}
                         />
 
                         <div className={cx('tipCard')}>
@@ -337,8 +328,6 @@ function AiAnalysis() {
                         loadingSavedCVs={loadingSavedCVs}
                         selectedCV={selectedCV}
                         onSelectSavedCV={handleSelectSavedCV}
-                        onPreviewCV={handlePreviewMockCV}
-                        onDownloadCV={handleDownloadMockCV}
                     />
                 ) : null}
             </div>

@@ -81,6 +81,7 @@
 
 .actionText {
     line-height: 1;
+    white-space: nowrap;
 }
 
 .arrowIcon {
@@ -103,7 +104,7 @@
     min-height: 84px;
     padding: 14px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
     background: #ffffff;
     border: 1.5px dashed #d4dced;
@@ -172,6 +173,26 @@
     font-size: 13px;
     line-height: 1.5;
     color: #7c89a2;
+}
+
+.removeFileButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #9a8f89;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        background: #fee2e2;
+        color: #ef4444;
+    }
 }
 
 .uploadHint {
