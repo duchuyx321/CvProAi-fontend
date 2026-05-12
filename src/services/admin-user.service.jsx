@@ -53,12 +53,24 @@ export const updateAdminUserStatus = async (
     try {
         const endpointAction =
             payload.action === 'lock' ? 'banned' : 'disbanned';
-
-        // Vừa để id trong path, vừa chèn thêm ?id=... vào query
-        // Đồng thời không truyền thêm tham số thứ 2 (body) vào hàm PATCH
         return await Response.PATCH(
             `${ADMIN_USERS_ENDPOINT}/${endpointAction}/${userId}`,
         );
+    } catch (error) {
+        return buildErrorResponse(error);
+    }
+};
+
+export const upgradeAdminUser = async (userId, payload) => {
+    try {
+        return await Response.PATCH(`${ADMIN_USERS_ENDPOINT}/upgrade/${userId}`, payload);
+    } catch (error) {
+        return buildErrorResponse(error);
+    }
+};
+export const getAdminPlans = async (limit=8 , page = 1) => {
+    try {
+        return await Response.GET(`admin/plans?limit=${limit}&page=${page}`);
     } catch (error) {
         return buildErrorResponse(error);
     }

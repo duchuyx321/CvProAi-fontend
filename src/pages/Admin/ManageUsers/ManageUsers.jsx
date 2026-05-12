@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
-import { Eye, LoaderCircle, Lock, RefreshCw, Unlock } from 'lucide-react';
+import { Eye, LoaderCircle, Lock, RefreshCw, Unlock, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 import GenericAdminToolbar from '~/components/GenericAdminToolbar';
@@ -11,6 +11,8 @@ import {
     getAdminUsers,
     updateAdminUserStatus,
 } from '~/services/admin-user.service';
+
+import UserUpgradeModal from './components/UserUpgradeModal';
 
 import styles from './ManageUsers.module.scss';
 import {
@@ -79,6 +81,7 @@ function ManageUsers() {
     const [errorMessage, setErrorMessage] = useState('');
     const [submittingUserId, setSubmittingUserId] = useState('');
     const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const [selectedUpgradeUser, setSelectedUpgradeUser] = useState(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -214,6 +217,10 @@ function ManageUsers() {
         },
         [navigate],
     );
+
+    const handleUpgradeUser = useCallback((user) => {
+        setSelectedUpgradeUser(user);
+    }, []);
 
     const handleRetryFetch = () => {
         setPage(1);
@@ -403,6 +410,17 @@ function ManageUsers() {
                                                 </button>
                                                 <button
                                                     type="button"
+                                                    className={cx('iconButton', 'upgrade')}
+                                                    aria-label={`Nâng cấp ${user.fullName}`}
+                                                    onClick={() =>
+                                                        handleUpgradeUser(user)
+                                                    }
+                                                    title="Nâng cấp tài khoản"
+                                                >
+                                                    <ArrowUpCircle />
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     className={cx(
                                                         'iconButton',
                                                         {
@@ -495,6 +513,15 @@ function ManageUsers() {
                     />
                 </div>
             </div>
+
+            <UserUpgradeModal
+                isOpen={Boolean(selectedUpgradeUser)}
+                onClose={() => setSelectedUpgradeUser(null)}
+                user={selectedUpgradeUser}
+                onSuccess={() => {
+                    handleRetryFetch();
+                }}
+            />
         </div>
     );
 }

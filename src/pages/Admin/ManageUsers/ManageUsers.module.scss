@@ -265,6 +265,16 @@
     }
 }
 
+.upgrade {
+    color: #f59e0b;
+
+    &:hover:not(:disabled) {
+        border-color: #fef3c7;
+        background: #fffbeb;
+        color: #f59e0b;
+    }
+}
+
 .spinning {
     animation: table-loader-spin 0.8s linear infinite;
 }

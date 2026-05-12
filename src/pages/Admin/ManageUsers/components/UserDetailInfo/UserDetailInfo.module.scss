@@ -54,6 +54,18 @@
     }
 }
 
+.upgradeAction {
+    background: #fffbeb !important;
+    border-color: #fef3c7 !important;
+    color: #f59e0b !important;
+    box-shadow: none !important;
+
+    &:hover {
+        background: #fef3c7 !important;
+        border-color: #fde68a !important;
+    }
+}
+
 .warningBanner {
     display: inline-flex;
     align-items: center;

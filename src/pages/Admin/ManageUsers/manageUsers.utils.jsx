@@ -86,7 +86,7 @@ export const getErrorMessage = (
 export const getResponsePayload = (response) => {
     if (
         Array.isArray(response?.data) &&
-        (response?.meta || response?.pagination || response?.total_items)
+        (response?.meta || response?.pagination || response?.total_items || response?.totalItems || response?.total !== undefined || response?.count !== undefined)
     ) {
         return response;
     }
@@ -135,8 +135,12 @@ export const getPaginationFromPayload = (
     const totalItems = toNumber(
         pagination?.total_items ??
             pagination?.totalItems ??
+            pagination?.total ??
+            pagination?.count ??
             payload?.total_items ??
             payload?.totalItems ??
+            payload?.total ??
+            payload?.count ??
             getUsersFromPayload(payload).length,
         0,
     );
@@ -155,6 +159,10 @@ export const getPaginationFromPayload = (
         toNumber(
             pagination?.total_pages ??
                 pagination?.totalPages ??
+                pagination?.last_page ??
+                pagination?.lastPage ??
+                payload?.total_pages ??
+                payload?.totalPages ??
                 (limit > 0 ? Math.ceil(totalItems / limit) : 1),
             1,
         ),

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
     Activity,
     ArrowLeft,
+    ArrowUpCircle,
     Bot,
     Calendar,
     CheckCircle2,
@@ -27,6 +28,7 @@ import {
     getAdminUserDetail,
     updateAdminUserStatus,
 } from '~/services/admin-user.service';
+import UserUpgradeModal from '../UserUpgradeModal';
 
 import styles from './UserDetailInfo.module.scss';
 import {
@@ -106,6 +108,8 @@ function UserDetailInfo({
     const [empty, setEmpty] = useState(false);
     const [submittingStatus, setSubmittingStatus] = useState(false);
     const [statusActionError, setStatusActionError] = useState('');
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const handleBack = () => {
         if (onBack) {
@@ -180,7 +184,12 @@ function UserDetailInfo({
         return () => {
             ignore = true;
         };
-    }, [fetchUserDetailAction, selectedUser, userId]);
+    }, [fetchUserDetailAction, selectedUser, userId, refreshTrigger]);
+
+    const handleUpgradeSuccess = () => {
+        setRefreshTrigger((prev) => prev + 1);
+        setIsUpgradeModalOpen(false);
+    };
 
     const handleToggleStatus = async () => {
         if (!detail?.id || submittingStatus) return;
@@ -355,6 +364,14 @@ function UserDetailInfo({
                             onClick={handleBack}
                         >
                             Quay lại
+                        </Button>
+                        <Button
+                            outlineText
+                            className={cx('upgradeAction')}
+                            leftIcon={<ArrowUpCircle aria-hidden="true" />}
+                            onClick={() => setIsUpgradeModalOpen(true)}
+                        >
+                            Nâng cấp
                         </Button>
                         <Button
                             primary={!detail.isLocked}
@@ -642,6 +659,13 @@ function UserDetailInfo({
                     </main>
                 </div>
             </div>
+
+            <UserUpgradeModal
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+                user={detail}
+                onSuccess={handleUpgradeSuccess}
+            />
         </section>
     );
 }

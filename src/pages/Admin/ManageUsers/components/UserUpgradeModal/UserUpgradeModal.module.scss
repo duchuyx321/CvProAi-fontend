@@ -1,0 +1,189 @@
+.body {
+    padding: 8px 0;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 0;
+    color: var(--text-secondary);
+
+    .spinning {
+        animation: spin 1s linear infinite;
+        width: 24px;
+        height: 24px;
+        color: var(--primary);
+    }
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+
+        .required {
+            color: var(--danger);
+        }
+    }
+
+    .input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--text-primary);
+        background-color: var(--surface);
+        transition: all 0.2s ease;
+        font-family: inherit;
+
+        &:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(46, 112, 184, 0.1);
+        }
+
+        &::placeholder {
+            color: var(--text-tertiary);
+        }
+    }
+    
+    textarea.input {
+        resize: vertical;
+        min-height: 80px;
+    }
+}
+
+.planList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.planItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: var(--surface);
+
+    &:hover {
+        border-color: var(--primary);
+        background-color: var(--bg-hover);
+    }
+
+    &.active {
+        border-color: var(--primary);
+        background-color: rgba(46, 112, 184, 0.05);
+        box-shadow: 0 2px 8px rgba(46, 112, 184, 0.1);
+    }
+
+    input[type='radio'] {
+        margin-top: 2px;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    .planInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        strong {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .price {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+    }
+}
+
+.noPlans {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 12px 0;
+}
+
+.footerActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    .cancelBtn {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+
+        &:hover:not(:disabled) {
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
+        }
+    }
+
+    .submitBtn {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+
+        &:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .spinning {
+            animation: spin 1s linear infinite;
+            width: 16px;
+            height: 16px;
+        }
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
