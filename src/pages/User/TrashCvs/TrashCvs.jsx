@@ -22,7 +22,7 @@ import CardItemCV from '../MyCvs/components/CardItemCV';
 import {
     forceDeleteMyCv,
     getTrashCvs,
-    resotreMyCv,
+    restoreMyCv,
 } from '~/services/trash-cv.service';
 import styles from './TrashCvs.module.scss';
 
@@ -54,7 +54,7 @@ const getSortParam = (value) => {
     }
 
     return {
-        sort_by: 'created_at',
+        sort_by: 'updated_at',
         sort_order: 'DESC',
     };
 };
@@ -72,6 +72,10 @@ const formatDateTime = (value) => {
         hour: '2-digit',
         minute: '2-digit',
     }).format(date);
+};
+
+const normalizeText = (value = '') => {
+    return value.trim().toLowerCase();
 };
 
 const mapTrashItem = (cv) => ({
@@ -97,11 +101,13 @@ function TrashCvs() {
     const [trashList, setTrashList] = useState([]);
     const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [firstLoading, setFirstLoading] = useState(true);
     const [searching, setSearching] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const [restoreItem, setRestoreItem] = useState(null);
     const [deleteForeverItem, setDeleteForeverItem] = useState(null);
+    const [confirmName, setConfirmName] = useState('');
 
     const sortRef = useRef(null);
 
@@ -158,6 +164,7 @@ function TrashCvs() {
                 if (!silent) {
                     toast.error(message);
                 }
+
                 return;
             }
 
@@ -181,6 +188,7 @@ function TrashCvs() {
             }
         } finally {
             setLoading(false);
+            setFirstLoading(false);
 
             setTimeout(() => {
                 setSearching(false);
@@ -211,19 +219,43 @@ function TrashCvs() {
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
     const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
+    const isRestoreConfirmValid =
+        !!restoreItem &&
+        normalizeText(confirmName) === normalizeText(restoreItem.name);
+
+    const isDeleteForeverConfirmValid =
+        !!deleteForeverItem &&
+        normalizeText(confirmName) === normalizeText(deleteForeverItem.name);
+
+    const closeRestoreModal = () => {
+        setRestoreItem(null);
+        setConfirmName('');
+    };
+
+    const closeDeleteForeverModal = () => {
+        setDeleteForeverItem(null);
+        setConfirmName('');
+    };
+
     const handleSearch = (event) => {
         setKeyword(event.target.value);
     };
 
     const handleRestore = (cv) => {
+        setConfirmName('');
         setRestoreItem(cv);
     };
 
     const handleConfirmRestore = async () => {
         if (!restoreItem) return;
 
+        if (!isRestoreConfirmValid) {
+            toast.error('Vui lòng nhập đúng tên CV để khôi phục');
+            return;
+        }
+
         try {
-            const res = await resotreMyCv(restoreItem.id);
+            const res = await restoreMyCv(restoreItem.id);
 
             if (!res?.success) {
                 toast.error(
@@ -233,7 +265,7 @@ function TrashCvs() {
             }
 
             toast.success(`Đã khôi phục "${restoreItem.name}"`);
-            setRestoreItem(null);
+            closeRestoreModal();
 
             const nextPage =
                 currentList.length === 1 && currentPage > 1
@@ -247,6 +279,7 @@ function TrashCvs() {
                     page: nextPage,
                     keywordValue: debouncedKeyword,
                     sort: sortValue,
+                    silent: true,
                 });
             }
         } catch {
@@ -255,11 +288,17 @@ function TrashCvs() {
     };
 
     const handleAskDeleteForever = (cv) => {
+        setConfirmName('');
         setDeleteForeverItem(cv);
     };
 
     const handleConfirmDeleteForever = async () => {
         if (!deleteForeverItem) return;
+
+        if (!isDeleteForeverConfirmValid) {
+            toast.error('Vui lòng nhập đúng tên CV để xóa vĩnh viễn');
+            return;
+        }
 
         try {
             const res = await forceDeleteMyCv(deleteForeverItem.id);
@@ -272,7 +311,7 @@ function TrashCvs() {
             }
 
             toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
-            setDeleteForeverItem(null);
+            closeDeleteForeverModal();
 
             const nextPage =
                 currentList.length === 1 && currentPage > 1
@@ -286,6 +325,7 @@ function TrashCvs() {
                     page: nextPage,
                     keywordValue: debouncedKeyword,
                     sort: sortValue,
+                    silent: true,
                 });
             }
         } catch {
@@ -335,6 +375,7 @@ function TrashCvs() {
                         active: currentPage === page,
                     })}
                     onClick={() => setCurrentPage(page)}
+                    disabled={loading}
                 >
                     {page}
                 </button>
@@ -347,7 +388,7 @@ function TrashCvs() {
             <Button
                 type="button"
                 className={cx('modalCancelBtn')}
-                onClick={() => setRestoreItem(null)}
+                onClick={closeRestoreModal}
             >
                 Hủy
             </Button>
@@ -357,6 +398,7 @@ function TrashCvs() {
                 type="button"
                 className={cx('modalRestoreBtn')}
                 onClick={handleConfirmRestore}
+                disabled={!isRestoreConfirmValid}
             >
                 Khôi phục
             </Button>
@@ -368,7 +410,7 @@ function TrashCvs() {
             <Button
                 type="button"
                 className={cx('modalCancelBtn')}
-                onClick={() => setDeleteForeverItem(null)}
+                onClick={closeDeleteForeverModal}
             >
                 Hủy
             </Button>
@@ -378,13 +420,14 @@ function TrashCvs() {
                 type="button"
                 className={cx('modalDeleteBtn')}
                 onClick={handleConfirmDeleteForever}
+                disabled={!isDeleteForeverConfirmValid}
             >
                 Xóa vĩnh viễn
             </Button>
         </div>
     );
 
-    if (loading) {
+    if (firstLoading && loading) {
         return (
             <div className={cx('wrapper')}>
                 <div className={cx('loading')}>
@@ -446,7 +489,9 @@ function TrashCvs() {
                             onClick={() => setIsOpenSort((prev) => !prev)}
                         >
                             <span className={cx('sortLabel')}>Sắp xếp:</span>
-                            <span className={cx('sortValue')}>{sortValue}</span>
+                            <span className={cx('sortValue')}>
+                                {sortValue}
+                            </span>
                             <FiChevronDown
                                 className={cx('sortArrow', {
                                     open: isOpenSort,
@@ -565,7 +610,7 @@ function TrashCvs() {
                                     type="button"
                                     className={cx('pageBtn', 'navBtn')}
                                     onClick={handlePrevPage}
-                                    disabled={currentPage === 1}
+                                    disabled={currentPage === 1 || loading}
                                 >
                                     <FiChevronLeft />
                                 </button>
@@ -576,7 +621,7 @@ function TrashCvs() {
                                     type="button"
                                     className={cx('pageBtn', 'navBtn')}
                                     onClick={handleNextPage}
-                                    disabled={currentPage === totalPages}
+                                    disabled={currentPage === totalPages || loading}
                                 >
                                     <FiChevronRight />
                                 </button>
@@ -588,11 +633,11 @@ function TrashCvs() {
 
             <Modal
                 isOpen={!!restoreItem}
-                onClose={() => setRestoreItem(null)}
+                onClose={closeRestoreModal}
                 title="Xác nhận khôi phục CV"
                 description={
                     restoreItem
-                        ? `Bạn có chắc muốn khôi phục "${restoreItem.name}" không? CV sẽ quay lại danh sách CV của tôi.`
+                        ? 'Để khôi phục CV này, vui lòng nhập đúng tên CV bên dưới.'
                         : ''
                 }
                 footer={restoreFooter}
@@ -602,16 +647,33 @@ function TrashCvs() {
                     <div className={cx('restoreIcon')}>
                         <FiRotateCcw />
                     </div>
+
+                    <div className={cx('confirmBox')}>
+                        <strong className={cx('confirmName')}>
+                            {restoreItem?.name}
+                        </strong>
+
+                        <input
+                            type="text"
+                            className={cx('confirmInput')}
+                            value={confirmName}
+                            onChange={(event) =>
+                                setConfirmName(event.target.value)
+                            }
+                            placeholder="Nhập tên CV..."
+                            autoFocus
+                        />
+                    </div>
                 </div>
             </Modal>
 
             <Modal
                 isOpen={!!deleteForeverItem}
-                onClose={() => setDeleteForeverItem(null)}
+                onClose={closeDeleteForeverModal}
                 title="Xóa vĩnh viễn CV"
                 description={
                     deleteForeverItem
-                        ? `Bạn có chắc muốn xóa vĩnh viễn "${deleteForeverItem.name}" không? Hành động này không thể hoàn tác.`
+                        ? 'Hành động này không thể hoàn tác. Vui lòng nhập đúng tên CV để tiếp tục.'
                         : ''
                 }
                 footer={modalFooter}
@@ -620,6 +682,23 @@ function TrashCvs() {
                 <div className={cx('modalBody')}>
                     <div className={cx('warningIcon')}>
                         <FiTrash2 />
+                    </div>
+
+                    <div className={cx('confirmBox')}>
+                        <strong className={cx('confirmName')}>
+                            {deleteForeverItem?.name}
+                        </strong>
+
+                        <input
+                            type="text"
+                            className={cx('confirmInput')}
+                            value={confirmName}
+                            onChange={(event) =>
+                                setConfirmName(event.target.value)
+                            }
+                            placeholder="Nhập tên CV..."
+                            autoFocus
+                        />
                     </div>
                 </div>
             </Modal>

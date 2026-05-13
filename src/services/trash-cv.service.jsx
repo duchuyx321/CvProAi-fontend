@@ -15,7 +15,7 @@ export const getTrashCvs = async (params = {}) => {
     }
 };
 
-export const resotreMyCv = async (cvId) => {
+export const restoreMyCv = async (cvId) => {
     try {
         const res = await Response.PATCH(`cvs/restore/${cvId}`);
         return res;

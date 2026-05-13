@@ -315,8 +315,66 @@
 
 .modalBody {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
     padding: 8px 0 4px;
+}
+.confirmBox {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.confirmText {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.5;
+    color: #4b5563;
+    text-align: center;
+}
+
+.confirmName {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #111827;
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-align: center;
+    word-break: break-word;
+}
+
+.confirmInput {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    outline: none;
+    padding: 0 14px;
+    font-size: 1.35rem;
+    color: #111827;
+    background: #fff;
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+}
+
+.modalRestoreBtn,
+.modalDeleteBtn {
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
 }
 
 .restoreIcon {
@@ -514,4 +572,5 @@
     .stateBtn {
         width: 100%;
     }
+    
 }

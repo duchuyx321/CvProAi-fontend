@@ -57,7 +57,7 @@ const getSortParam = (value) => {
     }
 
     return {
-        sort_by: 'created_at',
+        sort_by: 'updated_at',
         sort_order: 'DESC',
     };
 };
@@ -103,6 +103,7 @@ function MyCvs() {
     const [cvList, setCvList] = useState([]);
     const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [firstLoading, setFirstLoading] = useState(true);
     const [searching, setSearching] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -159,6 +160,7 @@ function MyCvs() {
                 if (!silent) {
                     toast.error(message);
                 }
+
                 return;
             }
 
@@ -182,6 +184,7 @@ function MyCvs() {
             }
         } finally {
             setLoading(false);
+            setFirstLoading(false);
 
             setTimeout(() => {
                 setSearching(false);
@@ -254,6 +257,7 @@ function MyCvs() {
                     page: nextPage,
                     keywordValue: debouncedKeyword,
                     sort: sortValue,
+                    silent: true,
                 });
             }
         } catch {
@@ -307,6 +311,7 @@ function MyCvs() {
                         active: currentPage === page,
                     })}
                     onClick={() => setCurrentPage(page)}
+                    disabled={loading}
                 >
                     {page}
                 </button>
@@ -335,7 +340,7 @@ function MyCvs() {
         </div>
     );
 
-    if (loading) {
+    if (firstLoading && loading) {
         return (
             <div className={cx('wrapper')}>
                 <div className={cx('loading')}>Đang tải danh sách CV...</div>
@@ -517,7 +522,7 @@ function MyCvs() {
                                     type="button"
                                     className={cx('pageBtn', 'navBtn')}
                                     onClick={handlePrevPage}
-                                    disabled={currentPage === 1}
+                                    disabled={currentPage === 1 || loading}
                                 >
                                     <FiChevronLeft />
                                 </button>
@@ -528,7 +533,7 @@ function MyCvs() {
                                     type="button"
                                     className={cx('pageBtn', 'navBtn')}
                                     onClick={handleNextPage}
-                                    disabled={currentPage === totalPages}
+                                    disabled={currentPage === totalPages || loading}
                                 >
                                     <FiChevronRight />
                                 </button>
@@ -544,7 +549,7 @@ function MyCvs() {
                 title="Xác nhận xóa CV"
                 description={
                     deleteItem
-                        ? `Bạn có chắc muốn xóa "${deleteItem.name}" không? Hành động này không thể hoàn tác.`
+                        ? `Bạn có chắc muốn xóa "${deleteItem.name}" không? CV sẽ được chuyển vào thùng rác.`
                         : ''
                 }
                 footer={deleteFooter}
