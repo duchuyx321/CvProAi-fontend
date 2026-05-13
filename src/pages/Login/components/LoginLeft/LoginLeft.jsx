@@ -90,7 +90,10 @@ function LoginLeft() {
     const fetchAPI = async (email, password) => {
         const result = await login(email, password);
         if (!result?.success) {
-            if (result?.status === 403) {
+            if (
+                result?.status === 403 &&
+                result?.message === 'Tài khoản chưa được xác thực email!'
+            ) {
                 setTimeout(
                     () =>
                         navigate(config.router.otp_verify, {
