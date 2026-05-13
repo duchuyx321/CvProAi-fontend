@@ -61,7 +61,6 @@ export const editOrder = async (code, id, data) => {
             throw new Error('Thiếu ID đơn hàng');
         }
 
-        const safeCode = encodeURIComponent(code);
         const safeId = encodeURIComponent(id);
 
         const res = await Response.PATCH(`admin/payments/edit/${safeId}`, data);

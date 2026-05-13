@@ -314,7 +314,7 @@ function RecentOrdersTable({ orders = [] }) {
         <div className={cx('panel', 'tablePanel')}>
             <div className={cx('panelHeader')}>
                 <h3>Giao dịch gần đây</h3>
-                <Link to={config.router.manageOrders} className={cx('linkBtn')}>
+                <Link to={config.router.adminOrders} className={cx('linkBtn')}>
                     Xem tất cả
                 </Link>
             </div>
@@ -531,72 +531,74 @@ export default function AdminDashboard() {
         }));
     }, []);
 
-    const fetchDashboardData = useCallback(async (
-        params,
-        showRefresh = false,
-    ) => {
-        const shouldShowErrorState =
-            !showRefresh || !hasDashboardDataRef.current;
+    const fetchDashboardData = useCallback(
+        async (params, showRefresh = false) => {
+            const shouldShowErrorState =
+                !showRefresh || !hasDashboardDataRef.current;
 
-        try {
-            if (showRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
+            try {
+                if (showRefresh) {
+                    setRefreshing(true);
+                } else {
+                    setLoading(true);
+                }
 
-            if (!showRefresh) {
+                if (!showRefresh) {
+                    setErrorMessage('');
+                }
+
+                const res = await getAdminDashboard(params);
+
+                if (!res?.success) {
+                    const message =
+                        res?.message ||
+                        res?.messsage ||
+                        'Không tải được dashboard';
+                    if (shouldShowErrorState) {
+                        setErrorMessage(message);
+                    }
+                    return { success: false, message };
+                }
+
+                const dashboardData = res?.data || {};
+
+                hasDashboardDataRef.current = true;
                 setErrorMessage('');
-            }
+                setStats(mapStats(dashboardData?.summary));
+                setChartData(mapChartData(dashboardData?.chartLineData));
+                setChartPieData(dashboardData?.chartPieData || {});
 
-            const res = await getAdminDashboard(params);
+                setSubscriptionData({
+                    premiumUpgradeRate: `${
+                        dashboardData?.chartProgress?.premiumRate || 0
+                    }%`,
+                    paymentSuccessRate: `${
+                        dashboardData?.chartProgress?.paymentPaidRate || 0
+                    }%`,
+                    pendingOrders: dashboardData?.chartProgress?.pending || 0,
+                    failedPayments: dashboardData?.chartProgress?.canceled || 0,
+                });
 
-            if (!res?.success) {
+                setRecentOrders(
+                    mapRecentOrders(
+                        dashboardData?.payments?.data?.data || [],
+                    ).slice(0, 4),
+                );
+                return { success: true };
+            } catch (error) {
                 const message =
-                    res?.message || res?.messsage || 'Không tải được dashboard';
+                    error?.message || 'Có lỗi xảy ra khi tải dashboard';
                 if (shouldShowErrorState) {
                     setErrorMessage(message);
                 }
                 return { success: false, message };
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
             }
-
-            const dashboardData = res?.data || {};
-
-            hasDashboardDataRef.current = true;
-            setErrorMessage('');
-            setStats(mapStats(dashboardData?.summary));
-            setChartData(mapChartData(dashboardData?.chartLineData));
-            setChartPieData(dashboardData?.chartPieData || {});
-
-            setSubscriptionData({
-                premiumUpgradeRate: `${
-                    dashboardData?.chartProgress?.premiumRate || 0
-                }%`,
-                paymentSuccessRate: `${
-                    dashboardData?.chartProgress?.paymentPaidRate || 0
-                }%`,
-                pendingOrders: dashboardData?.chartProgress?.pending || 0,
-                failedPayments: dashboardData?.chartProgress?.canceled || 0,
-            });
-
-            setRecentOrders(
-                mapRecentOrders(
-                    dashboardData?.payments?.data?.data || [],
-                ).slice(0, 4),
-            );
-            return { success: true };
-        } catch (error) {
-            const message =
-                error?.message || 'Có lỗi xảy ra khi tải dashboard';
-            if (shouldShowErrorState) {
-                setErrorMessage(message);
-            }
-            return { success: false, message };
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, [mapChartData, mapRecentOrders, mapStats]);
+        },
+        [mapChartData, mapRecentOrders, mapStats],
+    );
 
     useEffect(() => {
         fetchDashboardData(filterParams);
