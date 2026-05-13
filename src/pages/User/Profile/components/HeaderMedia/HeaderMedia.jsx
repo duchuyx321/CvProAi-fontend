@@ -4,7 +4,7 @@ import { MdOutlineCameraAlt } from 'react-icons/md';
 import { toast } from 'react-toastify';
 
 import Button from '~/components/Button';
-import { updateAvatar, updateCover } from '~/services/profile.service';
+import { updateProfile } from '~/services/profile.service';
 import styles from './HeaderMedia.module.scss';
 
 const cx = classNames.bind(styles);
@@ -34,60 +34,51 @@ const readFileAsDataUrl = (file) => {
     });
 };
 
+const getApiMessage = (response, fallback) => {
+    return response?.message || response?.messsage || fallback;
+};
+
 function HeaderMedia({
     fullName = '',
     summary = '',
     avatarUrl = '',
-    cover = '',
     onAvatarUrlChange,
-    onCoverChange,
 }) {
     const avatarInputRef = useRef(null);
-    const coverInputRef = useRef(null);
 
     const [avatarPreview, setAvatarPreview] = useState(avatarUrl || '');
-    const [coverPreview, setCoverPreview] = useState(cover || '');
-    const [avatarSubmitting, setAvatarSubmitting] = useState(false);
-    const [coverSubmitting, setCoverSubmitting] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         setAvatarPreview(avatarUrl || '');
     }, [avatarUrl]);
 
-    useEffect(() => {
-        setCoverPreview(cover || '');
-    }, [cover]);
-
-    const handleOpenAvatarPicker = () => {
-        if (avatarSubmitting) return;
+    const handleOpenImagePicker = () => {
+        if (submitting) return;
 
         avatarInputRef.current?.click();
     };
 
-    const handleOpenCoverPicker = () => {
-        if (coverSubmitting) return;
-
-        coverInputRef.current?.click();
-    };
-
     const handleChangeAvatar = async (event) => {
         const file = event.target.files?.[0];
+
         if (!file) return;
 
         try {
-            setAvatarSubmitting(true);
+            setSubmitting(true);
 
             const previewUrl = await readFileAsDataUrl(file);
             setAvatarPreview(previewUrl);
 
-            const formData = new FormData();
-
-            formData.append('avatar', file);
-
-            const updatePromise = updateAvatar(formData).then((result) => {
-                if (!result?.success) {
+            const updatePromise = updateProfile({
+                avatarFile: file,
+            }).then((result) => {
+                if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
-                        result?.message || 'Cập nhật ảnh đại diện thất bại',
+                        getApiMessage(
+                            result,
+                            'Cập nhật ảnh đại diện thất bại',
+                        ),
                     );
                 }
 
@@ -98,8 +89,9 @@ function HeaderMedia({
                 pending: 'Đang cập nhật ảnh đại diện...',
                 success: {
                     render({ data }) {
-                        return (
-                            data?.message || 'Cập nhật ảnh đại diện thành công'
+                        return getApiMessage(
+                            data,
+                            'Cập nhật ảnh đại diện thành công',
                         );
                     },
                 },
@@ -107,6 +99,7 @@ function HeaderMedia({
                     render({ data }) {
                         return (
                             data?.message ||
+                            data?.messsage ||
                             'Có lỗi xảy ra, vui lòng thử lại sau'
                         );
                     },
@@ -114,74 +107,18 @@ function HeaderMedia({
             });
 
             const nextAvatarUrl =
+                result?.data?.profile?.avatar_url ||
                 result?.data?.avatar_url ||
+                result?.data?.data?.profile?.avatar_url ||
                 result?.data?.data?.avatar_url ||
-                result?.data?.url ||
                 previewUrl;
 
             setAvatarPreview(nextAvatarUrl);
-
             onAvatarUrlChange?.(nextAvatarUrl);
         } catch {
             setAvatarPreview(avatarUrl || '');
         } finally {
-            setAvatarSubmitting(false);
-            event.target.value = '';
-        }
-    };
-
-    const handleChangeCover = async (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        try {
-            setCoverSubmitting(true);
-
-            const previewUrl = await readFileAsDataUrl(file);
-            setCoverPreview(previewUrl);
-
-            const formData = new FormData();
-            formData.append('cover', file);
-
-            const updatePromise = updateCover(formData).then((result) => {
-                if (!result?.success) {
-                    throw new Error(
-                        result?.message || 'Cập nhật ảnh bìa thất bại',
-                    );
-                }
-
-                return result;
-            });
-
-            const result = await toast.promise(updatePromise, {
-                pending: 'Đang cập nhật ảnh bìa...',
-                success: {
-                    render({ data }) {
-                        return data?.message || 'Cập nhật ảnh bìa thành công';
-                    },
-                },
-                error: {
-                    render({ data }) {
-                        return (
-                            data?.message ||
-                            'Có lỗi xảy ra, vui lòng thử lại sau'
-                        );
-                    },
-                },
-            });
-
-            const nextCover =
-                result?.data?.cover ||
-                result?.data?.data?.cover ||
-                result?.data?.url ||
-                previewUrl;
-
-            setCoverPreview(nextCover);
-            onCoverChange?.(nextCover);
-        } catch {
-            setCoverPreview(cover || '');
-        } finally {
-            setCoverSubmitting(false);
+            setSubmitting(false);
             event.target.value = '';
         }
     };
@@ -189,33 +126,17 @@ function HeaderMedia({
     return (
         <section className={cx('wrapper')}>
             <div className={cx('cover')}>
-                {coverPreview ? (
-                    <img
-                        src={coverPreview}
-                        alt="Ảnh bìa"
-                        className={cx('cover-img')}
-                    />
-                ) : (
-                    <div className={cx('cover-empty')} />
-                )}
+                <div className={cx('cover-empty')} />
 
-                <Button
+                {/* <Button
                     type="button"
                     className={cx('cover-btn')}
-                    onClick={handleOpenCoverPicker}
-                    disabled={coverSubmitting}
+                    onClick={handleOpenImagePicker}
+                    disabled={submitting}
                     leftIcon={<MdOutlineCameraAlt />}
                 >
-                    {coverSubmitting ? 'Đang tải...' : 'Chỉnh sửa ảnh bìa'}
-                </Button>
-
-                <input
-                    ref={coverInputRef}
-                    type="file"
-                    accept="image/*"
-                    className={cx('hidden')}
-                    onChange={handleChangeCover}
-                />
+                    {submitting ? 'Đang tải...' : 'Chỉnh sửa ảnh bìa'}
+                </Button> */}
             </div>
 
             <div className={cx('inner')}>
@@ -237,8 +158,8 @@ function HeaderMedia({
                     <button
                         type="button"
                         className={cx('avatar-btn')}
-                        onClick={handleOpenAvatarPicker}
-                        disabled={avatarSubmitting}
+                        onClick={handleOpenImagePicker}
+                        disabled={submitting}
                         aria-label="Cập nhật ảnh đại diện"
                     >
                         <MdOutlineCameraAlt />

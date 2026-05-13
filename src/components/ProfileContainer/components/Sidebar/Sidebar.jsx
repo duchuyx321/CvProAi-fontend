@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { NavLink } from 'react-router-dom';
-import { MdOutlineInventory2, MdOutlinePersonOutline, MdOutlineSecurity } from 'react-icons/md';
+import {
+    MdOutlineInventory2,
+    MdOutlinePersonOutline,
+    MdOutlineSecurity,
+} from 'react-icons/md';
+import { RiHistoryLine } from 'react-icons/ri';
 
 import { config } from '~/config';
-import { getProfile } from '~/services/profile.service';
+import { useAuth } from '~/context/AuthContext';
 import styles from './Sidebar.module.scss';
-import { RiHistoryLine } from 'react-icons/ri';
-import { toast } from 'react-toastify';
 
 const cx = classNames.bind(styles);
 
@@ -49,28 +51,12 @@ function getInitial(name = '') {
 }
 
 function Sidebar() {
-    const [user, setUser] = useState({});
+    const { user } = useAuth();
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const result = await getProfile();
-                if (!result?.success) {
-                    throw new Error(
-                        result?.message || 'Không thể tải thông tin cá nhân',
-                    )
-                }
-                setUser(result?.data || {});
-            } catch (error) {
-                toast.error(
-                    error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau'
-                )
-            }
-        }
-        fetchProfile();
-    }, [])
-
-    const hasAvatar = Boolean(user?.avatar_url);
+    const fullName = user?.full_name;
+    const role = user?.role;
+    const avatarUrl = user?.profile?.avatar_url || '';
+    const hasAvatar = Boolean(avatarUrl);
 
     return (
         <aside className={cx('wrapper')}>
@@ -79,22 +65,22 @@ function Sidebar() {
                     <div className={cx('avatar')}>
                         {hasAvatar ? (
                             <img
-                                src={user?.avatar_url}
-                                alt={user?.full_name}
+                                src={avatarUrl}
+                                alt={fullName}
                                 className={cx('avatarImg')}
                             />
                         ) : (
                             <span className={cx('avatarText')}>
-                                {getInitial(user?.full_name)}
+                                {getInitial(fullName)}
                             </span>
                         )}
                     </div>
 
-                    <h2 className={cx('name')}>{user?.full_name || ''}</h2>
-                    <p className={cx('role')}>{user?.role || ''}</p>
+                    <h2 className={cx('name')}>{fullName}</h2>
+                    <p className={cx('role')}>{role}</p>
                 </div>
 
-                <div className={cx('line')}></div>
+                <div className={cx('line')} />
 
                 <nav className={cx('menu')}>
                     {LIST_SIDEBARS.map((item) => (
