@@ -16,6 +16,7 @@ export const router = {
     dashboard: '/dashboard',
     cvTemplates: '/user/cv-templates',
     CvTemplateDetail: '/cv-templates/:code',
+    export: '/export',
 
     // CV editor
     createCv: '/create-cv/:code',

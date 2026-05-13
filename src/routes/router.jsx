@@ -37,6 +37,7 @@ import EditCv from '~/pages/User/EditCv';
 
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
+import Export from '~/pages/Export';
 
 // public router
 const PublicRouter = [
@@ -179,6 +180,11 @@ const UserRouter = [
         path: config.router.paymentSuccess,
         component: PaymentSuccess,
         layout: DetailLayout,
+    },
+    {
+        path: config.router.export,
+        component: Export,
+        layout: DefaultLayout,
     },
 ];
 
