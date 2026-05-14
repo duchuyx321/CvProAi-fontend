@@ -7,6 +7,10 @@ import styles from './AnalysisHistoryRow.module.scss';
 const cx = classNames.bind(styles);
 
 const STATUS_META = {
+    SUCCESS: {
+        label: 'Thành công',
+        className: 'completed',
+    },
     COMPLETED: {
         label: 'Hoàn thành',
         className: 'completed',
@@ -52,6 +56,16 @@ function formatTime(value) {
     }).format(date);
 }
 
+function getScoreValue(item) {
+    const rawScore = item?.ai_result?.overall_score;
+
+    const score = Number(rawScore);
+
+    if (Number.isNaN(score)) return 0;
+
+    return score;
+}
+
 function getScoreClassName(score) {
     if (score >= 80) return 'high';
     if (score >= 50) return 'medium';
@@ -59,13 +73,21 @@ function getScoreClassName(score) {
     return 'low';
 }
 
+function formatScore(score) {
+    if (!score) return '0';
+
+    return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
 function AnalysisHistoryRow({ item, onViewDetail }) {
-    const statusMeta = STATUS_META[item.status] || {
-        label: item.status || '--',
+    const statusMeta = STATUS_META[item?.status] || {
+        label: item?.status || '--',
         className: 'default',
     };
 
-    const scoreClassName = getScoreClassName(Number(item.score));
+    const score = getScoreValue(item);
+    const scoreClassName = getScoreClassName(score);
+    const isSuccess = item?.status === 'SUCCESS' || item?.status === 'COMPLETED';
 
     return (
         <tr className={cx('row')}>
@@ -76,28 +98,28 @@ function AnalysisHistoryRow({ item, onViewDetail }) {
                     </div>
 
                     <div className={cx('cvMeta')}>
-                        <strong>{item.file_name || '--'}</strong>
-                        <span>Vị trí: {item.position || '--'}</span>
+                        <strong>{item?.cv_name || '--'}</strong>
+                        <span>Vị trí: {item?.job_title || '--'}</span>
                     </div>
                 </div>
             </td>
 
             <td>
                 <div className={cx('dateInfo')}>
-                    <strong>{formatDate(item.createdAt)}</strong>
-                    <span>{formatTime(item.createdAt)}</span>
+                    <strong>{formatDate(item?.createdAt)}</strong>
+                    <span>{formatTime(item?.createdAt)}</span>
                 </div>
             </td>
 
             <td>
                 <div className={cx('scoreInfo', scoreClassName)}>
-                    <strong>{Number(item.score) || 0}%</strong>
+                    <strong>{isSuccess ? `${formatScore(score)}%` : '--'}</strong>
 
                     <div className={cx('scoreTrack')}>
                         <span
                             className={cx('scoreBar')}
                             style={{
-                                width: `${Number(item.score) || 0}%`,
+                                width: `${isSuccess ? score : 0}%`,
                             }}
                         />
                     </div>
@@ -115,6 +137,7 @@ function AnalysisHistoryRow({ item, onViewDetail }) {
                     type="button"
                     className={cx('detailButton')}
                     onClick={() => onViewDetail?.(item)}
+                    disabled={!item?.id}
                 >
                     Xem chi tiết
                 </Button>

@@ -16,8 +16,6 @@ const PAGE_SIZE = 8;
 
 const AnalysisSortBy = {
     CREATED_AT: 'createdAt',
-    SCORE: 'score',
-    FILE_NAME: 'file_name',
 };
 
 const SortOrder = {
@@ -36,21 +34,6 @@ const SORT_OPTIONS = [
         sort_by: AnalysisSortBy.CREATED_AT,
         sort_order: SortOrder.ASC,
     },
-    {
-        label: 'Điểm cao nhất',
-        sort_by: AnalysisSortBy.SCORE,
-        sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Điểm thấp nhất',
-        sort_by: AnalysisSortBy.SCORE,
-        sort_order: SortOrder.ASC,
-    },
-    {
-        label: 'Tên CV: A → Z',
-        sort_by: AnalysisSortBy.FILE_NAME,
-        sort_order: SortOrder.ASC,
-    },
 ];
 
 const RANGE_OPTIONS = [
@@ -66,15 +49,6 @@ const DEFAULT_META = {
     limit: PAGE_SIZE,
     total_items: 0,
     total_pages: 1,
-};
-
-const DEFAULT_FILTERS = {
-    search: '',
-    sort_by: AnalysisSortBy.CREATED_AT,
-    sort_order: SortOrder.DESC,
-    range: '30d',
-    from: '',
-    to: '',
 };
 
 function getPageFromUrl() {
@@ -95,39 +69,6 @@ function syncPageToUrl(nextPage, replace = false) {
     window.history[method](null, '', nextUrl);
 }
 
-function normalizeToolbarFilters({ search, sort, range }) {
-    const nextFilters = {
-        search: search || '',
-        sort_by: sort?.sort_by || DEFAULT_FILTERS.sort_by,
-        sort_order: sort?.sort_order || DEFAULT_FILTERS.sort_order,
-        range: '',
-        from: '',
-        to: '',
-    };
-
-    if (typeof range === 'string') {
-        nextFilters.range = range;
-        return nextFilters;
-    }
-
-    nextFilters.range = 'custom';
-    nextFilters.from = range?.from || '';
-    nextFilters.to = range?.to || '';
-
-    return nextFilters;
-}
-
-function isSameFilters(currentFilters, nextFilters) {
-    return (
-        currentFilters.search === nextFilters.search &&
-        currentFilters.sort_by === nextFilters.sort_by &&
-        currentFilters.sort_order === nextFilters.sort_order &&
-        currentFilters.range === nextFilters.range &&
-        currentFilters.from === nextFilters.from &&
-        currentFilters.to === nextFilters.to
-    );
-}
-
 function CvAnalysisHistory() {
     const navigate = useNavigate();
 
@@ -135,7 +76,14 @@ function CvAnalysisHistory() {
     const [page, setPage] = useState(getPageFromUrl);
     const [meta, setMeta] = useState(DEFAULT_META);
     const [loading, setLoading] = useState(false);
-    const [filters, setFilters] = useState(DEFAULT_FILTERS);
+    const [filters, setFilters] = useState({
+        search: '',
+        sort_by: AnalysisSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+        range: '30d',
+        from: '',
+        to: '',
+    });
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -157,9 +105,9 @@ function CvAnalysisHistory() {
                 const payload = {
                     page,
                     limit: PAGE_SIZE,
-                    search: filters.search,
                     sort_by: filters.sort_by,
                     sort_order: filters.sort_order,
+                    search: filters.search,
                 };
 
                 if (filters.range === 'custom') {
@@ -169,11 +117,9 @@ function CvAnalysisHistory() {
                     payload.range = filters.range;
                 }
 
-                const response = await getAnalysisHistory(payload);
+                const result = await getAnalysisHistory(payload);
 
                 if (ignore) return;
-
-                const result = response?.data || response || {};
 
                 if (result?.status >= 400 || result?.success === false) {
                     setHistories([]);
@@ -231,13 +177,32 @@ function CvAnalysisHistory() {
 
     const handleToolbarChange = useCallback(
         ({ search, sort, range }) => {
-            const nextFilters = normalizeToolbarFilters({
-                search,
-                sort,
-                range,
-            });
+            const nextFilters = {
+                search: search || '',
+                sort_by: sort?.sort_by || AnalysisSortBy.CREATED_AT,
+                sort_order: sort?.sort_order || SortOrder.DESC,
+                range: '',
+                from: '',
+                to: '',
+            };
 
-            if (isSameFilters(filters, nextFilters)) return;
+            if (typeof range === 'string') {
+                nextFilters.range = range;
+            } else {
+                nextFilters.range = 'custom';
+                nextFilters.from = range?.from || '';
+                nextFilters.to = range?.to || '';
+            }
+
+            const isSame =
+                filters.search === nextFilters.search &&
+                filters.sort_by === nextFilters.sort_by &&
+                filters.sort_order === nextFilters.sort_order &&
+                filters.range === nextFilters.range &&
+                filters.from === nextFilters.from &&
+                filters.to === nextFilters.to;
+
+            if (isSame) return;
 
             setFilters(nextFilters);
             setPage(1);
@@ -263,11 +228,11 @@ function CvAnalysisHistory() {
                 <GenericAdminToolbar
                     sortOptions={SORT_OPTIONS}
                     rangeOptions={RANGE_OPTIONS}
-                    defaultSortBy={DEFAULT_FILTERS.sort_by}
-                    defaultSortOrder={DEFAULT_FILTERS.sort_order}
-                    defaultRange={DEFAULT_FILTERS.range}
+                    defaultSortBy={AnalysisSortBy.CREATED_AT}
+                    defaultSortOrder={SortOrder.DESC}
+                    defaultRange="30d"
                     onChange={handleToolbarChange}
-                    searchPlaceholder="Tìm kiếm theo tên CV..."
+                    searchPlaceholder="Tìm kiếm theo tên CV hoặc vị trí..."
                     searchLoading={loading && Boolean(filters.search)}
                 />
             </div>

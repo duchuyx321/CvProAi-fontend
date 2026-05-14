@@ -27,7 +27,7 @@ export const getAnalysisHistory = async ({
     try {
         const res = await Response.GET(`ai-analysis?${queryUrl}`);
 
-        return res.data;
+        return res;
     } catch (error) {
         const status = error?.status || error?.response?.status;
         const data = error?.response?.data || {};
