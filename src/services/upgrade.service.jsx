@@ -108,8 +108,17 @@ export const createPayment = async (
     addon_package_id,
 ) => {
     try {
-        if (!paymentable_type || !plan_id || !addon_package_id) {
+        if (!paymentable_type) {
             throw new Error('dữ liệu gửi lên không hợp lệ.');
+        }
+        if (paymentable_type === 'SUBSCRIPTION' && !plan_id) {
+            throw new Error('Vui lòng chọn gói.');
+        }
+        if (paymentable_type === 'AI_ADDON' && !addon_package_id) {
+            throw new Error('Vui lòng chọn gói.');
+        }
+        if (paymentable_type === 'BOTH' && (!plan_id || !addon_package_id)) {
+            throw new Error('Vui lòng chọn gói.');
         }
         const result = await Response.POST('payments/create', {
             paymentable_type,

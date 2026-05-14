@@ -106,8 +106,8 @@ function ManagePackages() {
     }, []);
 
     const handleConfirmExport = useCallback(
-        (nextConfig) => {
-            exportPackageRows(filteredPackages, nextConfig);
+        async (nextConfig) => {
+            await exportPackageRows(filteredPackages, nextConfig);
             setIsExportModalOpen(false);
         },
         [filteredPackages]

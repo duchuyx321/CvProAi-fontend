@@ -1,6 +1,3 @@
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-import * as XLSX from 'xlsx-js-style';
 import { EXPORT_COLUMN_OPTIONS, STATUS_LABEL_MAP } from '../constants';
 import {
     formatCurrency,
@@ -9,11 +6,39 @@ import {
 } from './packageFormatters';
 import { endOfDay, startOfDay } from './packageFilter';
 
-pdfMake.vfs = pdfFonts?.pdfMake?.vfs || pdfFonts;
-
 const EXPORT_COLUMN_LABEL_MAP = Object.fromEntries(
     EXPORT_COLUMN_OPTIONS.map((item) => [item.value, item.label])
 );
+
+let xlsxModulePromise;
+let pdfMakePromise;
+
+async function loadXlsxModule() {
+    if (!xlsxModulePromise) {
+        xlsxModulePromise = import('xlsx-js-style').then(
+            (module) => module.default || module
+        );
+    }
+
+    return xlsxModulePromise;
+}
+
+async function loadPdfMake() {
+    if (!pdfMakePromise) {
+        pdfMakePromise = Promise.all([
+            import('pdfmake/build/pdfmake'),
+            import('pdfmake/build/vfs_fonts'),
+        ]).then(([pdfMakeModule, pdfFontsModule]) => {
+            const pdfMake = pdfMakeModule.default || pdfMakeModule;
+            const pdfFonts = pdfFontsModule.default || pdfFontsModule;
+
+            pdfMake.vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs || pdfFonts;
+            return pdfMake;
+        });
+    }
+
+    return pdfMakePromise;
+}
 
 function getExportCellValue(item, column) {
     switch (column) {
@@ -133,7 +158,8 @@ function exportRowsAsJson(rows = [], columns = []) {
     downloadBlob(blob, createExportFilename('json'));
 }
 
-function exportRowsAsExcel(rows = [], columns = []) {
+async function exportRowsAsExcel(rows = [], columns = []) {
+    const XLSX = await loadXlsxModule();
     const headers = columns.map(
         (column) => EXPORT_COLUMN_LABEL_MAP[column] || column
     );
@@ -225,7 +251,8 @@ function exportRowsAsExcel(rows = [], columns = []) {
     XLSX.writeFile(workbook, createExportFilename('xlsx'));
 }
 
-function exportRowsAsPdf(rows = [], columns = []) {
+async function exportRowsAsPdf(rows = [], columns = []) {
+    const pdfMake = await loadPdfMake();
     const headers = columns.map(
         (column) => EXPORT_COLUMN_LABEL_MAP[column] || column
     );
@@ -285,7 +312,7 @@ function exportRowsAsPdf(rows = [], columns = []) {
         .download(createExportFilename('pdf'));
 }
 
-export function exportPackageRows(rows = [], config = {}) {
+export async function exportPackageRows(rows = [], config = {}) {
     const selectedColumns = config.columns || [];
 
     if (selectedColumns.length === 0) {
@@ -300,11 +327,11 @@ export function exportPackageRows(rows = [], config = {}) {
     }
 
     if (config.format === 'excel') {
-        exportRowsAsExcel(scopedRows, selectedColumns);
+        await exportRowsAsExcel(scopedRows, selectedColumns);
         return;
     }
 
     if (config.format === 'pdf') {
-        exportRowsAsPdf(scopedRows, selectedColumns);
+        await exportRowsAsPdf(scopedRows, selectedColumns);
     }
 }

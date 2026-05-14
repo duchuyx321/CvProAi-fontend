@@ -114,10 +114,11 @@ function UpgradeOptionsPage() {
     }
     const handleContinuePayment = async () => {
         setIsLoadingPayment(true);
+        console.log(selectedPlan);
         try {
             const paymentPromise = fetchApi({
                 plan_id: selectedPlan.plan?.id,
-                addon_package_id: selectedPlan?.addon?.id,
+                addon_package_id: selectedPlan?.addon?.id || null,
             });
             const result = await toast.promise(paymentPromise, {
                 pending: 'Đang tạo đơn hàng...',

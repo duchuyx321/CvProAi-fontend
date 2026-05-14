@@ -104,11 +104,16 @@ function Payment() {
                     toast.success(
                         'Thanh toán thành công. Tài khoản đã được kích hoạt.',
                     );
-
                     setTimeout(() => {
-                        navigate(config.router.upgradePremium, {
-                            replace: true,
-                        });
+                        navigate(
+                            config.router.paymentSuccess.replace(
+                                ':orderId',
+                                payment_id,
+                            ),
+                            {
+                                replace: true,
+                            },
+                        );
                     }, 1200);
                 }
 
@@ -119,6 +124,17 @@ function Payment() {
                 ) {
                     clearInterval(intervalId);
                     toast.error('Thanh toán thất bại hoặc đã bị hủy.');
+                    setTimeout(() => {
+                        navigate(
+                            config.router.paymentSuccess.replace(
+                                ':orderId',
+                                payment_id,
+                            ),
+                            {
+                                replace: true,
+                            },
+                        );
+                    }, 1200);
                 }
             } catch (error) {
                 console.log('CHECK PAYMENT STATUS ERROR:', error);

@@ -2,29 +2,18 @@ import * as Response from '~/utils/HttpsRequest';
 
 const buildErrorResponse = (error) => {
     const status = error?.status || error?.response?.status;
-    const data = error?.response?.data;
+    const data = error?.response?.data || {};
 
     return {
+        ...data,
         success: false,
         message:
             data?.message ||
+            data?.messsage ||
             error?.message ||
             'Có lỗi xảy ra, vui lòng thử lại sau',
-        data: data?.data,
         status,
     };
-};
-
-const removeInvalidPayloadFields = (payload = {}) => {
-    return Object.keys(payload).reduce((acc, key) => {
-        const value = payload[key];
-
-        if (value !== undefined && value !== null) {
-            acc[key] = value;
-        }
-
-        return acc;
-    }, {});
 };
 
 export const getProfile = async () => {
@@ -35,31 +24,65 @@ export const getProfile = async () => {
     }
 };
 
+export const buildUpdateProfileFormData = ({
+    full_name,
+    phone,
+    avatar_url,
+    avatarFile,
+    dob,
+    location,
+    headline,
+    summary,
+    links,
+} = {}) => {
+    const formData = new FormData();
+
+    if (full_name !== undefined) {
+        formData.append('full_name', full_name || '');
+    }
+
+    if (phone !== undefined) {
+        formData.append('phone', phone || '');
+    }
+
+    if (avatarFile instanceof File) {
+        formData.append('avatar', avatarFile);
+    } else if (avatar_url !== undefined) {
+        formData.append('avatar_url', avatar_url || '');
+    }
+
+    if (dob !== undefined) {
+        formData.append('dob', dob || '');
+    }
+
+    if (location !== undefined) {
+        formData.append('location', location || '');
+    }
+
+    if (headline !== undefined) {
+        formData.append('headline', headline || '');
+    }
+
+    if (summary !== undefined) {
+        formData.append('summary', summary || '');
+    }
+
+    if (links !== undefined) {
+        formData.append(
+            'links',
+            typeof links === 'string' ? links : JSON.stringify(links || {}),
+        );
+    }
+
+    return formData;
+};
+
 export const updateProfile = async (payload = {}) => {
     try {
-        const rest = removeInvalidPayloadFields(payload);
+        const formData = buildUpdateProfileFormData(payload);
 
-        if (Object.keys(rest).length === 0) {
-            return {
-                success: false,
-                message: 'Không có dữ liệu cần cập nhật',
-            };
-        }
-
-        return await Response.POST('profile/update', rest);
+        return await Response.POST('profile/update', formData);
     } catch (error) {
         return buildErrorResponse(error);
     }
-};
-
-export const updateAvatar = async (avatarUrl) => {
-    return updateProfile({
-        avatar_url: avatarUrl,
-    });
-};
-
-export const updateCover = async (cover) => {
-    return updateProfile({
-        cover,
-    });
 };

@@ -1,0 +1,145 @@
+.wrapper {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid #e5e9f2;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(190px, 220px) minmax(
+            280px,
+            360px
+        );
+    gap: 12px;
+    align-items: start;
+}
+
+.searchControl,
+.rangeControl {
+    min-width: 0;
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.controlLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.select {
+    height: 45px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d9dfeb;
+    padding: 0 14px;
+    background: #fff;
+    outline: none;
+    color: #0f172a;
+    font-size: 1.4rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.customRange {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.dateField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dateLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.dateInput {
+    height: 45px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d9dfeb;
+    padding: 0 14px;
+    background: #fff;
+    outline: none;
+    color: #0f172a;
+    font-size: 1.4rem;
+    line-height: 1.5;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dateInput:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.rangeMessage {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #dc2626;
+    font-size: 1.3rem;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.searchSpinner {
+    color: #4f46e5;
+    animation: admin-toolbar-spin 0.8s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes admin-toolbar-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 1024px) {
+    .row {
+        grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+    }
+
+    .searchControl,
+    .rangeControl {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .wrapper {
+        padding: 12px;
+    }
+
+    .row,
+    .customRange {
+        grid-template-columns: 1fr;
+    }
+
+    .searchControl,
+    .rangeControl {
+        grid-column: auto;
+    }
+}

@@ -216,7 +216,7 @@ export function usePackageDetailForm({
             );
 
             return true;
-        } catch (error) {
+        } catch {
             toast.error('Không thể cập nhật gói dịch vụ.');
             return false;
         } finally {

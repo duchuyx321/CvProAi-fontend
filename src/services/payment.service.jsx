@@ -12,7 +12,7 @@ export const getDetailCheckout = async (payment_id) => {
 };
 export const checkStatus = async (payment_id) => {
     try {
-        const res = await Response.GET(`payments/statuseckout/${payment_id}`);
+        const res = await Response.GET(`payments/status/${payment_id}`);
         return res;
     } catch (error) {
         const status = error?.status || error?.response?.status;

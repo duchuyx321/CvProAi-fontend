@@ -30,28 +30,24 @@ function getLabel(filters) {
     return 'Ngày tạo gói';
 }
 
-function DatePickerDropdown({ filters, onChange }) {
-    const ref = useRef(null);
-    const [open, setOpen] = useState(false);
-    const [draft, setDraft] = useState({
+function createDraftFromFilters(filters) {
+    return {
         createdPreset: filters.createdPreset,
         createdFrom: filters.createdFrom,
         createdTo: filters.createdTo,
-    });
+    };
+}
+
+function DatePickerDropdown({ filters, onChange }) {
+    const ref = useRef(null);
+    const [open, setOpen] = useState(false);
+    const [draft, setDraft] = useState(() => createDraftFromFilters(filters));
     const [error, setError] = useState('');
 
     const isActive =
         filters.createdPreset !== 'all' ||
         Boolean(filters.createdFrom) ||
         Boolean(filters.createdTo);
-
-    useEffect(() => {
-        setDraft({
-            createdPreset: filters.createdPreset,
-            createdFrom: filters.createdFrom,
-            createdTo: filters.createdTo,
-        });
-    }, [filters.createdPreset, filters.createdFrom, filters.createdTo]);
 
     useEffect(() => {
         if (!open) return undefined;
@@ -64,6 +60,15 @@ function DatePickerDropdown({ filters, onChange }) {
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [open]);
+
+    const handleToggleOpen = () => {
+        if (!open) {
+            setDraft(createDraftFromFilters(filters));
+            setError('');
+        }
+
+        setOpen((previousState) => !previousState);
+    };
 
     const handleSelectPreset = (preset) => {
         setError('');
@@ -89,11 +94,7 @@ function DatePickerDropdown({ filters, onChange }) {
     const handleCancel = () => {
         setOpen(false);
         setError('');
-        setDraft({
-            createdPreset: filters.createdPreset,
-            createdFrom: filters.createdFrom,
-            createdTo: filters.createdTo,
-        });
+        setDraft(createDraftFromFilters(filters));
     };
 
     const handleClear = (e) => {
@@ -109,7 +110,7 @@ function DatePickerDropdown({ filters, onChange }) {
             <button
                 type="button"
                 className={cx('filterButton', 'dateButton', { filterButtonActive: isActive })}
-                onClick={() => setOpen((p) => !p)}
+                onClick={handleToggleOpen}
                 aria-label="Lọc theo ngày tạo gói"
             >
                 <MdOutlineCalendarMonth className={cx('dateIcon')} />

@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
         try {
             await logoutApi();
         } catch {
-            // ignore API errors — always clear local state
+            // Always clear local state, even if the API logout fails.
         } finally {
             clearAuthState();
         }

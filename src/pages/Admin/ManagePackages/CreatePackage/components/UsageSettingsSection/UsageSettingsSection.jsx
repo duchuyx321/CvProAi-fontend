@@ -62,26 +62,28 @@ function UsageSettingsSection({
                 </div>
 
                 <div className={cx('limitList')}>
-                    {LIMIT_ITEMS.map(({ key, label, Icon }) => (
-                        <div key={key} className={cx('limitItem')}>
+                    {LIMIT_ITEMS.map((item) => (
+                        <div key={item.key} className={cx('limitItem')}>
                             <div className={cx('limitLeft')}>
                                 <span className={cx('limitIcon')}>
-                                    <Icon />
+                                    <item.Icon />
                                 </span>
-                                <span className={cx('limitLabel')}>{label}</span>
+                                <span className={cx('limitLabel')}>
+                                    {item.label}
+                                </span>
                             </div>
 
                             <input
-                                data-field={key}
+                                data-field={item.key}
                                 className={cx('limitInput', {
-                                    hasError: Boolean(errors[key]),
+                                    hasError: Boolean(errors[item.key]),
                                 })}
                                 type="text"
                                 inputMode="numeric"
-                                value={formData[key]}
+                                value={formData[item.key]}
                                 disabled={disabled}
                                 onChange={(event) =>
-                                    onChangeField(key, event.target.value)
+                                    onChangeField(item.key, event.target.value)
                                 }
                             />
                         </div>

@@ -90,16 +90,16 @@ function BenefitsCard({
 
             <div className={cx('content')}>
                 <div className={cx('limitList')}>
-                    {LIMIT_ITEMS.map(({ key, title, description, Icon }) => (
-                        <div key={key} className={cx('limitCard')}>
+                    {LIMIT_ITEMS.map((item) => (
+                        <div key={item.key} className={cx('limitCard')}>
                             <div className={cx('limitMeta')}>
                                 <span className={cx('limitIcon')}>
-                                    <Icon />
+                                    <item.Icon />
                                 </span>
 
                                 <div className={cx('limitText')}>
-                                    <strong>{title}</strong>
-                                    <span>{description}</span>
+                                    <strong>{item.title}</strong>
+                                    <span>{item.description}</span>
                                 </div>
                             </div>
 
@@ -107,8 +107,8 @@ function BenefitsCard({
                                 <input
                                     type="text"
                                     inputMode="numeric"
-                                    value={formData[key]}
-                                    onChange={handleChangeLimit(key)}
+                                    value={formData[item.key]}
+                                    onChange={handleChangeLimit(item.key)}
                                     disabled={isReadOnly}
                                 />
                             </div>

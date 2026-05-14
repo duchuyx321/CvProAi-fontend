@@ -51,7 +51,7 @@ export function usePackageDelete({ setPackageList, loadPackages }) {
             setIsDeleteModalOpen(false);
             setSelectedPackage(null);
             loadPackages();
-        } catch (error) {
+        } catch {
             toast.error('Không thể xóa gói dịch vụ.');
         } finally {
             setDeleting(false);

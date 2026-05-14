@@ -30,19 +30,22 @@ export const router = {
     security: '/security',
     package: '/package',
     history: '/history',
-
     payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
     upgradeOptions: '/upgrade-options/:slug',
+
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
+    manageUsersDetail: '/admin/manage-users/:userId',
     manageTemplates: '/admin/templates',
+    createTemplate: '/admin/templates/create',
+    previewTemplate: '/admin/templates/preview/:code',
+    editTemplate: '/admin/templates/edit/:code',
     adminSettings: '/admin/settings',
-    manageOrders: '/admin/orders',
     managePackages: '/admin/packages',
-
     createPackage: '/admin/packages/create',
     packageDetail: '/admin/packages/:packageId',
     packageActions: '/admin/packages/:packageId/actions',
+    adminOrders: '/admin/orders',
 };

@@ -115,24 +115,22 @@ function ExportModal({
                     <p className={cx('sectionTitle')}>Định dạng tệp</p>
 
                     <div className={cx('formatGrid')}>
-                        {FORMAT_OPTIONS.map(
-                            ({ value: optionValue, label, Icon }) => (
+                        {FORMAT_OPTIONS.map((item) => (
                                 <button
-                                    key={optionValue}
+                                    key={item.value}
                                     type="button"
                                     className={cx('formatBtn', {
                                         formatBtnActive:
-                                            value?.format === optionValue,
+                                            value?.format === item.value,
                                     })}
                                     onClick={() =>
-                                        handleChangeFormat(optionValue)
+                                        handleChangeFormat(item.value)
                                     }
                                 >
-                                    <Icon />
-                                    <span>{label}</span>
+                                    <item.Icon />
+                                    <span>{item.label}</span>
                                 </button>
-                            )
-                        )}
+                            ))}
                     </div>
                 </section>
 

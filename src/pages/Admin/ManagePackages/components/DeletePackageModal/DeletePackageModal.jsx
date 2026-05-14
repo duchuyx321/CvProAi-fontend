@@ -1,5 +1,5 @@
 import classNames from 'classnames/bind';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MdDeleteOutline, MdErrorOutline, MdWarningAmber } from 'react-icons/md';
 import Button from '~/components/Button';
 import Modal from '~/components/Modal';
@@ -14,14 +14,9 @@ function DeletePackageModal({
     onClose,
     onConfirm,
 }) {
-    const [isConfirmStep, setIsConfirmStep] = useState(false);
-
-    useEffect(() => {
-        if (!open) {
-            setIsConfirmStep(false);
-        }
-    }, [open]);
-
+    const [confirmPackageId, setConfirmPackageId] = useState(null);
+    const packageKey = packageItem?.id || packageItem?.code || packageItem?.name;
+    const isConfirmStep = open && confirmPackageId === packageKey;
     const packageName = packageItem?.name || 'Gói dịch vụ';
 
     const handleClose = () => {
@@ -29,7 +24,7 @@ function DeletePackageModal({
             return;
         }
 
-        setIsConfirmStep(false);
+        setConfirmPackageId(null);
         onClose?.();
     };
 
@@ -39,10 +34,11 @@ function DeletePackageModal({
         }
 
         if (!isConfirmStep) {
-            setIsConfirmStep(true);
+            setConfirmPackageId(packageKey);
             return;
         }
 
+        setConfirmPackageId(null);
         onConfirm?.();
     };
 
