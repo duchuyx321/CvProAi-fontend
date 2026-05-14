@@ -70,8 +70,7 @@ export const AuthProvider = ({ children }) => {
 
             setUser(me);
             return me;
-        } catch (error) {
-            console.log(error);
+        } catch {
             setUser(null);
             return null;
         } finally {

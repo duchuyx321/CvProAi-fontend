@@ -7,7 +7,7 @@ import { GiAlliedStar } from 'react-icons/gi';
 
 import { config } from '~/config';
 import { useAuth } from '~/context/AuthContext';
-// import { getUpgradeFaqs, getUpgradePackages } from '~/services/upgrade.service';
+import { getUpgradeFaqs, getUpgradePackages } from '~/services/upgrade.service';
 import styles from './UpgradePremium.module.scss';
 
 const cx = classNames.bind(styles);
@@ -38,6 +38,7 @@ function UpgradePremium() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [packages, setPackages] = useState([]);
+    const [faqs, setFaqs] = useState([]);
 
     const userTier = useMemo(
         () => user?.tier ?? user?.planTier ?? user?.packageTier ?? 'free',
