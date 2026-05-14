@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getPackageDetail, updatePackage } from '~/services/managePackageService';
-import { DEFAULT_FORM_DATA, FALLBACK_PACKAGES } from '../../../managePackages.utils';
+import { DEFAULT_FORM_DATA } from '../../../managePackages.utils';
 import {
     buildBenefitsPreview,
     buildUpdatePayload,
     createFormSnapshot,
-    findPackageById,
     normalizePackageDetail,
     toDigitsOnly,
     validatePackageDetailForm,
@@ -57,18 +56,10 @@ export function usePackageDetailForm({
                 response;
 
             if (!raw || response?.success === false) {
-                const fallback = findPackageById(FALLBACK_PACKAGES, packageId);
-                if (!fallback) {
-                    if (!routePackage) {
-                        toast.error('Không tìm thấy gói dịch vụ.');
-                        onNotFound?.();
-                    }
-                    return;
+                if (!routePackage) {
+                    toast.error('Không tìm thấy gói dịch vụ.');
+                    onNotFound?.();
                 }
-                const normalizedPackage = normalizePackageDetail(fallback);
-                const nextSnapshot = createFormSnapshot(normalizedPackage);
-                setSavedSnapshot(nextSnapshot);
-                setFormData(normalizedPackage);
                 return;
             }
 
@@ -77,13 +68,7 @@ export function usePackageDetailForm({
             setSavedSnapshot(nextSnapshot);
             setFormData(normalizedPackage);
         } catch {
-            const fallback = findPackageById(FALLBACK_PACKAGES, packageId);
-            if (fallback) {
-                const normalizedPackage = normalizePackageDetail(fallback);
-                const nextSnapshot = createFormSnapshot(normalizedPackage);
-                setSavedSnapshot(nextSnapshot);
-                setFormData(normalizedPackage);
-            } else if (!routePackage) {
+            if (!routePackage) {
                 toast.error('Không thể tải chi tiết gói dịch vụ.');
                 onNotFound?.();
             }

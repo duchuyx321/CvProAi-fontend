@@ -4,72 +4,6 @@ import { deletePackage, getPackages } from '~/services/managePackageService';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const FALLBACK_PACKAGES = [
-    {
-        id: 'PKG-001',
-        code: 'PKG-001',
-        name: 'Gói Miễn Phí',
-        price: 0,
-        durationUnit: 'permanent',
-        durationValue: null,
-        benefits: ['1 CV', 'AI cơ bản'],
-        totalUsers: 15420,
-        status: 'ACTIVE',
-        createdAt: '2026-04-10T08:30:00.000Z',
-        description: 'Gói miễn phí cho người dùng mới.',
-        maxCv: 1,
-        aiLimit: 10,
-        premiumCv: false,
-        removeWatermark: false,
-        customDomain: false,
-        support247: false,
-        allowAiAddon: false,
-        fullAiAnalysis: false,
-    },
-    {
-        id: 'PKG-002',
-        code: 'PKG-002',
-        name: 'Premium',
-        price: 199000,
-        durationUnit: 'month',
-        durationValue: 1,
-        benefits: ['Không giới hạn', 'Phân tích sâu'],
-        totalUsers: 2850,
-        status: 'PAUSED',
-        createdAt: '2026-04-09T08:30:00.000Z',
-        description: 'Gói tối ưu dành cho ứng viên chuyên nghiệp.',
-        maxCv: 50,
-        aiLimit: 100,
-        premiumCv: true,
-        removeWatermark: true,
-        customDomain: true,
-        support247: false,
-        allowAiAddon: true,
-        fullAiAnalysis: true,
-    },
-    {
-        id: 'PKG-003',
-        code: 'PKG-003',
-        name: 'Enterprise',
-        price: 599000,
-        durationUnit: 'year',
-        durationValue: 1,
-        benefits: ['Hỗ trợ 24/7', 'White Label'],
-        totalUsers: 142,
-        status: 'PAUSED',
-        createdAt: '2026-04-08T08:30:00.000Z',
-        description: 'Gói doanh nghiệp với quản trị nâng cao.',
-        maxCv: 200,
-        aiLimit: 500,
-        premiumCv: true,
-        removeWatermark: true,
-        customDomain: true,
-        support247: true,
-        allowAiAddon: true,
-        fullAiAnalysis: true,
-    },
-];
-
 export const PAGE_SIZE = 4;
 
 export const PACKAGE_SORT_OPTIONS = [
@@ -486,17 +420,17 @@ export function usePackageList() {
             const response = await getPackages();
 
             if (response?.success === false) {
-                setLoadError('Không thể tải dữ liệu từ máy chủ. Đang hiển thị dữ liệu mẫu.');
-                setPackageList(FALLBACK_PACKAGES);
+                setLoadError('Không thể tải dữ liệu từ máy chủ.');
+                setPackageList([]);
                 return;
             }
 
             const apiItems = response?.data?.items ?? response?.data ?? [];
             const normalized = normalizePackageList(Array.isArray(apiItems) ? apiItems : []);
-            setPackageList(normalized.length ? normalized : FALLBACK_PACKAGES);
+            setPackageList(normalized);
         } catch {
-            setLoadError('Không thể tải dữ liệu từ máy chủ. Đang hiển thị dữ liệu mẫu.');
-            setPackageList(FALLBACK_PACKAGES);
+            setLoadError('Không thể tải dữ liệu từ máy chủ.');
+            setPackageList([]);
         } finally {
             setLoading(false);
         }

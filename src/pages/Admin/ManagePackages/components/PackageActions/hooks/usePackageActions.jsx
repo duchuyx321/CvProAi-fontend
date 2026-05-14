@@ -7,7 +7,7 @@ import {
     getPackages,
     togglePackageStatus,
 } from '~/services/managePackageService';
-import { FALLBACK_PACKAGES, normalizePackage } from '../../../managePackages.utils';
+import { normalizePackage } from '../../../managePackages.utils';
 
 const PACKAGE_BASE_PATH = '/admin/packages';
 
@@ -60,9 +60,9 @@ export function usePackageActions(packageId) {
                 const normalized = Array.isArray(rawItems)
                     ? rawItems.map((item, i) => normalizePackage(item, i))
                     : [];
-                setPackages(normalized.length ? normalized : FALLBACK_PACKAGES);
+                setPackages(normalized);
             } else {
-                setPackages(FALLBACK_PACKAGES);
+                setPackages([]);
             }
 
             setLoading(false);
