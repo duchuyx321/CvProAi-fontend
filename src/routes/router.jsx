@@ -40,6 +40,7 @@ import AdminOrders from '~/pages/Admin/AdminOrders';
 
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
+import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
 
 // public router
 const PublicRouter = [
@@ -182,6 +183,11 @@ const UserRouter = [
         path: config.router.paymentSuccess,
         component: PaymentSuccess,
         layout: DetailLayout,
+    },
+    {
+        path: config.router.cvAnalysisHistory,
+        component: CvAnalysisHistory,
+        layout: DefaultLayout,
     },
 ];
 

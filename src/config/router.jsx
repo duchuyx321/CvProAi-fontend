@@ -33,7 +33,7 @@ export const router = {
     payment: '/checkout/:payment_id',
     paymentSuccess: '/payment/success/:orderId',
     upgradeOptions: '/upgrade-options/:slug',
-
+    cvAnalysisHistory: '/cv-analysis-history',
     // Admin
     adminDashboard: '/admin/dashboard',
     manageUsers: '/admin/manage-users',
