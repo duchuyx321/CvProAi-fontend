@@ -1,318 +1,336 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
-import { toast } from 'react-toastify';
+
+import GenericAdminToolbar from '~/components/GenericAdminToolbar';
+import Pagination from '~/components/Pagination';
+import { getMyPayments } from '~/services/history.service';
 
 import HistoryRow from './components/HistoryRow';
 import styles from './HistoryMain.module.scss';
-// import { getPaymentHistory } from '~/services/history.service';
 
 const cx = classNames.bind(styles);
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const HISTORY_MOCKS = {
-    success: true,
-    message: 'Lấy lịch sử giao dịch thành công',
-    data: {
-        items: [
-            {
-                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90001',
-                user_id: 'test-user-id',
-                order_type: 'SUBSCRIPTION',
-                order_code: 'CVP-83921',
-                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                addon_package_id: null,
-                amount_cents: '199000',
-                currency: 'VND',
-                status: 'PAID',
-                provider: 'SEPAY',
-                provider_transaction_id: 'SEPAY_TXN_83921',
-                description: 'Thanh toán gói Premium 1 tháng',
-                metadata: {
-                    reference_code: 'CVPROAI83921',
-                    bank_code: 'MB',
-                },
-                paid_at: '2026-05-15T08:30:00.000Z',
-                created_at: '2026-05-15T08:25:00.000Z',
-                updated_at: '2026-05-15T08:30:00.000Z',
-                plan: {
-                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                    name: 'Premium',
-                    slug: 'premium',
-                    billing_cycle: 'MONTH',
-                },
-                addon_package: null,
-            },
-            {
-                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90002',
-                user_id: 'test-user-id',
-                order_type: 'SUBSCRIPTION',
-                order_code: 'CVP-72810',
-                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                addon_package_id: null,
-                amount_cents: '199000',
-                currency: 'VND',
-                status: 'PAID',
-                provider: 'SEPAY',
-                provider_transaction_id: 'SEPAY_TXN_72810',
-                description: 'Thanh toán gói Premium 1 tháng',
-                metadata: {
-                    reference_code: 'CVPROAI72810',
-                    bank_code: 'VCB',
-                },
-                paid_at: '2026-04-15T08:30:00.000Z',
-                created_at: '2026-04-15T08:25:00.000Z',
-                updated_at: '2026-04-15T08:30:00.000Z',
-                plan: {
-                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                    name: 'Premium',
-                    slug: 'premium',
-                    billing_cycle: 'MONTH',
-                },
-                addon_package: null,
-            },
-            {
-                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90003',
-                user_id: 'test-user-id',
-                order_type: 'SUBSCRIPTION',
-                order_code: 'CVP-72805',
-                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                addon_package_id: null,
-                amount_cents: '199000',
-                currency: 'VND',
-                status: 'FAILED',
-                provider: 'SEPAY',
-                provider_transaction_id: null,
-                description: 'Thanh toán gói Premium 1 tháng thất bại',
-                metadata: {
-                    reference_code: 'CVPROAI72805',
-                    bank_code: 'TPB',
-                    failure_reason: 'Không nhận được xác nhận thanh toán',
-                },
-                paid_at: null,
-                created_at: '2026-04-15T07:45:00.000Z',
-                updated_at: '2026-04-15T07:50:00.000Z',
-                plan: {
-                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                    name: 'Premium',
-                    slug: 'premium',
-                    billing_cycle: 'MONTH',
-                },
-                addon_package: null,
-            },
-            {
-                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90004',
-                user_id: 'test-user-id',
-                order_type: 'AI_ADDON',
-                order_code: 'CVP-AI-70112',
-                plan_id: null,
-                addon_package_id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
-                amount_cents: '49000',
-                currency: 'VND',
-                status: 'PAID',
-                provider: 'SEPAY',
-                provider_transaction_id: 'SEPAY_TXN_70112',
-                description: 'Mua thêm 10 lượt phân tích AI',
-                metadata: {
-                    reference_code: 'CVPROAI70112',
-                    bank_code: 'ACB',
-                },
-                paid_at: '2026-03-15T09:10:00.000Z',
-                created_at: '2026-03-15T09:05:00.000Z',
-                updated_at: '2026-03-15T09:10:00.000Z',
-                plan: null,
-                addon_package: {
-                    id: 'a1d5f1c2-98e6-4d2c-a16b-5db3f7a70001',
-                    name: 'Gói 10 lượt AI',
-                    slug: 'ai-10-runs',
-                    runs: 10,
-                },
-            },
-            {
-                id: '6f3f2f70-9b51-4f14-b727-9c8d09d90005',
-                user_id: 'test-user-id',
-                order_type: 'SUBSCRIPTION',
-                order_code: 'CVP-90001',
-                plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                addon_package_id: null,
-                amount_cents: '199000',
-                currency: 'VND',
-                status: 'CANCELLED',
-                provider: 'SEPAY',
-                provider_transaction_id: null,
-                description: 'Đơn thanh toán gói Premium đã hủy',
-                metadata: {
-                    reference_code: 'CVPROAI90001',
-                    bank_code: 'MB',
-                },
-                paid_at: null,
-                created_at: '2026-05-16T08:25:00.000Z',
-                updated_at: '2026-05-16T08:30:00.000Z',
-                plan: {
-                    id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-                    name: 'Premium',
-                    slug: 'premium',
-                    billing_cycle: 'MONTH',
-                },
-                addon_package: null,
-            },
-        ],
-        pagination: {
-            page: 1,
-            limit: 10,
-            total_items: 5,
-            total_pages: 1,
-        },
-    },
-    date: '08:39:35 21/04/2026',
-    path: '/api/v1/users/me/payments',
+const PAGE_SIZE = 8;
+
+const PaymentSortBy = {
+    CREATED_AT: 'createdAt',
+    UPDATED_AT: 'updatedAt',
+    AMOUNT: 'amount_cents',
+    STATUS: 'status',
 };
 
+const SortOrder = {
+    ASC: 'ASC',
+    DESC: 'DESC',
+};
+
+const SORT_OPTIONS = [
+    {
+        label: 'Cập nhật mới nhất',
+        sort_by: PaymentSortBy.UPDATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Cập nhật cũ nhất',
+        sort_by: PaymentSortBy.UPDATED_AT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Giao dịch mới nhất',
+        sort_by: PaymentSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Giao dịch cũ nhất',
+        sort_by: PaymentSortBy.CREATED_AT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Giá cao nhất',
+        sort_by: PaymentSortBy.AMOUNT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Giá thấp nhất',
+        sort_by: PaymentSortBy.AMOUNT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Trạng thái: A → Z',
+        sort_by: PaymentSortBy.STATUS,
+        sort_order: SortOrder.ASC,
+    },
+];
+
+const RANGE_OPTIONS = [
+    { label: '7 ngày qua', value: '7d' },
+    { label: '30 ngày qua', value: '30d' },
+    { label: 'Tháng này', value: 'month' },
+    { label: 'Năm nay', value: 'year' },
+    { label: 'Tùy chỉnh', value: 'custom' },
+];
+
+const DEFAULT_META = {
+    page: 1,
+    limit: PAGE_SIZE,
+    total_items: 0,
+    total_pages: 1,
+};
+
+const DEFAULT_FILTERS = {
+    search: '',
+    sort_by: PaymentSortBy.UPDATED_AT,
+    sort_order: SortOrder.DESC,
+    range: '30d',
+    from: '',
+    to: '',
+};
+
+function getPageFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = Number(params.get('page'));
+
+    return pageParam > 0 ? pageParam : 1;
+}
+
+function syncPageToUrl(nextPage, replace = false) {
+    const params = new URLSearchParams(window.location.search);
+
+    params.set('page', String(nextPage));
+
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    const method = replace ? 'replaceState' : 'pushState';
+
+    window.history[method](null, '', nextUrl);
+}
+
+function normalizeToolbarFilters({ search, sort, range }) {
+    const nextFilters = {
+        search: search || '',
+        sort_by: sort?.sort_by || DEFAULT_FILTERS.sort_by,
+        sort_order: sort?.sort_order || DEFAULT_FILTERS.sort_order,
+        range: '',
+        from: '',
+        to: '',
+    };
+
+    if (typeof range === 'string') {
+        nextFilters.range = range;
+        return nextFilters;
+    }
+
+    nextFilters.range = 'custom';
+    nextFilters.from = range?.from || '';
+    nextFilters.to = range?.to || '';
+
+    return nextFilters;
+}
+
+function isSameFilters(currentFilters, nextFilters) {
+    return (
+        currentFilters.search === nextFilters.search &&
+        currentFilters.sort_by === nextFilters.sort_by &&
+        currentFilters.sort_order === nextFilters.sort_order &&
+        currentFilters.range === nextFilters.range &&
+        currentFilters.from === nextFilters.from &&
+        currentFilters.to === nextFilters.to
+    );
+}
+
 function HistoryMain() {
-    const [historyData, setHistoryData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [page, setPage] = useState(getPageFromUrl);
+    const [payments, setPayments] = useState([]);
+    const [meta, setMeta] = useState(DEFAULT_META);
+    const [loading, setLoading] = useState(false);
+    const [filters, setFilters] = useState(DEFAULT_FILTERS);
 
     useEffect(() => {
-        let cancelled = false;
+        const params = new URLSearchParams(window.location.search);
+        const pageParam = Number(params.get('page'));
 
-        const fetchHistory = async () => {
-            setIsLoading(true);
+        if (!params.get('page') || pageParam <= 0 || Number.isNaN(pageParam)) {
+            syncPageToUrl(1, true);
+            setPage(1);
+        }
+    }, []);
 
+    useEffect(() => {
+        let ignore = false;
+
+        const fetchPayments = async () => {
             try {
-                // const result = await getPaymentHistory({
-                //     page: 1,
-                //     limit: 10,
-                // });
+                setLoading(true);
 
-                const result = HISTORY_MOCKS;
+                const payload = {
+                    page,
+                    limit: PAGE_SIZE,
+                    search: filters.search,
+                    sort_by: filters.sort_by,
+                    sort_order: filters.sort_order,
+                };
 
-                if (!result?.success) {
-                    throw new Error(
-                        result?.message || 'Không thể tải lịch sử giao dịch',
-                    );
+                if (filters.range === 'custom') {
+                    payload.from = filters.from;
+                    payload.to = filters.to;
+                } else {
+                    payload.range = filters.range;
                 }
 
-                if (!Array.isArray(result?.data?.items)) {
-                    throw new Error('Dữ liệu lịch sử giao dịch không hợp lệ');
+                const result = await getMyPayments(payload);
+
+                if (ignore) return;
+
+                if (result?.status >= 400 || result?.success === false) {
+                    setPayments([]);
+                    setMeta(DEFAULT_META);
+                    return;
                 }
 
-                if (!cancelled) {
-                    setHistoryData(result.data);
-                }
+                const paymentData = Array.isArray(result?.data?.data)
+                    ? result.data.data
+                    : [];
+                const paymentMeta = result?.data?.meta || DEFAULT_META;
+
+                setPayments(paymentData);
+                setMeta(paymentMeta);
             } catch (error) {
-                if (!cancelled) {
-                    toast.error(
-                        error?.response?.data?.message ||
-                            error?.message ||
-                            'Có lỗi xảy ra, vui lòng thử lại sau',
-                    );
+                if (!ignore) {
+                    console.error('Fetch payment history failed:', error);
+                    setPayments([]);
+                    setMeta(DEFAULT_META);
                 }
             } finally {
-                if (!cancelled) {
-                    setIsLoading(false);
+                if (!ignore) {
+                    setLoading(false);
                 }
             }
         };
 
-        fetchHistory();
+        fetchPayments();
 
         return () => {
-            cancelled = true;
+            ignore = true;
         };
-    }, []);
+    }, [
+        page,
+        filters.search,
+        filters.sort_by,
+        filters.sort_order,
+        filters.range,
+        filters.from,
+        filters.to,
+    ]);
 
-    if (isLoading) {
-        return (
-            <div className={cx('wrapper')}>
-                <p className={cx('loading')}>Đang tải lịch sử giao dịch...</p>
-            </div>
-        );
-    }
+    const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
+    const totalItems = Number(meta?.total_items) || payments.length;
+    const limit = Number(meta?.limit) || PAGE_SIZE;
+    const startItem = totalItems ? (page - 1) * limit + 1 : 0;
+    const endItem = totalItems ? Math.min(page * limit, totalItems) : 0;
 
-    if (!historyData) {
-        return (
-            <div className={cx('wrapper')}>
-                <p className={cx('empty')}>Không có dữ liệu giao dịch.</p>
-            </div>
-        );
-    }
+    const handlePageChange = useCallback(
+        (newPage) => {
+            if (newPage < 1 || newPage > totalPages || newPage === page) {
+                return;
+            }
 
-    const { items, pagination } = historyData;
+            setPage(newPage);
+            syncPageToUrl(newPage);
+        },
+        [page, totalPages],
+    );
+
+    const handleToolbarChange = useCallback(
+        ({ search, sort, range }) => {
+            const nextFilters = normalizeToolbarFilters({
+                search,
+                sort,
+                range,
+            });
+
+            if (isSameFilters(filters, nextFilters)) return;
+
+            setFilters(nextFilters);
+            setPage(1);
+            syncPageToUrl(1, true);
+        },
+        [filters],
+    );
 
     return (
         <div className={cx('wrapper')}>
-            <section className={cx('card')}>
-                <div className={cx('header')}>
-                    <h2 className={cx('title')}>Lịch sử giao dịch</h2>
-                    <p className={cx('desc')}>
-                        Theo dõi các khoản thanh toán gói Premium và lượt AI mua thêm.
-                    </p>
+            <div className={cx('header-section')}>
+                <div className={cx('title')}>
+                    <h3>Lịch sử giao dịch</h3>
+                    <p>Theo dõi danh sách giao dịch và trạng thái thanh toán.</p>
+                </div>
+            </div>
+
+            <div className={cx('toolbar')}>
+                <GenericAdminToolbar
+                    sortOptions={SORT_OPTIONS}
+                    rangeOptions={RANGE_OPTIONS}
+                    defaultSortBy={DEFAULT_FILTERS.sort_by}
+                    defaultSortOrder={DEFAULT_FILTERS.sort_order}
+                    defaultRange={DEFAULT_FILTERS.range}
+                    onChange={handleToolbarChange}
+                    searchPlaceholder="Tìm kiếm theo mã đơn, tên hoặc email..."
+                    searchLoading={loading && Boolean(filters.search)}
+                />
+            </div>
+
+            <div className={cx('tableCard')}>
+                <div className={cx('tableScroll')}>
+                    <table className={cx('table')}>
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Người dùng</th>
+                                <th>Gói dịch vụ</th>
+                                <th>Số tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {payments.map((payment) => (
+                                <HistoryRow
+                                    key={payment.id}
+                                    payment={payment}
+                                />
+                            ))}
+
+                            {!loading && !payments.length ? (
+                                <tr>
+                                    <td colSpan="6" className={cx('emptyCell')}>
+                                        Chưa có giao dịch nào.
+                                    </td>
+                                </tr>
+                            ) : null}
+                        </tbody>
+                    </table>
+
+                    {loading ? (
+                        <div className={cx('loadingOverlay')}>
+                            <span className={cx('loader')} />
+                            <span>Đang tải lịch sử giao dịch...</span>
+                        </div>
+                    ) : null}
                 </div>
 
-                {items.length === 0 ? (
-                    <p className={cx('empty')}>Chưa có giao dịch nào.</p>
-                ) : (
-                    <>
-                        <div className={cx('tableWrapper')}>
-                            <div className={cx('tableHeader')}>
-                                <div className={cx('col', 'colCode')}>Mã đơn</div>
-                                <div className={cx('col', 'colDate')}>
-                                    Ngày thanh toán
-                                </div>
-                                <div className={cx('col', 'colPlan')}>
-                                    Nội dung
-                                </div>
-                                <div className={cx('col', 'colAmount')}>
-                                    Số tiền
-                                </div>
-                                <div className={cx('col', 'colMethod')}>
-                                    Phương thức
-                                </div>
-                                <div className={cx('col', 'colStatus')}>
-                                    Trạng thái
-                                </div>
-                            </div>
+                <div className={cx('tableFooter')}>
+                    <p>
+                        Hiển thị {startItem} đến {endItem} trong số {totalItems} giao dịch
+                    </p>
 
-                            <div className={cx('tableBody')}>
-                                {items.map((item) => (
-                                    <HistoryRow key={item.id} item={item} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className={cx('footer')}>
-                            <p className={cx('summary')}>
-                                Hiển thị 1 đến {items.length} trong số{' '}
-                                {pagination?.total_items || items.length} giao dịch
-                            </p>
-
-                            <div className={cx('pagination')}>
-                                <button
-                                    type="button"
-                                    className={cx('pageBtn')}
-                                    disabled
-                                >
-                                    Trước
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={cx('pageBtn', 'active')}
-                                >
-                                    {pagination?.page || 1}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={cx('pageBtn')}
-                                    disabled
-                                >
-                                    Sau
-                                </button>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </section>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        disabled={loading}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            </div>
         </div>
     );
 }
