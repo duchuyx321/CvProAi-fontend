@@ -13,7 +13,16 @@ import styles from './PricingCard.module.scss';
 
 const cx = classNames.bind(styles);
 
-function getRoute(isPremium, isAuthenticated, slug) {
+const PLAN_SLUGS = {
+    FREE: 'free',
+    PREMIUM: 'premium',
+};
+
+function normalizeSlug(value = '') {
+    return String(value).trim().toLowerCase();
+}
+
+function getUpgradeRoute(isPremium, isAuthenticated, slug) {
     if (!isAuthenticated) return config.router.login;
 
     if (isPremium && slug) {
@@ -21,15 +30,6 @@ function getRoute(isPremium, isAuthenticated, slug) {
     }
 
     return undefined;
-}
-
-const PLAN_SLUGS = {
-    FREE: 'free',
-    PREMIUM: 'premium',
-};
-
-function normalizeSlug(value = '') {
-    return value.trim().toLowerCase();
 }
 
 function getCtaLabel({
@@ -40,8 +40,15 @@ function getCtaLabel({
     isAuthenticated,
 }) {
     if (isCurrentPlan) return 'Gói hiện tại';
-    if (isCurrentPremium && isFree) return 'Free';
-    if (isAuthenticated && isFree) return 'Gói hiện tại';
+
+    if (!isAuthenticated) {
+        return isPremium ? 'Nâng cấp Premium' : 'Bắt đầu ngay';
+    }
+
+    if (isCurrentPremium && isFree) return 'Đã nâng cấp Premium';
+
+    if (isFree) return 'Gói miễn phí';
+
     if (isPremium) return 'Nâng cấp Premium';
 
     return 'Bắt đầu ngay';
@@ -53,19 +60,19 @@ function PricingCard({
     isCurrentPlan = false,
     isCurrentPremium = false,
 }) {
+    
     const planSlug = normalizeSlug(plan.slug);
 
     const isFree = planSlug === PLAN_SLUGS.FREE;
     const isPremium = planSlug === PLAN_SLUGS.PREMIUM;
 
     const features = buildPlanFeatures(plan);
-
-    const route = getRoute(isPremium, isAuthenticated, planSlug);
+    const route = getUpgradeRoute(isPremium, isAuthenticated, planSlug);
 
     const isDisabled =
         isCurrentPlan ||
-        (isCurrentPremium && isFree) ||
-        (isAuthenticated && isFree);
+        (isAuthenticated && isFree) ||
+        (isCurrentPremium && isPremium);
 
     const ctaLabel = getCtaLabel({
         isFree,
@@ -76,27 +83,37 @@ function PricingCard({
     });
 
     return (
-        <article className={cx('card', { popular: isPremium })}>
-            {isPremium && <span className={cx('badge')}>PHỔ BIẾN NHẤT</span>}
+        <article
+            className={cx('card', {
+                popular: isPremium,
+                current: isCurrentPlan,
+            })}
+        >
+            {isPremium ? (
+                <span className={cx('badge')}>PHỔ BIẾN NHẤT</span>
+            ) : null}
 
             <div className={cx('head')}>
-                <h2 className={cx('cardTitle')}>{plan.name}</h2>
+                <div className={cx('titleRow')}>
+                    <h2 className={cx('cardTitle')}>{plan.name || '--'}</h2>
 
-                {isCurrentPlan && (
-                    <span className={cx('currentBadge')}>
-                        <HiCheckBadge className={cx('currentBadgeIcon')} />
-                        <span>Đang sử dụng</span>
-                    </span>
-                )}
+                    {isCurrentPlan ? (
+                        <span className={cx('currentBadge')}>
+                            <HiCheckBadge className={cx('currentBadgeIcon')} />
+                            <span>Đang sử dụng</span>
+                        </span>
+                    ) : null}
+                </div>
 
-                {plan.description && (
+                {plan.description ? (
                     <p className={cx('cardDesc')}>{plan.description}</p>
-                )}
+                ) : null}
 
                 <div className={cx('priceBox')}>
                     <span className={cx('price')}>
                         {formatPrice(plan.price, plan.currency)}
                     </span>
+
                     <span className={cx('unit')}>
                         {mapBillingCycleToUnit(plan.billing_cycle)}
                     </span>
@@ -104,11 +121,11 @@ function PricingCard({
             </div>
 
             <div className={cx('body')}>
-                {isPremium && (
+                {isPremium ? (
                     <p className={cx('featureTitle')}>
                         Mọi tính năng trong gói Miễn phí và:
                     </p>
-                )}
+                ) : null}
 
                 <ul className={cx('list')}>
                     {features.map((item) => (
