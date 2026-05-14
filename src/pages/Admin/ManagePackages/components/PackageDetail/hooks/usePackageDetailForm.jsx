@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getPackageDetail, updatePackage } from '~/services/managePackageService';
-import { DEFAULT_FORM_DATA, FALLBACK_PACKAGES } from '../../constants';
+import { DEFAULT_FORM_DATA, FALLBACK_PACKAGES } from '../../../managePackages.utils';
 import {
     buildBenefitsPreview,
     buildUpdatePayload,

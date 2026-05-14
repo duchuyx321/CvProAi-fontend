@@ -1,4 +1,4 @@
-import { DEFAULT_FORM_DATA } from '../../constants';
+import { DEFAULT_FORM_DATA } from '../../../managePackages.utils';
 
 export function toSafeString(value = '') {
     return String(value ?? '').trim();

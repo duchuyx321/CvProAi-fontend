@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     MdOutlineDeleteOutline,
     MdOutlineEdit,
+    MdOutlineFileDownload,
     MdOutlineVisibility,
 } from 'react-icons/md';
 import { useLocation, useNavigate } from 'react-router-dom';
+import GenericAdminToolbar from '~/components/GenericAdminToolbar';
+import Pagination from '~/components/Pagination';
 import { config } from '~/config';
-import ActionBar from './components/ActionBar';
 import DeletePackageModal from './components/DeletePackageModal';
 import ExportModal from './components/ExportModal';
 import PackageTable from './components/PackageTable';
@@ -15,40 +17,43 @@ import {
     DEFAULT_EXPORT_CONFIG,
     EXPORT_COLUMN_OPTIONS,
     EXPORT_DATE_RANGE_OPTIONS,
+    exportPackageRows,
+    formatCurrency,
+    formatDuration,
+    PACKAGE_RANGE_OPTIONS,
+    PACKAGE_SORT_OPTIONS,
     PAGE_SIZE,
-} from './constants';
-import { usePackageDelete } from './hooks/usePackageDelete';
-import { usePackageFilters } from './hooks/usePackageFilters';
-import { usePackageList } from './hooks/usePackageList';
-import { exportPackageRows } from './utils/packageExport';
-import { formatCurrency, formatDuration } from './utils/packageFormatters';
+    STATUS_LABEL_MAP,
+    usePackageDelete,
+    usePackageFilters,
+    usePackageList,
+} from './managePackages.utils';
 import styles from './ManagePackages.module.scss';
 
 const cx = classNames.bind(styles);
+
+const STATUS_FILTER_OPTIONS = [
+    { value: 'ALL', label: 'Tất cả trạng thái' },
+    { value: 'ACTIVE', label: STATUS_LABEL_MAP.ACTIVE },
+    { value: 'PAUSED', label: STATUS_LABEL_MAP.PAUSED },
+];
 
 function ManagePackages() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const {
-        packageList,
-        setPackageList,
-        loading,
-        loadError,
-        loadPackages,
-    } = usePackageList();
+    const { packageList, setPackageList, loading, loadError, loadPackages } =
+        usePackageList();
 
     const {
         filters,
-        searchValue,
         currentPage,
         totalPages,
         filteredPackages,
         paginatedPackages,
         setCurrentPage,
         handleChangeFilter,
-        handleChangeDateFilter,
-        handleChangeSearch,
+        handleToolbarChange,
     } = usePackageFilters(packageList);
 
     const {
@@ -58,10 +63,7 @@ function ManagePackages() {
         handleOpenDeleteModal,
         handleCloseDeleteModal,
         handleConfirmDelete,
-    } = usePackageDelete({
-        setPackageList,
-        loadPackages,
-    });
+    } = usePackageDelete({ setPackageList, loadPackages });
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [exportConfig, setExportConfig] = useState(DEFAULT_EXPORT_CONFIG);
@@ -74,75 +76,97 @@ function ManagePackages() {
     }, [loadPackages, location.pathname, location.state, navigate]);
 
     const handleView = useCallback(
-        (item) => {
+        (item) =>
             navigate(
                 `${config.router.packageDetail.replace(':packageId', item.id)}?mode=view`,
-                { state: { package: item } }
-            );
-        },
-        [navigate]
+                { state: { package: item } },
+            ),
+        [navigate],
     );
 
     const handleEdit = useCallback(
-        (item) => {
+        (item) =>
             navigate(
                 config.router.packageDetail.replace(':packageId', item.id),
-                { state: { package: item } }
-            );
-        },
-        [navigate]
+                { state: { package: item } },
+            ),
+        [navigate],
     );
 
-    const handleOpenCreate = useCallback(() => {
-        navigate(config.router.createPackage);
-    }, [navigate]);
-
-    const handleOpenExportModal = useCallback(() => {
-        setIsExportModalOpen(true);
-    }, []);
-
-    const handleCloseExportModal = useCallback(() => {
-        setIsExportModalOpen(false);
-    }, []);
-
-    const handleConfirmExport = useCallback(
-        async (nextConfig) => {
-            await exportPackageRows(filteredPackages, nextConfig);
-            setIsExportModalOpen(false);
-        },
-        [filteredPackages]
+    const handleOpenCreate = useCallback(
+        () => navigate(config.router.createPackage),
+        [navigate],
     );
+
+    const totalItems = filteredPackages.length;
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
     return (
-        <section className={cx('page')}>
-            <div className={cx('pageHeader')}>
-                <h1 className={cx('pageTitle')}>Quản lý gói dịch vụ</h1>
-                <p className={cx('pageDescription')}>
-                    Quản lý danh sách gói dịch vụ, lọc dữ liệu và theo dõi trạng thái sử dụng.
-                </p>
+        <div className={cx('wrapper')}>
+            <header>
+                <div className={cx('title')}>
+                    <h3>Quản lý gói dịch vụ</h3>
+                    <p>
+                        Quản lý danh sách gói dịch vụ, lọc dữ liệu và theo dõi
+                        trạng thái sử dụng.
+                    </p>
+                </div>
+                <div className={cx('headerActions')}>
+                    <button
+                        type="button"
+                        className={cx('btnOutline')}
+                        onClick={() => setIsExportModalOpen(true)}
+                    >
+                        <MdOutlineFileDownload />
+                        Xuất danh sách
+                    </button>
+                    <button
+                        type="button"
+                        className={cx('btnPrimary')}
+                        onClick={handleOpenCreate}
+                    >
+                        + Thêm gói dịch vụ
+                    </button>
+                </div>
+            </header>
+
+            <div className={cx('toolbar')}>
+                <GenericAdminToolbar
+                    sortOptions={PACKAGE_SORT_OPTIONS}
+                    rangeOptions={PACKAGE_RANGE_OPTIONS}
+                    defaultSortBy="createdAt"
+                    defaultSortOrder="DESC"
+                    defaultRange="all"
+                    searchPlaceholder="Tìm kiếm theo mã hoặc tên gói..."
+                    onChange={handleToolbarChange}
+                />
+                <div className={cx('statusFilter')}>
+                    <label className={cx('statusLabel')}>Trạng thái</label>
+                    <select
+                        className={cx('statusSelect')}
+                        value={filters.status}
+                        onChange={(e) =>
+                            handleChangeFilter('status', e.target.value)
+                        }
+                    >
+                        {STATUS_FILTER_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            <ActionBar
-                filters={filters}
-                searchValue={searchValue}
-                onChangeFilter={handleChangeFilter}
-                onChangeDateFilter={handleChangeDateFilter}
-                onChangeSearch={handleChangeSearch}
-                onExport={handleOpenExportModal}
-                onOpenCreate={handleOpenCreate}
-            />
-
-            {loadError ? <p className={cx('helperText')}>{loadError}</p> : null}
+            {loadError ? (
+                <p className={cx('helperText')}>{loadError}</p>
+            ) : null}
 
             <div className={cx('tableCard')}>
                 <PackageTable
                     loading={loading}
                     packages={paginatedPackages}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    totalItems={filteredPackages.length}
-                    pageSize={PAGE_SIZE}
-                    onChangePage={setCurrentPage}
                     formatCurrency={formatCurrency}
                     formatDuration={formatDuration}
                     renderActions={(item) => (
@@ -156,7 +180,6 @@ function ManagePackages() {
                             >
                                 <MdOutlineVisibility />
                             </button>
-
                             <button
                                 type="button"
                                 className={cx('iconBtn')}
@@ -166,7 +189,6 @@ function ManagePackages() {
                             >
                                 <MdOutlineEdit />
                             </button>
-
                             <button
                                 type="button"
                                 className={cx('iconBtn', 'iconBtnDanger')}
@@ -181,14 +203,30 @@ function ManagePackages() {
                 />
             </div>
 
+            <div className={cx('footer')}>
+                <span className={cx('summary')}>
+                    Hiển thị {startItem} – {endItem} trong {totalItems} gói
+                    dịch vụ
+                </span>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    disabled={loading}
+                />
+            </div>
+
             <ExportModal
                 open={isExportModalOpen}
                 value={exportConfig}
                 columnOptions={EXPORT_COLUMN_OPTIONS}
                 dateRangeOptions={EXPORT_DATE_RANGE_OPTIONS}
                 onChange={setExportConfig}
-                onClose={handleCloseExportModal}
-                onConfirm={handleConfirmExport}
+                onClose={() => setIsExportModalOpen(false)}
+                onConfirm={async (nextConfig) => {
+                    await exportPackageRows(filteredPackages, nextConfig);
+                    setIsExportModalOpen(false);
+                }}
             />
 
             <DeletePackageModal
@@ -198,7 +236,7 @@ function ManagePackages() {
                 onClose={handleCloseDeleteModal}
                 onConfirm={handleConfirmDelete}
             />
-        </section>
+        </div>
     );
 }
 

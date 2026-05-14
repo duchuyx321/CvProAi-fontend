@@ -7,8 +7,7 @@ import {
     getPackages,
     togglePackageStatus,
 } from '~/services/managePackageService';
-import { normalizePackage } from '../../utils/normalizePackage';
-import { FALLBACK_PACKAGES } from '../../constants';
+import { FALLBACK_PACKAGES, normalizePackage } from '../../../managePackages.utils';
 
 const PACKAGE_BASE_PATH = '/admin/packages';
 
