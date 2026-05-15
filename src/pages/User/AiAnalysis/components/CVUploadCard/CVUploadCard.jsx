@@ -5,6 +5,7 @@ import {
     FiFilePlus,
     FiFileText,
     FiFolder,
+    FiX,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -35,6 +36,7 @@ function CVUploadCard({
     showSavedCVSection,
     onToggleSavedCVSection,
     onUploadLocalCV,
+    onRemoveCV,
 }) {
     const fileInputRef = useRef(null);
 
@@ -170,6 +172,17 @@ function CVUploadCard({
                         {selectedSourceLabel}
                     </span>
                 </div>
+
+                {selectedCV && (
+                    <button
+                        type="button"
+                        className={cx('removeFileButton')}
+                        onClick={onRemoveCV}
+                        aria-label="Bỏ chọn CV"
+                    >
+                        <FiX />
+                    </button>
+                )}
             </div>
 
             <p className={cx('uploadHint')}>

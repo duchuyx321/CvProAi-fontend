@@ -5,13 +5,13 @@ import { IoMdAdd } from 'react-icons/io';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 
 import Button from '~/components/Button';
-import GenericAdminToolbar from '~/components/GenericAdminToolbar';
 import Pagination from '~/components/Pagination';
 import { getAllTemplate } from '~/services/admin-template.service';
 
 import styles from './ManageTemplates.module.scss';
 import { useNavigate } from 'react-router-dom';
 import { config } from '~/config';
+import GenericAdminToolbar from '~/components/GenericAdminToolbar';
 
 const cx = classNames.bind(styles);
 const PAGE_SIZE = 8;

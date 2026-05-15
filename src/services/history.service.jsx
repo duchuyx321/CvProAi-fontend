@@ -37,8 +37,15 @@ export const getAllOrders = async (params = {}) => {
         const query = new URLSearchParams();
 
         Object.entries(params).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-                query.append(key, value);
+            const nextValue =
+                typeof value === 'string' ? value.trim() : value;
+
+            if (
+                nextValue !== undefined &&
+                nextValue !== null &&
+                nextValue !== ''
+            ) {
+                query.append(key, nextValue);
             }
         });
 
@@ -81,13 +88,9 @@ export const editOrder = async (code, id, data) => {
             throw new Error('Thiếu ID đơn hàng');
         }
 
-        const safeCode = encodeURIComponent(code);
         const safeId = encodeURIComponent(id);
 
-        const res = await Response.PATCH(
-            `admin/payments/edit/${safeCode}?id=${safeId}`,
-            data,
-        );
+        const res = await Response.PATCH(`admin/payments/edit/${safeId}`, data);
 
         return res;
     } catch (error) {

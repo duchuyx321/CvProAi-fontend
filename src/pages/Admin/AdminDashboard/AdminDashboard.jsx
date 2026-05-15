@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
@@ -314,7 +314,7 @@ function RecentOrdersTable({ orders = [] }) {
         <div className={cx('panel', 'tablePanel')}>
             <div className={cx('panelHeader')}>
                 <h3>Giao dịch gần đây</h3>
-                <Link to={config.router.manageOrders} className={cx('linkBtn')}>
+                <Link to={config.router.adminOrders} className={cx('linkBtn')}>
                     Xem tất cả
                 </Link>
             </div>
@@ -391,6 +391,7 @@ export default function AdminDashboard() {
     const [errorMessage, setErrorMessage] = useState('');
 
     const filterRef = useRef(null);
+    const hasDashboardDataRef = useRef(false);
 
     const filterParams = useMemo(() => {
         if (filterType === 'custom') {
@@ -421,7 +422,7 @@ export default function AdminDashboard() {
         };
     }, []);
 
-    const mapStats = (summary = {}) => {
+    const mapStats = useCallback((summary = {}) => {
         return [
             {
                 id: 1,
@@ -476,9 +477,9 @@ export default function AdminDashboard() {
                 ),
             },
         ];
-    };
+    }, []);
 
-    const mapRecentOrders = (items = []) => {
+    const mapRecentOrders = useCallback((items = []) => {
         return (Array.isArray(items) ? items : []).map((item) => {
             let statusType = 'warning';
             let statusText = item?.status || '';
@@ -519,72 +520,89 @@ export default function AdminDashboard() {
                 time: formatRelativeTime(item?.createdAt || item?.created_at),
             };
         });
-    };
+    }, []);
 
-    const mapChartData = (items = []) => {
+    const mapChartData = useCallback((items = []) => {
         return (Array.isArray(items) ? items : []).map((item) => ({
             label: item?.label || '',
             users: Number(item?.users?.value) || 0,
             cvs: Number(item?.cvs?.value) || 0,
             aiRuns: Number(item?.aiRuns?.value) || 0,
         }));
-    };
+    }, []);
 
-    const fetchDashboardData = async (
-        params = filterParams,
-        showRefresh = false,
-    ) => {
-        try {
-            if (showRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
+    const fetchDashboardData = useCallback(
+        async (params, showRefresh = false) => {
+            const shouldShowErrorState =
+                !showRefresh || !hasDashboardDataRef.current;
 
-            setErrorMessage('');
+            try {
+                if (showRefresh) {
+                    setRefreshing(true);
+                } else {
+                    setLoading(true);
+                }
 
-            const res = await getAdminDashboard(params);
+                if (!showRefresh) {
+                    setErrorMessage('');
+                }
 
-            if (!res?.success) {
+                const res = await getAdminDashboard(params);
+
+                if (!res?.success) {
+                    const message =
+                        res?.message ||
+                        res?.messsage ||
+                        'Không tải được dashboard';
+                    if (shouldShowErrorState) {
+                        setErrorMessage(message);
+                    }
+                    return { success: false, message };
+                }
+
+                const dashboardData = res?.data || {};
+
+                hasDashboardDataRef.current = true;
+                setErrorMessage('');
+                setStats(mapStats(dashboardData?.summary));
+                setChartData(mapChartData(dashboardData?.chartLineData));
+                setChartPieData(dashboardData?.chartPieData || {});
+
+                setSubscriptionData({
+                    premiumUpgradeRate: `${
+                        dashboardData?.chartProgress?.premiumRate || 0
+                    }%`,
+                    paymentSuccessRate: `${
+                        dashboardData?.chartProgress?.paymentPaidRate || 0
+                    }%`,
+                    pendingOrders: dashboardData?.chartProgress?.pending || 0,
+                    failedPayments: dashboardData?.chartProgress?.canceled || 0,
+                });
+
+                setRecentOrders(
+                    mapRecentOrders(
+                        dashboardData?.payments?.data?.data || [],
+                    ).slice(0, 4),
+                );
+                return { success: true };
+            } catch (error) {
                 const message =
-                    res?.message || res?.messsage || 'Không tải được dashboard';
-                setErrorMessage(message);
-                return;
+                    error?.message || 'Có lỗi xảy ra khi tải dashboard';
+                if (shouldShowErrorState) {
+                    setErrorMessage(message);
+                }
+                return { success: false, message };
+            } finally {
+                setLoading(false);
+                setRefreshing(false);
             }
-
-            const dashboardData = res?.data || {};
-
-            setStats(mapStats(dashboardData?.summary));
-            setChartData(mapChartData(dashboardData?.chartLineData));
-            setChartPieData(dashboardData?.chartPieData || {});
-
-            setSubscriptionData({
-                premiumUpgradeRate: `${
-                    dashboardData?.chartProgress?.premiumRate || 0
-                }%`,
-                paymentSuccessRate: `${
-                    dashboardData?.chartProgress?.paymentPaidRate || 0
-                }%`,
-                pendingOrders: dashboardData?.chartProgress?.pending || 0,
-                failedPayments: dashboardData?.chartProgress?.canceled || 0,
-            });
-
-            setRecentOrders(
-                mapRecentOrders(
-                    dashboardData?.payments?.data?.data || [],
-                ).slice(0, 4),
-            );
-        } catch {
-            setErrorMessage('Có lỗi xảy ra khi tải dashboard');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
+        },
+        [mapChartData, mapRecentOrders, mapStats],
+    );
 
     useEffect(() => {
         fetchDashboardData(filterParams);
-    }, [filterParams]);
+    }, [fetchDashboardData, filterParams]);
 
     const handleResetFilter = () => {
         setFilterType('30d');
@@ -613,7 +631,14 @@ export default function AdminDashboard() {
     };
 
     const handleRefresh = async () => {
-        await fetchDashboardData(filterParams, true);
+        const result = await fetchDashboardData(filterParams, true);
+
+        if (result?.success) {
+            toast.success('Dashboard đã được làm mới.');
+            return;
+        }
+
+        toast.error(result?.message || 'Không thể làm mới dashboard.');
     };
 
     const fetchApi = async (filterParams, format = 'excel') => {
@@ -814,7 +839,11 @@ export default function AdminDashboard() {
                         onClick={handleRefresh}
                         disabled={refreshing || loading}
                     >
-                        <FiRefreshCw />
+                        <FiRefreshCw
+                            className={cx('refreshIcon', {
+                                spinning: refreshing || loading,
+                            })}
+                        />
                         <span>
                             {refreshing || loading ? 'Đang tải...' : 'Làm mới'}
                         </span>

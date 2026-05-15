@@ -4,6 +4,8 @@ import styles from './HistoryRow.module.scss';
 
 const cx = classNames.bind(styles);
 
+const VI_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
 const STATUS_LABELS = {
     PAID: 'Đã thanh toán',
     PENDING: 'Đang chờ',
@@ -22,14 +24,19 @@ function formatCurrency(value, currency = 'VND') {
     }).format(amount);
 }
 
-function formatDateTime(value) {
+function isValidDate(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime());
+}
+
+function formatDateTime(value, timeZone = VI_TIME_ZONE) {
     if (!value) return '--';
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return '--';
+    if (!isValidDate(date)) return '--';
 
     return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -38,31 +45,37 @@ function formatDateTime(value) {
     }).format(date);
 }
 
-function formatTime(value) {
+function formatTime(value, timeZone = VI_TIME_ZONE) {
     if (!value) return '--';
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return '--';
+    if (!isValidDate(date)) return '--';
 
     return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
         hour: '2-digit',
         minute: '2-digit',
     }).format(date);
 }
 
-function formatOnlyDate(value) {
+function formatOnlyDate(value, timeZone = VI_TIME_ZONE) {
     if (!value) return '--';
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return '--';
+    if (!isValidDate(date)) return '--';
 
     return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
     }).format(date);
+}
+
+function formatPaidAt(value) {
+    return formatDateTime(value, 'UTC');
 }
 
 function getStatusLabel(status) {
@@ -89,7 +102,7 @@ function HistoryRow({ payment }) {
     return (
         <tr>
             <td className={cx('codeCell')}>
-                <span title={payment?.order_code}>
+                <span title={payment?.order_code || ''}>
                     {payment?.order_code || '--'}
                 </span>
             </td>
@@ -99,6 +112,7 @@ function HistoryRow({ payment }) {
                     <span className={cx('userName')} title={fullName}>
                         {fullName}
                     </span>
+
                     <small title={email}>{email}</small>
                 </div>
             </td>
@@ -110,7 +124,9 @@ function HistoryRow({ payment }) {
                     </span>
 
                     {payment?.paid_at ? (
-                        <small>Thanh toán lúc {formatDateTime(payment.paid_at)}</small>
+                        <small>
+                            Thanh toán lúc {formatPaidAt(payment.paid_at)}
+                        </small>
                     ) : (
                         <small>Chưa thanh toán</small>
                     )}
