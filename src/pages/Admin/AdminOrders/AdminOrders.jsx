@@ -30,7 +30,7 @@ const SortOrder = {
 const PaymentSortBy = {
     CREATED_AT: 'createdAt',
     UPDATED_AT: 'updatedAt',
-    TITLE: 'title',
+    ORDER_CODE: 'order_code',
 };
 
 const SORT_OPTIONS = [
@@ -55,13 +55,13 @@ const SORT_OPTIONS = [
         sort_order: SortOrder.ASC,
     },
     {
-        label: 'Tiêu đề: A → Z',
-        sort_by: PaymentSortBy.TITLE,
+        label: 'Mã đơn: A → Z',
+        sort_by: PaymentSortBy.ORDER_CODE,
         sort_order: SortOrder.ASC,
     },
     {
-        label: 'Tiêu đề: Z → A',
-        sort_by: PaymentSortBy.TITLE,
+        label: 'Mã đơn: Z → A',
+        sort_by: PaymentSortBy.ORDER_CODE,
         sort_order: SortOrder.DESC,
     },
 ];
@@ -145,7 +145,7 @@ function getErrorMessage(error, fallbackMessage) {
 
 function normalizeToolbarFilters({ search, sort, range }) {
     const nextFilters = {
-        search: search || '',
+        search: search?.trim() || '',
         sort_by: sort?.sort_by || DEFAULT_FILTERS.sort_by,
         sort_order: sort?.sort_order || DEFAULT_FILTERS.sort_order,
         range: '',
