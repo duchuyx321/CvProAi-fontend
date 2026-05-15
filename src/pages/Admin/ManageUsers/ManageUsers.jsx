@@ -150,10 +150,6 @@ function ManageUsers() {
     }, [page, filters]);
 
     const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
-    const totalItems = Number(meta?.total_items) || users.length;
-    const limit = Number(meta?.limit) || PAGE_SIZE;
-    const startItem = totalItems ? (page - 1) * limit + 1 : 0;
-    const endItem = totalItems ? Math.min(page * limit, totalItems) : 0;
 
     const handlePageChange = useCallback(
         (newPage) => {

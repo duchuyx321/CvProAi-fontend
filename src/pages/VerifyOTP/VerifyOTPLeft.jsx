@@ -53,7 +53,7 @@ function VerifyOTPLeft() {
         const expiresAt = Date.now() + DEFAULT_COUNTDOWN * 1000;
         sessionStorage.setItem(storageKey, String(expiresAt));
         setCountdown(DEFAULT_COUNTDOWN);
-    }, [storageKey]);
+    }, [DEFAULT_COUNTDOWN, storageKey]);
     useEffect(() => {
         const expiresAt = Number(sessionStorage.getItem(storageKey));
 
@@ -171,8 +171,7 @@ function VerifyOTPLeft() {
 
             toast.success('Gửi lại mã thành công');
             startCountdown();
-            // eslint-disable-next-line no-unused-vars
-        } catch (error) {
+        } catch {
             toast.error('Gửi lại mã thất bại');
         } finally {
             setLoadingResend(false);

@@ -63,7 +63,7 @@ function SidebarDefault() {
                 } else {
                     setAiQuota((prev) => ({ ...prev, isLoading: false }));
                 }
-            } catch (error) {
+            } catch {
                 setAiQuota((prev) => ({ ...prev, isLoading: false }));
             }
         };

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import classNames from 'classnames/bind';
 import { FcGoogle } from 'react-icons/fc';
 import { FaFacebook } from 'react-icons/fa';

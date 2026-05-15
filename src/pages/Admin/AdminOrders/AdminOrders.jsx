@@ -292,15 +292,7 @@ function AdminOrders() {
         return () => {
             ignore = true;
         };
-    }, [
-        page,
-        filters.search,
-        filters.sort_by,
-        filters.sort_order,
-        filters.range,
-        filters.from,
-        filters.to,
-    ]);
+    }, [page, filters]);
 
     const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
     const totalItems = Number(meta?.total_items) || orders.length;
