@@ -77,12 +77,10 @@ function Pricing() {
     }, []);
 
     const checkIsCurrentPlan = (plan) => {
-        if (!isAuthenticated) return false;
+        if (!isInitialized || !isAuthenticated) return false;
 
         return currentPlanSlug === normalizeSlug(plan?.slug);
     };
-
-    const isPageLoading = isLoading || !isInitialized;
 
     return (
         <section className={cx('wrapper')}>
@@ -95,7 +93,7 @@ function Pricing() {
                 </div>
 
                 <div className={cx('grid')}>
-                    {isPageLoading ? (
+                    {isLoading ? (
                         <p className={cx('loading')}>Đang tải bảng giá...</p>
                     ) : pricing.length === 0 ? (
                         <p className={cx('empty')}>
@@ -106,9 +104,13 @@ function Pricing() {
                             <PricingCard
                                 key={plan.id}
                                 plan={plan}
-                                isAuthenticated={isAuthenticated}
+                                isAuthenticated={
+                                    isInitialized && isAuthenticated
+                                }
                                 isCurrentPlan={checkIsCurrentPlan(plan)}
-                                isCurrentPremium={isCurrentPremium}
+                                isCurrentPremium={
+                                    isInitialized && isCurrentPremium
+                                }
                             />
                         ))
                     )}
