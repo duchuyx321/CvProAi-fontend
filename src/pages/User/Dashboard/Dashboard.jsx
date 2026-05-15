@@ -207,7 +207,7 @@ function Dashboard() {
                                         !(dashboardData?.cvs ?? []).length > 0
                                     }
                                     onClick={() =>
-                                        navigate(config.router.myCvs)
+                                        navigate(config.router.adminOrders)
                                     }
                                 >
                                     Xem tất cả

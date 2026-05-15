@@ -8,6 +8,7 @@ import { FiAward } from 'react-icons/fi';
 import { IoDocumentTextOutline } from 'react-icons/io5';
 import { GoHome } from 'react-icons/go';
 import { RiAiGenerate2, RiFolderUserLine } from 'react-icons/ri';
+import { MdManageSearch } from 'react-icons/md';
 import { config } from '~/config';
 import { getDashboardOverview } from '~/services/dashboard.service';
 
@@ -24,6 +25,11 @@ const MAIN_MENU = [
         title: 'CV của tôi',
         to: config.router.myCvs,
         Icon: RiFolderUserLine,
+    },
+    {
+        title: 'Lịch sử phân tích CV',
+        to: config.router.cvAnalysisHistory,
+        Icon: MdManageSearch,
     },
     {
         title: 'Phân tích CV bằng AI',

@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
     FaCheckCircle,
-    FaPrint,
     FaArrowRight,
     FaReceipt,
     FaSpinner,
@@ -47,8 +46,10 @@ const parseCustomDate = (value) => {
     const ddmmyyyy = raw.match(
         /^(\d{1,2}):(\d{1,2}):(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
     );
+
     if (ddmmyyyy) {
         const [, hour, minute, second, day, month, year] = ddmmyyyy;
+
         const parsed = new Date(
             Number(year),
             Number(month) - 1,
@@ -57,10 +58,12 @@ const parseCustomDate = (value) => {
             Number(minute),
             Number(second),
         );
+
         return Number.isNaN(parsed.getTime()) ? null : parsed;
     }
 
     const iso = new Date(raw);
+
     return Number.isNaN(iso.getTime()) ? null : iso;
 };
 
@@ -70,17 +73,19 @@ const toSafeNumber = (value, fallback = 0) => {
             .replace(/,/g, '')
             .trim(),
     );
+
     return Number.isFinite(parsed) ? parsed : fallback;
 };
 
 function PaymentSuccess() {
     const { orderId } = useParams();
     const navigate = useNavigate();
-    useAuth();
+    const { initializeAuth } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [orderData, setOrderData] = useState(null);
     const [paymentState, setPaymentState] = useState('pending');
+    const [actionLoading, setActionLoading] = useState(false);
 
     const paymentStateConfig = {
         success: {
@@ -203,8 +208,12 @@ function PaymentSuccess() {
 
     const formatDate = (value) => {
         const parsedDate = parseCustomDate(value);
+
         if (!parsedDate) return '--';
-        return `${parsedDate.toLocaleDateString('vi-VN')} ${parsedDate.toLocaleTimeString('vi-VN')}`;
+
+        return `${parsedDate.toLocaleDateString(
+            'vi-VN',
+        )} ${parsedDate.toLocaleTimeString('vi-VN')}`;
     };
 
     const computedViewData = useMemo(() => {
@@ -268,6 +277,37 @@ function PaymentSuccess() {
         };
     }, [orderData, orderId]);
 
+    const handlePrimaryAction = async () => {
+        if (actionLoading) return;
+
+        if (paymentState === 'success') {
+            try {
+                setActionLoading(true);
+
+                await initializeAuth();
+
+                navigate(config.router.upgradePremium, {
+                    replace: true,
+                });
+            } catch (error) {
+                console.error('Refresh user after payment failed:', error);
+
+                toast.error(
+                    error?.message ||
+                        'Không thể cập nhật trạng thái gói. Vui lòng tải lại trang.',
+                );
+            } finally {
+                setActionLoading(false);
+            }
+
+            return;
+        }
+
+        navigate(config.router.upgradePremium, {
+            replace: true,
+        });
+    };
+
     if (loading) {
         return (
             <div className={cx('loading-wrapper')}>
@@ -289,22 +329,23 @@ function PaymentSuccess() {
             <div className={cx('card')}>
                 <div className={cx('hero')}>
                     <div className={cx('icon-wrap')}>
-                        {paymentState === 'success' && (
+                        {paymentState === 'success' ? (
                             <FaCheckCircle className={cx('icon-success')} />
-                        )}
+                        ) : null}
 
-                        {paymentState === 'pending' && (
+                        {paymentState === 'pending' ? (
                             <FaClock className={cx('icon-pending')} />
-                        )}
+                        ) : null}
 
-                        {paymentState === 'failed' && (
+                        {paymentState === 'failed' ? (
                             <FaTimesCircle className={cx('icon-failed')} />
-                        )}
+                        ) : null}
                     </div>
 
                     <span className={cx('status-badge', paymentState)}>
                         {currentView.badge}
                     </span>
+
                     <h1 className={cx('title')}>{currentView.title}</h1>
 
                     <p className={cx('subtitle')}>{currentView.subtitle}</p>
@@ -318,6 +359,7 @@ function PaymentSuccess() {
                                 {computedViewData.orderCode}
                             </span>
                         </div>
+
                         <div className={cx('info-chip')}>
                             <span className={cx('info-label')}>
                                 Gói đã kích hoạt
@@ -365,7 +407,7 @@ function PaymentSuccess() {
                             </span>
                         </div>
 
-                        <div className={cx('divider')}></div>
+                        <div className={cx('divider')} />
 
                         <div className={cx('row', 'total-row')}>
                             <span className={cx('label')}>Tổng tiền</span>
@@ -377,27 +419,16 @@ function PaymentSuccess() {
                 </div>
 
                 <div className={cx('actions')}>
-                    {/* <button type="button" className={cx('btn-secondary')} onClick={() => window.print()}>
-                        <FaPrint /> In bien lai
-                    </button> */}
-
                     <button
                         type="button"
                         className={cx('btn-primary', paymentState)}
-                        onClick={() => {
-                            if (paymentState === 'success') {
-                                navigate(config.router.upgradePremium, {
-                                    replace: true,
-                                });
-                                return;
-                            }
-
-                            navigate(config.router.upgradePremium, {
-                                replace: true,
-                            });
-                        }}
+                        onClick={handlePrimaryAction}
+                        disabled={actionLoading}
                     >
-                        {currentView.buttonText} <FaArrowRight />
+                        {actionLoading
+                            ? 'Đang cập nhật gói...'
+                            : currentView.buttonText}
+                        {!actionLoading ? <FaArrowRight /> : null}
                     </button>
                 </div>
 

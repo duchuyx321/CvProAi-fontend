@@ -239,9 +239,8 @@ function AiAnalysis() {
             console.log(result);
             // navigate sang result ở đây
             setTimeout(() => {
-                // window.location.replace(config.router.home);
                 navigate(
-                    `${config.router.aiAnalysisResult_route}${result.data.dataValues.id || result.data.id}`,
+                    `${config.router.aiAnalysisResult_route}${result.data.detailAnalyze || result.data.dataValues.detailAnalyze}`,
                 ); //dashboard
             }, 800);
         } catch (error) {
