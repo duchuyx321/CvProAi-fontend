@@ -150,8 +150,10 @@ $capacity-border: #e2e8f0;
 
 .progress-bar-fill {
     height: 100%;
+    width: var(--progress-width, 0%);
     background-color: $primary-color;
     border-radius: 4px;
+    transition: width 0.3s ease;
 }
 
 .capacity-text {

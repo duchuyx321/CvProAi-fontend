@@ -30,16 +30,15 @@ const ADMIN_MENU = [
         Icon: RiFileList2Line,
     },
     {
+        title: 'Quản lý đơn hàng',
+        to: config.router.adminOrders,
+        Icon: FiShoppingCart,
+    },
+    {
         title: 'Quản lý gói dịch vụ',
         to: config.router.managePackages,
         Icon: LiaBoxSolid,
     },
-    {
-        title: 'Quản lý đơn hàng',
-        to: config.router.manageOrders,
-        Icon: FiShoppingCart,
-    },
-    { title: 'Cài đặt', to: config.router.adminSettings, Icon: FiSettings },
 ];
 
 function SidebarAdmin() {

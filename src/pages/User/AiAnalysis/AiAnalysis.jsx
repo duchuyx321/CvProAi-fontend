@@ -47,7 +47,7 @@ function AiAnalysis() {
             const result = await getDashboardOverview();
 
             if (result?.success && result?.data?.cvs) {
-                const cvs = result.data.cvs.map(cv => ({
+                const cvs = result.data.cvs.map((cv) => ({
                     id: cv.id,
                     fileName: cv.title || cv.name || 'CV chưa đặt tên',
                     fileUrl: cv.fileUrl || '#',
@@ -231,8 +231,8 @@ function AiAnalysis() {
             console.log(result);
             setTimeout(() => {
                 navigate(
-                    `${config.router.aiAnalysisResult_route}${result.data.dataValues.id || result.data.id}`,
-                );
+                    `${config.router.aiAnalysisResult_route}${result.data.detailAnalyze || result.data.dataValues.detailAnalyze}`,
+                ); //dashboard
             }, 800);
         } catch (error) {
             console.error('Analyze CV error:', error);
@@ -244,26 +244,26 @@ function AiAnalysis() {
     const selectedCV =
         cvInput.type === 'ID'
             ? {
-                id: cvInput.cv_id,
-                name: cvInput.name,
-                fileUrl: cvInput.fileUrl,
-                source: 'saved',
-            }
+                  id: cvInput.cv_id,
+                  name: cvInput.name,
+                  fileUrl: cvInput.fileUrl,
+                  source: 'saved',
+              }
             : cvInput.type === 'FILE'
-                ? {
+              ? {
                     id: null,
                     name: cvInput.name,
                     file: cvInput.cv_file,
                     source: 'local',
                 }
-                : null;
+              : null;
 
     const selectedJobDescriptionFile = jdInput.jd_file
         ? {
-            name: jdInput.jd_file.name,
-            size: jdInput.jd_file.size,
-            file: jdInput.jd_file,
-        }
+              name: jdInput.jd_file.name,
+              size: jdInput.jd_file.size,
+              file: jdInput.jd_file,
+          }
         : null;
 
     return (

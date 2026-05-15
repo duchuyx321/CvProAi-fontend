@@ -73,6 +73,14 @@
     border-color: #4338ca;
 }
 
+.refreshIcon {
+    flex: 0 0 auto;
+}
+
+.spinning {
+    animation: refresh-spin 0.8s linear infinite;
+}
+
 .ghostActionBtn:disabled,
 .primaryActionBtn:disabled,
 .filterBtn:disabled {
@@ -637,6 +645,16 @@
 .emptyTable {
     text-align: center;
     color: #9ca3af;
+}
+
+@keyframes refresh-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 1400px) {

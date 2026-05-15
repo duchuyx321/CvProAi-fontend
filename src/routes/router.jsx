@@ -18,13 +18,12 @@ import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers';
 import ManageTemplates from '~/pages/Admin/ManageTemplates';
-
 import AdminSettings from '~/pages/Admin/AdminSettings';
-import ManageOrders from '~/pages/Admin/ManageOrders';
 import ManagePackages from '~/pages/Admin/ManagePackages';
 import Profile from '~/pages/User/Profile';
 import Security from '~/pages/User/Security';
 import DetailLayout from '~/layouts/DetailLayout';
+
 import Package from '~/pages/User/Package';
 import History from '~/pages/User/History';
 import Pricing from '~/pages/Pricing';
@@ -34,9 +33,11 @@ import PaymentSuccess from '~/pages/User/PaymentSuccess';
 import UpgradeOptionsPage from '~/pages/User/UpgradeOptionsPage';
 import CreateCv from '~/pages/User/CreateCv';
 import EditCv from '~/pages/User/EditCv';
+import AdminOrders from '~/pages/Admin/AdminOrders';
 
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
+import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
 
 // public router
 const PublicRouter = [
@@ -180,6 +181,11 @@ const UserRouter = [
         component: PaymentSuccess,
         layout: DetailLayout,
     },
+    {
+        path: config.router.cvAnalysisHistory,
+        component: CvAnalysisHistory,
+        layout: DefaultLayout,
+    },
 ];
 
 // admin router
@@ -210,8 +216,8 @@ const AdminRouter = [
         layout: DetailLayout,
     },
     {
-        path: config.router.manageOrders,
-        component: ManageOrders,
+        path: config.router.adminOrders,
+        component: AdminOrders,
         layout: AdminLayout,
     },
     {

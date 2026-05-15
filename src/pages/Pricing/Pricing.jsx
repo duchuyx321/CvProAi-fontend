@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
 
@@ -10,46 +10,43 @@ import { getPricing } from '~/services/pricing.service';
 const cx = classNames.bind(styles);
 
 function normalizeSlug(value = '') {
-    return value.trim().toLowerCase();
+    return String(value).trim().toLowerCase();
 }
 
 function Pricing() {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, isInitialized } = useAuth();
 
-    const currentPlanSlug = normalizeSlug(user?.plan?.slug ?? 'free');
+    const currentPlanSlug = useMemo(() => {
+        return normalizeSlug(user?.planCurrent?.slug || '');
+    }, [user]);
 
     const isCurrentPremium = isAuthenticated && currentPlanSlug === 'premium';
-
-    const checkIsCurrentPlan = (plan) => {
-        if (!isAuthenticated) return false;
-
-        return currentPlanSlug === normalizeSlug(plan.slug);
-    };
 
     const [pricing, setPricing] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
-        const fetchPricing = async () => {
-            setIsLoading(true);
 
+        const fetchPricing = async () => {
             try {
+                setIsLoading(true);
+
                 const result = await getPricing();
 
-                if (!result?.success) {
+                if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
-                        result?.message ?? 'Không thể tải bảng giá',
+                        result?.message ||
+                            result?.messsage ||
+                            'Không thể tải bảng giá',
                     );
                 }
 
-                if (!Array.isArray(result?.data?.data)) {
-                    throw new Error('Dữ liệu bảng giá không hợp lệ');
-                }
+                const plans = Array.isArray(result?.data?.data)
+                    ? result.data.data
+                    : [];
 
-                const activePlans = result.data?.data.filter(
-                    (plan) => plan.is_active === true,
-                );
+                const activePlans = plans.filter((plan) => plan?.is_active);
 
                 if (!cancelled) {
                     setPricing(activePlans);
@@ -57,8 +54,13 @@ function Pricing() {
             } catch (error) {
                 if (!cancelled) {
                     toast.error(
-                        error?.message ?? 'Có lỗi xảy ra, vui lòng thử lại sau',
+                        error?.response?.data?.message ||
+                            error?.response?.data?.messsage ||
+                            error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau',
                     );
+
+                    setPricing([]);
                 }
             } finally {
                 if (!cancelled) {
@@ -73,6 +75,12 @@ function Pricing() {
             cancelled = true;
         };
     }, []);
+
+    const checkIsCurrentPlan = (plan) => {
+        if (!isInitialized || !isAuthenticated) return false;
+
+        return currentPlanSlug === normalizeSlug(plan?.slug);
+    };
 
     return (
         <section className={cx('wrapper')}>
@@ -96,9 +104,13 @@ function Pricing() {
                             <PricingCard
                                 key={plan.id}
                                 plan={plan}
-                                isAuthenticated={isAuthenticated}
+                                isAuthenticated={
+                                    isInitialized && isAuthenticated
+                                }
                                 isCurrentPlan={checkIsCurrentPlan(plan)}
-                                isCurrentPremium={isCurrentPremium}
+                                isCurrentPremium={
+                                    isInitialized && isCurrentPremium
+                                }
                             />
                         ))
                     )}

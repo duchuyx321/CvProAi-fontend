@@ -1,4 +1,5 @@
 .wrapper {
+    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -6,8 +7,57 @@
 
 .loading,
 .empty {
-    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    padding: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+    color: #64748b;
+    font-size: 1.5rem;
+    font-weight: 600;
     text-align: center;
-    font-size: 1.6rem;
-    color: #6b7280;
+}
+
+.loading {
+    position: relative;
+    gap: 10px;
+
+    &::before {
+        content: '';
+        width: 20px;
+        height: 20px;
+        border: 2px solid #dbeafe;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+    }
+}
+
+.empty {
+    color: #94a3b8;
+    background: #f8fafc;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .wrapper {
+        gap: 18px;
+    }
+
+    .loading,
+    .empty {
+        min-height: 180px;
+        padding: 24px 18px;
+        border-radius: 16px;
+        font-size: 1.35rem;
+    }
 }
