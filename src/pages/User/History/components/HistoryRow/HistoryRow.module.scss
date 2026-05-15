@@ -1,124 +1,151 @@
-.row {
-    display: grid;
-    grid-template-columns: 0.95fr 1fr 1.35fr 0.9fr 0.9fr 1.25fr;
-    gap: 10px;
-    width: 100%;
-    padding: 18px 10px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.cell {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    min-height: 40px;
-    font-size: 1.5rem;
-    color: #374151;
-}
-
-.code {
-    font-weight: 600;
-    color: #111827;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.codeCell {
+    color: #020617;
+    font-weight: 800;
     white-space: nowrap;
+
+    span {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
 }
 
-.date {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.plan {
+.userInfo,
+.packageInfo,
+.dateInfo {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 4px;
-    flex-wrap: wrap;
     min-width: 0;
+
+    small {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        color: #64748b;
+        font-size: 1.18rem;
+        line-height: 1.4;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 }
 
-.planName {
-    font-weight: 600;
-    color: #111827;
+.userName,
+.packageName {
+    display: block;
+    max-width: 100%;
     overflow: hidden;
+    color: #020617;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.4;
+    white-space: nowrap;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
-.planCycle {
-    font-size: 1.3rem;
-    color: #6b7280;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.userName {
+    color: #0f172a;
 }
 
-.amount {
-    justify-content: flex-start;
-    font-weight: 600;
-    color: #111827;
-    white-space: nowrap;
+.packageName {
+    color: #1e293b;
 }
 
-.method {
-    color: #4b5563;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.amountCell {
+    color: #020617;
+    font-weight: 800;
     white-space: nowrap;
-}
-
-.status {
-    justify-content: flex-start;
 }
 
 .statusBadge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 112px;
-    min-height: 30px;
-
-    padding: 0 12px;
+    max-width: 100%;
+    min-width: 118px;
+    padding: 8px 12px;
     border-radius: 999px;
-    font-size: 1.3rem;
-    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1;
     white-space: nowrap;
 }
 
-.success {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.failed {
-    background: #fee2e2;
-    color: #dc2626;
+.paid {
+    color: #047857;
+    background: #d1fae5;
 }
 
 .pending {
-    background: #fef3c7;
     color: #b45309;
+    background: #fef3c7;
 }
 
-.canceled {
-    background: #f3f4f6;
-    color: #4b5563;
+.failed {
+    color: #b91c1c;
+    background: #fee2e2;
 }
 
-.refunded {
-    background: #e0f2fe;
-    color: #0369a1;
-}
-.code,
-.date,
-.method {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.cancelled {
+    color: #64748b;
+    background: #e2e8f0;
 }
 
-.status {
-    justify-content: flex-start;
-    overflow: visible;
+.dateInfo {
+    span {
+        color: #020617;
+        font-size: 1.32rem;
+        font-weight: 800;
+        line-height: 1.35;
+        white-space: nowrap;
+    }
+
+    small {
+        color: #64748b;
+        font-size: 1.16rem;
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 992px) {
+    .userName,
+    .packageName {
+        font-size: 1.2rem;
+    }
+
+    .userInfo,
+    .packageInfo,
+    .dateInfo {
+        small {
+            font-size: 1.05rem;
+        }
+    }
+
+    .statusBadge {
+        min-width: 0;
+        padding: 6px 8px;
+        font-size: 1.05rem;
+    }
+
+    .dateInfo {
+        span {
+            font-size: 1.08rem;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .codeCell,
+    .amountCell {
+        font-size: 1.02rem;
+    }
+
+    .statusBadge {
+        padding: 6px 7px;
+        font-size: 1rem;
+    }
 }
