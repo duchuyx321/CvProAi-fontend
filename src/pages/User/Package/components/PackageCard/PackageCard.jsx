@@ -5,6 +5,8 @@ import styles from './PackageCard.module.scss';
 
 const cx = classNames.bind(styles);
 
+const VI_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
 const BILLING_CYCLE_LABELS = {
     MONTH: '1 tháng',
     YEAR: '1 năm',
@@ -28,6 +30,7 @@ function formatDate(value) {
     if (Number.isNaN(date.getTime())) return '--';
 
     return new Intl.DateTimeFormat('vi-VN', {
+        timeZone: VI_TIME_ZONE,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -69,6 +72,9 @@ function buildPlanBenefits(plan = {}) {
 function PackageCard({ plan = {} }) {
     const benefits = buildPlanBenefits(plan);
     const isActive = Boolean(plan.is_active);
+
+    const hasSubscriptionStartedAt = Boolean(plan.subscription_started_at);
+    const hasSubscriptionExpiresAt = Boolean(plan.subscription_expires_at);
 
     return (
         <article className={cx('card')}>
@@ -117,19 +123,23 @@ function PackageCard({ plan = {} }) {
                     </span>
                 </div>
 
-                <div className={cx('metaItem')}>
-                    <span className={cx('metaLabel')}>Ngày tạo gói</span>
-                    <span className={cx('metaValue')}>
-                        {formatDate(plan.createdAt)}
-                    </span>
-                </div>
+                {hasSubscriptionStartedAt && (
+                    <div className={cx('metaItem')}>
+                        <span className={cx('metaLabel')}>Ngày bắt đầu</span>
+                        <span className={cx('metaValue')}>
+                            {formatDate(plan.subscription_started_at)}
+                        </span>
+                    </div>
+                )}
 
-                <div className={cx('metaItem')}>
-                    <span className={cx('metaLabel')}>Cập nhật lần cuối</span>
-                    <span className={cx('metaValue')}>
-                        {formatDate(plan.updatedAt)}
-                    </span>
-                </div>
+                {hasSubscriptionExpiresAt && (
+                    <div className={cx('metaItem')}>
+                        <span className={cx('metaLabel')}>Ngày hết hạn</span>
+                        <span className={cx('metaValue')}>
+                            {formatDate(plan.subscription_expires_at)}
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className={cx('section')}>
@@ -144,6 +154,7 @@ function PackageCard({ plan = {} }) {
                             <span className={cx('benefitIcon')}>
                                 <IoCheckmarkCircleOutline />
                             </span>
+
                             <span className={cx('benefitText')}>{item}</span>
                         </li>
                     ))}
