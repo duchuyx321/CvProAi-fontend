@@ -23,41 +23,18 @@ const INITIAL_FORM_DATA = {
     fullAiAnalysis: false,
 };
 
-const BENEFIT_LABELS = {
-    premiumCv: 'Dùng template premium',
-    removeWatermark: 'Xuất CV không watermark',
-    customDomain: 'Tên miền tùy chỉnh',
-    support247: 'Hỗ trợ 24/7',
-    allowAiAddon: 'Cho phép mua thêm AI add-on',
-    fullAiAnalysis: 'Xem full phân tích AI',
-};
-
 const FIELD_ORDER = ['name', 'description', 'price', 'currency', 'durationUnit', 'maxCv', 'aiLimit'];
 
 const sanitizeDigits = (value = '') => String(value).replace(/\D/g, '');
 
-const buildBenefitList = (data) => {
-    const benefits = [];
-    if (Number(data.maxCv) > 0) benefits.push(`${Number(data.maxCv)} CV`);
-    if (Number(data.aiLimit) > 0) benefits.push(`AI ${Number(data.aiLimit)} lượt`);
-    Object.entries(BENEFIT_LABELS).forEach(([key, label]) => {
-        if (data[key]) benefits.push(label);
-    });
-    return benefits;
-};
+const toBillingCycle = (durationUnit) => {
+    const billingCycleMap = {
+        year: 'YEAR',
+        month: 'MONTH',
+        permanent: 'LIFETIME',
+    };
 
-const buildPackageCode = (name, manualCode = '') => {
-    const normalized = manualCode.trim().toUpperCase();
-    if (normalized) return normalized;
-    const slug = name
-        .trim()
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .replace(/[^a-zA-Z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .toUpperCase()
-        .slice(0, 18);
-    return `PKG-${slug || 'NEW'}-${Date.now().toString().slice(-6)}`;
+    return billingCycleMap[durationUnit] || 'MONTH';
 };
 
 const validate = (formData) => {
@@ -122,23 +99,21 @@ export function useCreatePackageForm() {
 
         try {
             const payload = {
-                code: buildPackageCode(formData.name, formData.code),
                 name: formData.name.trim(),
                 description: formData.description.trim(),
                 price: Number(formData.price) || 0,
                 currency: formData.currency,
-                durationUnit: formData.durationUnit,
-                durationValue: formData.durationUnit === 'permanent' ? null : Number(formData.durationValue) || 1,
-                status: formData.status,
-                benefits: buildBenefitList(formData),
-                maxCv: Number(formData.maxCv) || 0,
-                aiLimit: Number(formData.aiLimit) || 0,
-                premiumCv: Boolean(formData.premiumCv),
-                removeWatermark: Boolean(formData.removeWatermark),
-                customDomain: Boolean(formData.customDomain),
-                support247: Boolean(formData.support247),
-                allowAiAddon: Boolean(formData.allowAiAddon),
-                fullAiAnalysis: Boolean(formData.fullAiAnalysis),
+                billing_cycle: toBillingCycle(formData.durationUnit),
+                cv_limit: Number(formData.maxCv) || 0,
+                export_limit: Number(formData.maxCv) || 0,
+                ai_limit: Number(formData.aiLimit) || 0,
+                premium_template: Boolean(formData.premiumCv),
+                remove_watermark: Boolean(formData.removeWatermark),
+                custom_domain: Boolean(formData.customDomain),
+                priority_support: Boolean(formData.support247),
+                can_purchase_ai_addon: Boolean(formData.allowAiAddon),
+                view_full_ai_analysis: Boolean(formData.fullAiAnalysis),
+                is_active: formData.status !== 'PAUSED',
             };
 
             const response = await createPackage(payload);

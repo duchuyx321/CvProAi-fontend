@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 import { getPackageDetail, updatePackage } from '~/services/managePackageService';
 import { DEFAULT_FORM_DATA } from '../../../managePackages.utils';
 import {
-    buildBenefitsPreview,
     buildUpdatePayload,
     createFormSnapshot,
     normalizePackageDetail,
@@ -13,6 +12,7 @@ import {
 
 export function usePackageDetailForm({
     packageId,
+    packageRecordId,
     isReadOnly,
     onNotFound,
     routePackage,
@@ -20,14 +20,10 @@ export function usePackageDetailForm({
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+    const [recordId, setRecordId] = useState(packageRecordId || '');
     const [errors, setErrors] = useState({});
     const [savedSnapshot, setSavedSnapshot] = useState(
         createFormSnapshot(DEFAULT_FORM_DATA)
-    );
-
-    const previewBenefits = useMemo(
-        () => buildBenefitsPreview(formData),
-        [formData]
     );
 
     const currentSnapshot = useMemo(
@@ -41,6 +37,7 @@ export function usePackageDetailForm({
         if (routePackage) {
             const normalizedPackage = normalizePackageDetail(routePackage);
             const nextSnapshot = createFormSnapshot(normalizedPackage);
+            setRecordId(normalizedPackage.id || packageRecordId || '');
             setSavedSnapshot(nextSnapshot);
             setFormData(normalizedPackage);
             setLoading(false);
@@ -51,7 +48,9 @@ export function usePackageDetailForm({
             const response = await getPackageDetail(packageId);
             const raw =
                 response?.data?.item ??
+                response?.data?.plan ??
                 response?.data?.data ??
+                response?.plan ??
                 response?.data ??
                 response;
 
@@ -65,6 +64,9 @@ export function usePackageDetailForm({
 
             const normalizedPackage = normalizePackageDetail(raw);
             const nextSnapshot = createFormSnapshot(normalizedPackage);
+            if (normalizedPackage.id && normalizedPackage.id !== packageId) {
+                setRecordId(normalizedPackage.id);
+            }
             setSavedSnapshot(nextSnapshot);
             setFormData(normalizedPackage);
         } catch {
@@ -75,7 +77,7 @@ export function usePackageDetailForm({
         } finally {
             setLoading(false);
         }
-    }, [onNotFound, packageId, routePackage]);
+    }, [onNotFound, packageId, packageRecordId, routePackage]);
 
     useEffect(() => {
         loadPackageDetail();
@@ -176,8 +178,11 @@ export function usePackageDetailForm({
         setSubmitting(true);
 
         try {
-            const payload = buildUpdatePayload(formData, previewBenefits);
-            const response = await updatePackage(packageId, payload);
+            const payload = buildUpdatePayload(formData);
+            const response = await updatePackage(
+                recordId || formData.id || packageId,
+                payload,
+            );
 
             const isFailed =
                 response?.success === false ||
@@ -212,7 +217,7 @@ export function usePackageDetailForm({
         isDirty,
         isReadOnly,
         packageId,
-        previewBenefits,
+        recordId,
         submitting,
     ]);
 

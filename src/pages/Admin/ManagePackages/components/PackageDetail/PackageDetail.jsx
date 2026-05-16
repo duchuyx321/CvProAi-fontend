@@ -1,6 +1,11 @@
 import classNames from 'classnames/bind';
 import { useCallback } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import {
+    useLocation,
+    useNavigate,
+    useParams,
+    useSearchParams,
+} from 'react-router-dom';
 import Button from '~/components/Button';
 import { config } from '~/config';
 import { BasicInfoCard, BenefitsCard } from './components';
@@ -43,33 +48,11 @@ function PackageDetail() {
         submitPackageDetail,
     } = usePackageDetailForm({
         packageId,
+        packageRecordId: routePackage?.id,
         isReadOnly,
         onNotFound: handleBackToList,
         routePackage,
     });
-
-    const handleCancel = useCallback(() => {
-        if (isReadOnly) {
-            handleBackToList();
-            return;
-        }
-
-        if (submitting) {
-            return;
-        }
-
-        if (isDirty) {
-            const confirmed = window.confirm(
-                'Bạn có thay đổi chưa lưu. Bạn có chắc chắn muốn rời trang?'
-            );
-
-            if (!confirmed) {
-                return;
-            }
-        }
-
-        handleBackToList();
-    }, [handleBackToList, isDirty, isReadOnly, submitting]);
 
     const handleSubmit = useCallback(() => {
         submitPackageDetail();
@@ -109,14 +92,6 @@ function PackageDetail() {
                         </div>
 
                         <div className={cx('actions')}>
-                            <Button
-                                outlineText
-                                onClick={handleCancel}
-                                disabled={submitting && !isReadOnly}
-                            >
-                                {isReadOnly ? 'Quay lại' : 'Hủy'}
-                            </Button>
-
                             {isReadOnly ? (
                                 <Button primary onClick={handleGoToEdit}>
                                     Chỉnh sửa
@@ -127,7 +102,9 @@ function PackageDetail() {
                                     onClick={handleSubmit}
                                     disabled={submitting || !isDirty}
                                 >
-                                    {submitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                    {submitting
+                                        ? 'Đang lưu...'
+                                        : 'Lưu thay đổi'}
                                 </Button>
                             )}
                         </div>

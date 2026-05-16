@@ -38,6 +38,8 @@ const STATUS_FILTER_OPTIONS = [
     { value: 'PAUSED', label: STATUS_LABEL_MAP.PAUSED },
 ];
 
+const getPackageRouteKey = (item) => item.slug || item.id;
+
 function ManagePackages() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -78,7 +80,7 @@ function ManagePackages() {
     const handleView = useCallback(
         (item) =>
             navigate(
-                `${config.router.packageDetail.replace(':packageId', item.id)}?mode=view`,
+                `${config.router.packageDetail.replace(':packageId', getPackageRouteKey(item))}?mode=view`,
                 { state: { package: item } },
             ),
         [navigate],
@@ -87,7 +89,7 @@ function ManagePackages() {
     const handleEdit = useCallback(
         (item) =>
             navigate(
-                config.router.packageDetail.replace(':packageId', item.id),
+                config.router.packageDetail.replace(':packageId', getPackageRouteKey(item)),
                 { state: { package: item } },
             ),
         [navigate],

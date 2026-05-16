@@ -53,6 +53,16 @@ function normalizeBoolean(value, fallback = false) {
     return fallback;
 }
 
+function normalizeStatus(value) {
+    if (typeof value === 'boolean') return value ? 'ACTIVE' : 'PAUSED';
+    if (typeof value === 'number') return value === 1 ? 'ACTIVE' : 'PAUSED';
+
+    const normalizedValue = toSafeString(value).toUpperCase();
+    return normalizedValue === 'PAUSED' || normalizedValue === 'INACTIVE'
+        ? 'PAUSED'
+        : 'ACTIVE';
+}
+
 function normalizeBenefits(value) {
     if (Array.isArray(value)) {
         return value.map((item) => toSafeString(item)).filter(Boolean);
@@ -77,22 +87,22 @@ function extractFeatureFlags(packageItem) {
 
     return {
         premiumCv:
-            normalizeBoolean(packageItem?.premiumCv, false) ||
+            normalizeBoolean(packageItem?.premiumCv ?? packageItem?.premium_template, false) ||
             hasBenefit(/premium|template/),
         removeWatermark:
-            normalizeBoolean(packageItem?.removeWatermark, false) ||
+            normalizeBoolean(packageItem?.removeWatermark ?? packageItem?.remove_watermark, false) ||
             hasBenefit(/watermark/),
         customDomain:
-            normalizeBoolean(packageItem?.customDomain, false) ||
+            normalizeBoolean(packageItem?.customDomain ?? packageItem?.custom_domain, false) ||
             hasBenefit(/tên\s*miền|domain/),
         support247:
-            normalizeBoolean(packageItem?.support247, false) ||
+            normalizeBoolean(packageItem?.support247 ?? packageItem?.priority_support, false) ||
             hasBenefit(/24\/7|hỗ\s*trợ/),
         allowAiAddon:
-            normalizeBoolean(packageItem?.allowAiAddon, false) ||
+            normalizeBoolean(packageItem?.allowAiAddon ?? packageItem?.can_purchase_ai_addon, false) ||
             hasBenefit(/add[\s-]*on/),
         fullAiAnalysis:
-            normalizeBoolean(packageItem?.fullAiAnalysis, false) ||
+            normalizeBoolean(packageItem?.fullAiAnalysis ?? packageItem?.view_full_ai_analysis, false) ||
             hasBenefit(/full\s*phân\s*tích|phân\s*tích\s*ai/),
     };
 }
@@ -104,7 +114,10 @@ export function normalizePackageDetail(packageItem) {
 
     const featureFlags = extractFeatureFlags(packageItem);
     const normalizedDurationUnit = normalizeDurationUnit(
-        packageItem?.durationUnit || packageItem?.cycle || packageItem?.billingUnit
+        packageItem?.durationUnit ||
+            packageItem?.cycle ||
+            packageItem?.billingUnit ||
+            packageItem?.billing_cycle
     );
 
     return {
@@ -114,6 +127,7 @@ export function normalizePackageDetail(packageItem) {
                 packageItem?.packageId ||
                 packageItem?.code
         ),
+        slug: toSafeString(packageItem?.slug || packageItem?.code || packageItem?.packageCode),
         code: toSafeString(packageItem?.code || packageItem?.packageCode),
         name: toSafeString(
             packageItem?.name || packageItem?.packageName || packageItem?.title
@@ -137,12 +151,14 @@ export function normalizePackageDetail(packageItem) {
         maxCv: String(
             packageItem?.maxCv ??
                 packageItem?.maxCV ??
+                packageItem?.cv_limit ??
                 packageItem?.maxResume ??
                 packageItem?.resumeLimit ??
                 50
         ),
         aiLimit: String(
             packageItem?.aiLimit ??
+                packageItem?.ai_limit ??
                 packageItem?.aiUsageLimit ??
                 packageItem?.analysisLimit ??
                 100
@@ -159,9 +175,12 @@ export function normalizePackageDetail(packageItem) {
                 packageItem?.subscribers ||
                 packageItem?.totalSubscriptions
         ),
-        status:
-            toSafeString(packageItem?.status || packageItem?.state).toUpperCase() ||
-            'ACTIVE',
+        status: normalizeStatus(
+            packageItem?.status ??
+                packageItem?.state ??
+                packageItem?.is_active ??
+                packageItem?.isActive
+        ),
     };
 }
 
@@ -279,26 +298,28 @@ export function validatePackageDetailForm(formData) {
     return nextErrors;
 }
 
-export function buildUpdatePayload(formData, benefits) {
+export function buildUpdatePayload(formData) {
+    const billingCycleMap = {
+        year: 'YEAR',
+        month: 'MONTH',
+        permanent: 'LIFETIME',
+    };
+
     return {
-        code: toSafeString(formData.code),
         name: toSafeString(formData.name),
         price: toSafeNumber(formData.price),
-        durationUnit: formData.durationUnit,
-        durationValue:
-            formData.durationUnit === 'permanent'
-                ? null
-                : toSafeNumber(formData.durationValue) || 1,
+        currency: 'VND',
+        billing_cycle: billingCycleMap[formData.durationUnit] || 'MONTH',
         description: toSafeString(formData.description),
-        benefits,
-        maxCv: toSafeNumber(formData.maxCv),
-        aiLimit: toSafeNumber(formData.aiLimit),
-        premiumCv: Boolean(formData.premiumCv),
-        removeWatermark: Boolean(formData.removeWatermark),
-        customDomain: Boolean(formData.customDomain),
-        support247: Boolean(formData.support247),
-        allowAiAddon: Boolean(formData.allowAiAddon),
-        fullAiAnalysis: Boolean(formData.fullAiAnalysis),
-        status: formData.status || 'ACTIVE',
+        cv_limit: toSafeNumber(formData.maxCv),
+        export_limit: toSafeNumber(formData.maxCv),
+        ai_limit: toSafeNumber(formData.aiLimit),
+        premium_template: Boolean(formData.premiumCv),
+        remove_watermark: Boolean(formData.removeWatermark),
+        custom_domain: Boolean(formData.customDomain),
+        priority_support: Boolean(formData.support247),
+        can_purchase_ai_addon: Boolean(formData.allowAiAddon),
+        view_full_ai_analysis: Boolean(formData.fullAiAnalysis),
+        is_active: formData.status !== 'PAUSED',
     };
 }

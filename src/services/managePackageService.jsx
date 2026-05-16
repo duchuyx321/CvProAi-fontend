@@ -1,6 +1,8 @@
 import * as Response from '~/utils/HttpsRequest';
 
-const getErrorResponse = (error, fallback = 'Có lỗi xảy ra') => ({
+const DEFAULT_ERROR_MESSAGE = 'Có lỗi xảy ra';
+
+const getErrorResponse = (error, fallback = DEFAULT_ERROR_MESSAGE) => ({
     success: false,
     message: error?.response?.data?.message || error?.message || fallback,
     status: error?.response?.status,

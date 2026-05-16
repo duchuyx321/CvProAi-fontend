@@ -173,13 +173,16 @@ export function filterPackages(packageList = [], filters, keyword = '') {
 // ─── Normalize ────────────────────────────────────────────────────────────────
 
 function normalizeStatus(value) {
+    if (typeof value === 'boolean') return value ? 'ACTIVE' : 'PAUSED';
+    if (typeof value === 'number') return value === 1 ? 'ACTIVE' : 'PAUSED';
+
     return toSafeString(value).toUpperCase() === 'PAUSED' ? 'PAUSED' : 'ACTIVE';
 }
 
 function normalizeDurationUnit(value) {
     const v = toSafeString(value).toLowerCase();
     if (['permanent', 'lifetime', 'forever', 'vinh_vien'].includes(v)) return 'permanent';
-    if (['year', 'years', 'annual'].includes(v)) return 'year';
+    if (['year', 'years', 'annual', 'yearly'].includes(v)) return 'year';
     return 'month';
 }
 
@@ -189,23 +192,55 @@ function normalizeBenefits(value) {
     return [];
 }
 
+function getPackageBenefits(item) {
+    const benefits = normalizeBenefits(item?.benefits || item?.features || item?.privileges);
+
+    if (benefits.length > 0) return benefits;
+
+    return [
+        item?.premium_template || item?.premiumCv ? 'Dùng template premium' : '',
+        item?.remove_watermark || item?.removeWatermark ? 'Xuất CV không watermark' : '',
+        item?.custom_domain || item?.customDomain ? 'Tên miền tùy chỉnh' : '',
+        item?.priority_support || item?.support247 ? 'Hỗ trợ 24/7' : '',
+        item?.can_purchase_ai_addon || item?.allowAiAddon ? 'Cho phép mua thêm AI add-on' : '',
+        item?.view_full_ai_analysis || item?.fullAiAnalysis ? 'Xem full phân tích AI' : '',
+    ].filter(Boolean);
+}
+
 export function normalizePackage(item, index) {
     return {
         id: toSafeString(item?.id || item?._id || item?.packageId) || `pkg-${index + 1}`,
+        slug: toSafeString(item?.slug || item?.code || item?.packageCode),
         code: toSafeString(item?.code || item?.packageCode) || `PKG-${String(index + 1).padStart(3, '0')}`,
         name: toSafeString(item?.name || item?.packageName || item?.title) || 'Chưa đặt tên',
         price: toSafeNumber(item?.price || item?.amount || item?.fee),
-        durationUnit: normalizeDurationUnit(item?.durationUnit || item?.cycle || item?.billingUnit),
+        durationUnit: normalizeDurationUnit(item?.durationUnit || item?.cycle || item?.billingUnit || item?.billing_cycle),
         durationValue: item?.durationValue ?? item?.duration ?? item?.billingCycleValue ?? 1,
-        benefits: normalizeBenefits(item?.benefits || item?.features || item?.privileges),
+        benefits: getPackageBenefits(item),
         totalUsers: toSafeNumber(item?.totalUsers || item?.users || item?.subscribers || item?.totalSubscriptions),
-        status: normalizeStatus(item?.status || item?.state),
+        status: normalizeStatus(item?.status ?? item?.state ?? item?.is_active ?? item?.isActive),
         createdAt: item?.createdAt || item?.created_date || item?.createdDate || '',
     };
 }
 
 export function normalizePackageList(items = []) {
     return items.map(normalizePackage);
+}
+
+function getPackageItemsFromResponse(response) {
+    const candidates = [
+        response?.data?.items,
+        response?.data?.data,
+        response?.data?.plans,
+        response?.data?.rows,
+        response?.items,
+        response?.plans,
+        response?.rows,
+        response?.data,
+        response,
+    ];
+
+    return candidates.find((item) => Array.isArray(item)) || [];
 }
 
 // ─── Export (PDF / Excel / JSON) ──────────────────────────────────────────────
@@ -425,8 +460,8 @@ export function usePackageList() {
                 return;
             }
 
-            const apiItems = response?.data?.items ?? response?.data ?? [];
-            const normalized = normalizePackageList(Array.isArray(apiItems) ? apiItems : []);
+            const apiItems = getPackageItemsFromResponse(response);
+            const normalized = normalizePackageList(apiItems);
             setPackageList(normalized);
         } catch {
             setLoadError('Không thể tải dữ liệu từ máy chủ.');
