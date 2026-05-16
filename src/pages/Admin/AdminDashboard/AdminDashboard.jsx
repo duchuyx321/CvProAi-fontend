@@ -561,34 +561,39 @@ export default function AdminDashboard() {
     }, []);
 
     const fetchDashboardData = useCallback(
-        async (params, showRefresh = false) => {
-            const shouldShowErrorState =
-                !showRefresh || !hasDashboardDataRef.current;
+    async (params, showRefresh = false) => {
+        const shouldShowErrorState =
+            !showRefresh || !hasDashboardDataRef.current;
 
-            try {
-                if (showRefresh) {
-                    setRefreshing(true);
-                } else {
-                    setLoading(true);
+        try {
+            if (showRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
+
+            if (!showRefresh) {
+                setErrorMessage('');
+            }
+
+            const res = await getAdminDashboard(params);
+
+            if (!res?.success) {
+                const message =
+                    res?.message ||
+                    res?.messsage ||
+                    'Không tải được dashboard';
+
+                if (shouldShowErrorState) {
+                    setErrorMessage(message);
                 }
 
-                if (!showRefresh) {
-                    setErrorMessage('');
-                }
+                return {
+                    success: false,
+                    message,
+                };
+            }
 
-                const res = await getAdminDashboard(params);
-
-                if (!res?.success) {
-                    const message =
-                        res?.message ||
-                        res?.messsage ||
-                        'Không tải được dashboard';
-                    if (shouldShowErrorState) {
-                        setErrorMessage(message);
-                    }
-                    return { success: false, message };
-                }
-                
             const dashboardData = res?.data || {};
 
             setStats(mapStats(dashboardData?.summary));
@@ -613,14 +618,31 @@ export default function AdminDashboard() {
                     dashboardData?.payments?.data?.data || [],
                 ).slice(0, 4),
             );
+
+            hasDashboardDataRef.current = true;
+
+            return {
+                success: true,
+            };
         } catch {
-            setErrorMessage('Có lỗi xảy ra khi tải dashboard');
+            const message = 'Có lỗi xảy ra khi tải dashboard';
+
+            if (shouldShowErrorState) {
+                setErrorMessage(message);
+            }
+
+            return {
+                success: false,
+                message,
+            };
         } finally {
             setLoading(false);
             setRefreshing(false);
             setFirstLoading(false);
         }
-    }, [mapChartData, mapStats, mapRecentOrders]);
+    },
+    [mapChartData, mapStats, mapRecentOrders],
+);
 
     useEffect(() => {
         fetchDashboardData(filterParams);
