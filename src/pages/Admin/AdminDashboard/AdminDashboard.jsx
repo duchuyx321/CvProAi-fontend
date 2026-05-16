@@ -595,6 +595,8 @@ export default function AdminDashboard() {
             }
 
             const dashboardData = res?.data || {};
+            
+            setErrorMessage('');
 
             setStats(mapStats(dashboardData?.summary));
             setChartData(mapChartData(dashboardData?.chartLineData));
