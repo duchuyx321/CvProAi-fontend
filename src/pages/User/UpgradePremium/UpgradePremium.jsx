@@ -39,10 +39,18 @@ function UpgradePremium() {
     const [isLoading, setIsLoading] = useState(true);
     const [packages, setPackages] = useState([]);
 
-    const userTier = useMemo(
-        () => user?.tier ?? user?.planTier ?? user?.packageTier ?? 'free',
-        [user?.packageTier, user?.planTier, user?.tier],
-    );
+    const userTier = useMemo(() => {
+        const planCurrent = user?.planCurrent || user?.plan_current;
+        return (
+            user?.tier ??
+            user?.planTier ??
+            user?.packageTier ??
+            planCurrent?.tier ??
+            planCurrent?.name ??
+            planCurrent?.id ??
+            (planCurrent?.view_full_ai_analysis ? 'premium' : 'free')
+        );
+    }, [user]);
 
     useEffect(() => {
         let isMounted = true;
