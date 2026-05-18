@@ -220,7 +220,10 @@ function CvAnalysisHistory() {
             <header>
                 <div className={cx('title')}>
                     <h3>Lịch sử phân tích CV</h3>
-                    <p>Theo dõi và đánh giá chi tiết lịch sử phân tích CV bằng AI.</p>
+                    <p>
+                        Theo dõi và đánh giá chi tiết lịch sử phân tích CV bằng
+                        AI.
+                    </p>
                 </div>
             </header>
 
@@ -279,7 +282,8 @@ function CvAnalysisHistory() {
 
                 <div className={cx('tableFooter')}>
                     <p>
-                        Hiển thị {startItem} đến {endItem} trong số {totalItems} kết quả
+                        Hiển thị {startItem} đến {endItem} trong số {totalItems}{' '}
+                        kết quả
                     </p>
 
                     <Pagination
