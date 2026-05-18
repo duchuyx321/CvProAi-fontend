@@ -6,9 +6,6 @@
 
 .inner {
     width: 100%;
-    // max-width: 1120px;
-    margin: 0 auto;
-    // padding: 24px 24px 56px;
 }
 
 .pageHeader {
@@ -208,8 +205,7 @@
     }
 }
 
-.benefitIcon,
-.usageIcon {
+.benefitIcon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -244,11 +240,6 @@
     color: #16a34a;
 }
 
-.warning {
-    background: #ffedd5;
-    color: #f59e0b;
-}
-
 .section {
     margin-top: 38px;
 }
@@ -262,115 +253,10 @@
     color: #111827;
 }
 
-/* Add-on */
 .addonGrid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 22px;
-}
-
-.addonCard {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 210px;
-    padding: 24px 20px 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
-
-    &:hover {
-        transform: translateY(-2px);
-        border-color: #c7d2fe;
-        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
-    }
-
-    &.popular {
-        border: 2px solid #4338ca;
-        box-shadow: 0 18px 40px rgba(67, 56, 202, 0.12);
-
-        .addonBtn {
-            border-color: #4338ca;
-            background: #4338ca;
-            color: #fff;
-        }
-    }
-
-    h3 {
-        margin: 0 0 8px;
-        color: #111827;
-        font-size: 1.65rem;
-        font-weight: 850;
-        line-height: 1.3;
-    }
-
-    strong {
-        display: block;
-        margin-bottom: 14px;
-        color: #4338ca;
-        font-size: 2rem;
-        font-weight: 900;
-        line-height: 1;
-    }
-
-    p {
-        flex: 1;
-        margin: 0 0 20px;
-        color: #64748b;
-        font-size: 1.35rem;
-        line-height: 1.55;
-    }
-}
-
-.addonBadge {
-    position: absolute;
-    top: -13px;
-    left: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 26px;
-    padding: 0 14px;
-    border-radius: 999px;
-    background: #4338ca;
-    color: #fff;
-    font-size: 1.05rem;
-    font-weight: 850;
-    text-transform: uppercase;
-    transform: translateX(-50%);
-}
-
-.addonBtn {
-    width: 100%;
-    height: 42px;
-    border: 1px solid #dbe3ef;
-    border-radius: 10px;
-    background: #fff;
-    color: #111827;
-    font-size: 1.4rem;
-    font-weight: 800;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
-
-    &:hover:not(:disabled) {
-        transform: translateY(-1px);
-        border-color: #4338ca;
-        color: #4338ca;
-    }
-
-    &:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-        transform: none;
-    }
 }
 
 .addonLocked {
@@ -384,7 +270,6 @@
     line-height: 1.55;
 }
 
-/* Upgrade */
 .upgradeList {
     display: flex;
     flex-direction: column;
@@ -474,211 +359,6 @@
     }
 }
 
-/* Usage */
-.usageGrid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px;
-}
-
-.usageCard {
-    padding: 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
-
-    &.warning {
-        border-top: 4px solid #f59e0b;
-        box-shadow: 0 14px 32px rgba(245, 158, 11, 0.08);
-    }
-}
-
-.usageTop {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.usageStatus {
-    display: inline-flex;
-    align-items: center;
-    height: 26px;
-    padding: 0 10px;
-    border-radius: 999px;
-    font-size: 1.15rem;
-    font-weight: 850;
-
-    &.primary,
-    &.success {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
-    &.warning {
-        background: #ffedd5;
-        color: #f59e0b;
-    }
-
-    &.info {
-        background: #e0f2fe;
-        color: #0284c7;
-    }
-}
-
-.usageLabel {
-    margin: 0 0 10px;
-    color: #475569;
-    font-size: 1.35rem;
-    font-weight: 700;
-}
-
-.usageValue {
-    display: block;
-    margin-bottom: 14px;
-    color: #111827;
-    font-size: 2.4rem;
-    font-weight: 900;
-
-    span {
-        color: #64748b;
-        font-size: 1.7rem;
-        font-weight: 700;
-    }
-}
-
-.usageTrack {
-    height: 7px;
-    border-radius: 999px;
-    background: #edf2f7;
-    overflow: hidden;
-}
-
-.usageBar {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-
-    &.primary {
-        background: #4338ca;
-    }
-
-    &.warning {
-        background: #f59e0b;
-    }
-
-    &.info {
-        background: #0284c7;
-    }
-}
-
-.miniAction {
-    width: 100%;
-    height: 36px;
-    margin-top: 16px;
-    border: 1px solid currentColor;
-    border-radius: 9px;
-    background: #fff;
-    font-size: 1.2rem;
-    font-weight: 850;
-    cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        transform 0.2s ease;
-
-    &.warning {
-        color: #f59e0b;
-
-        &:hover:not(:disabled) {
-            background: #fffbeb;
-        }
-    }
-
-    &.info {
-        color: #0284c7;
-
-        &:hover:not(:disabled) {
-            background: #f0f9ff;
-        }
-    }
-
-    &:hover:not(:disabled) {
-        transform: translateY(-1px);
-    }
-
-    &:disabled {
-        opacity: 0.65;
-        cursor: not-allowed;
-        transform: none;
-    }
-}
-
-/* Compare */
-.compareCard {
-    margin-top: 38px;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    background: #fff;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
-
-    h2 {
-        margin: 0;
-        padding: 22px 24px;
-        color: #111827;
-        font-size: 1.65rem;
-        font-weight: 850;
-    }
-}
-
-.compareTableWrap {
-    overflow-x: auto;
-}
-
-.compareTable {
-    width: 100%;
-    min-width: 720px;
-    border-collapse: collapse;
-
-    th,
-    td {
-        padding: 16px 24px;
-        border-top: 1px solid #e2e8f0;
-        color: #0f172a;
-        font-size: 1.35rem;
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    th:first-child,
-    td:first-child {
-        width: 48%;
-        color: #475569;
-        text-align: left;
-        font-weight: 800;
-    }
-
-    th {
-        background: #f8fafc;
-        color: #64748b;
-        font-size: 1.15rem;
-        font-weight: 850;
-        text-transform: uppercase;
-    }
-
-    td {
-        font-weight: 700;
-    }
-}
-
-.currentCol {
-    background: #eef2ff !important;
-    color: #4338ca !important;
-    font-weight: 900 !important;
-}
-
-/* Responsive */
 @media (max-width: 1024px) {
     .currentPlanCard,
     .upgradeCard {
@@ -693,8 +373,7 @@
     }
 
     .benefitGrid,
-    .addonGrid,
-    .usageGrid {
+    .addonGrid {
         grid-template-columns: 1fr;
     }
 }
@@ -755,9 +434,5 @@
 
     .upgradeFeatures {
         padding: 22px;
-    }
-
-    .compareCard {
-        margin-top: 30px;
     }
 }

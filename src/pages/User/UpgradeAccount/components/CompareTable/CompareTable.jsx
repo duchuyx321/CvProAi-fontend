@@ -48,19 +48,46 @@ function normalizeSlug(value = '') {
     return String(value).trim().toLowerCase();
 }
 
+function getFeatureColumnWidth(planCount) {
+    if (planCount <= 2) return '42%';
+    if (planCount === 3) return '34%';
+
+    return '30%';
+}
+
 function CompareTable({ plans = [], currentPlanSlug = '' }) {
     const normalizedCurrentPlanSlug = normalizeSlug(currentPlanSlug);
+    const planCount = plans.length;
+    const featureColumnWidth = getFeatureColumnWidth(planCount);
 
-    if (!plans.length) {
+    if (!planCount) {
         return null;
     }
 
     return (
-        <section className={cx('compareCard')}>
+        <section
+            className={cx('compareCard', {
+                twoPlans: planCount === 2,
+                threePlans: planCount === 3,
+                manyPlans: planCount >= 4,
+            })}
+        >
             <h2>So sánh các gói</h2>
 
             <div className={cx('compareTableWrap')}>
                 <table className={cx('compareTable')}>
+                    <colgroup>
+                        <col style={{ width: featureColumnWidth }} />
+                        {plans.map((plan) => (
+                            <col
+                                key={plan.id}
+                                style={{
+                                    width: `calc((100% - ${featureColumnWidth}) / ${planCount})`,
+                                }}
+                            />
+                        ))}
+                    </colgroup>
+
                     <thead>
                         <tr>
                             <th>Tính năng</th>
@@ -77,8 +104,15 @@ function CompareTable({ plans = [], currentPlanSlug = '' }) {
                                             currentCol: isCurrent,
                                         })}
                                     >
-                                        {plan.name}
-                                        {isCurrent ? ' (Hiện tại)' : ''}
+                                        <span className={cx('planName')}>
+                                            {plan.name || '--'}
+                                        </span>
+
+                                        {isCurrent ? (
+                                            <span className={cx('currentText')}>
+                                                Hiện tại
+                                            </span>
+                                        ) : null}
                                     </th>
                                 );
                             })}

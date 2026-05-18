@@ -49,25 +49,18 @@ export const createPayment = async (
 
 export const getAiAddonPackages = async ({
     page = 1,
-    limit = 8,
+    limit = 20,
     search = '',
     sort_by = 'createdAt',
     sort_order = 'DESC',
-    is_trash = false,
 } = {}) => {
-    let queryUrl = `limit=${limit}&page=${page}&sort_by=${sort_by}&sort_order=${sort_order}&is_trash=${is_trash}`;
+    let queryUrl = `limit=${limit}&page=${page}&sort_by=${sort_by}&sort_order=${sort_order}`;
 
-    if (search.trim()) {
-        queryUrl += `&search=${encodeURIComponent(search.trim())}`;
-    } else {
-        queryUrl += '&search=';
-    }
+    queryUrl += `&search=${encodeURIComponent(search.trim())}`;
 
     try {
         const result = await Response.GET(`ai-addon-packages?${queryUrl}`);
-
         console.log(result);
-
         return result;
     } catch (error) {
         const status = error?.status || error?.response?.status;

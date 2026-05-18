@@ -11,7 +11,6 @@ import {
     Check,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-
 import Button from '~/components/Button';
 import { useAuth } from '~/context/AuthContext';
 import { getPricing } from '~/services/pricing.service';
@@ -20,7 +19,7 @@ import {
     getAiAddonPackages,
 } from '~/services/upgrade.service';
 import { config } from '~/config';
-
+import AddonCard from './components/AddonCard';
 import CompareTable from './components/CompareTable';
 import styles from './UpgradeAccount.module.scss';
 
@@ -157,6 +156,7 @@ function UpgradeAccount() {
     const currentPlanSlug = normalizeSlug(currentPlan?.slug);
     const currentPlanPrice = toNumber(currentPlan?.price);
     const canBuyAiAddon = Boolean(currentPlan?.can_purchase_ai_addon);
+    const isFreeCurrentPlan = currentPlanSlug === 'free';
 
     useEffect(() => {
         let cancelled = false;
@@ -219,7 +219,6 @@ function UpgradeAccount() {
                     search: '',
                     sort_by: 'createdAt',
                     sort_order: 'DESC',
-                    // is_trash: false,
                 });
 
                 if (result?.status >= 400 || result?.success === false) {
@@ -266,7 +265,7 @@ function UpgradeAccount() {
     }, [currentPlan]);
 
     const upgradePlans = useMemo(() => {
-        if (!currentPlan) return [];
+        if (!currentPlan || !isFreeCurrentPlan) return [];
 
         return plans.filter((plan) => {
             const planSlug = normalizeSlug(plan.slug);
@@ -275,7 +274,13 @@ function UpgradeAccount() {
 
             return toNumber(plan.price) > currentPlanPrice;
         });
-    }, [plans, currentPlan, currentPlanSlug, currentPlanPrice]);
+    }, [
+        plans,
+        currentPlan,
+        currentPlanSlug,
+        currentPlanPrice,
+        isFreeCurrentPlan,
+    ]);
 
     const handleGoHistory = () => {
         navigate(config.router.history);
@@ -368,7 +373,7 @@ function UpgradeAccount() {
     return (
         <main className={cx('wrapper')}>
             <div className={cx('inner')}>
-                <header className={cx('pageHeader')}>
+                <div className={cx('pageHeader')}>
                     <div>
                         <h1>Trung tâm gói dịch vụ</h1>
                         <p>
@@ -385,7 +390,7 @@ function UpgradeAccount() {
                     >
                         Lịch sử giao dịch
                     </Button>
-                </header>
+                </div>
 
                 {loading ? (
                     <div className={cx('loadingCard')}>
@@ -419,7 +424,7 @@ function UpgradeAccount() {
 
                                 <p className={cx('activeText')}>
                                     {currentPlan?.is_active
-                                        ? 'Gói đang được áp dụng cho tài khoản'
+                                        ? 'Đang sử dụng'
                                         : 'Gói hiện không còn hoạt động'}
                                 </p>
 
@@ -432,12 +437,6 @@ function UpgradeAccount() {
                                         Quản lý gói
                                     </Button>
 
-                                    <Button
-                                        type="button"
-                                        className={cx('outlineBtn')}
-                                    >
-                                        Xem quyền lợi
-                                    </Button>
                                 </div>
                             </div>
 
@@ -492,66 +491,22 @@ function UpgradeAccount() {
                                 </div>
                             ) : (
                                 <div className={cx('addonGrid')}>
-                                    {addonPackages.map((addon, index) => {
-                                        const isBuying =
-                                            buyingAddonId === addon.id;
-                                        const isPopular = index === 1;
-
-                                        return (
-                                            <article
-                                                key={addon.id}
-                                                className={cx('addonCard', {
-                                                    popular: isPopular,
-                                                })}
-                                            >
-                                                {isPopular ? (
-                                                    <span
-                                                        className={cx(
-                                                            'addonBadge',
-                                                        )}
-                                                    >
-                                                        Phổ biến
-                                                    </span>
-                                                ) : null}
-
-                                                <h3>{addon.name}</h3>
-
-                                                <strong>
-                                                    {formatPrice(
-                                                        addon.price,
-                                                        addon.currency || 'VND',
-                                                    )}
-                                                </strong>
-
-                                                <p>
-                                                    {addon.description ||
-                                                        `+${addon.runs || 0} lượt phân tích CV bằng AI.`}
-                                                </p>
-
-                                                <Button
-                                                    type="button"
-                                                    primary={isPopular}
-                                                    className={cx('addonBtn')}
-                                                    disabled={
-                                                        isBuying ||
-                                                        Boolean(buyingAddonId)
-                                                    }
-                                                    onClick={() =>
-                                                        handleBuyAddon(addon)
-                                                    }
-                                                >
-                                                    {isBuying
-                                                        ? 'Đang tạo đơn hàng...'
-                                                        : 'Mua ngay'}
-                                                </Button>
-                                            </article>
-                                        );
-                                    })}
+                                    {addonPackages.map((addon) => (
+                                        <AddonCard
+                                            key={addon.id}
+                                            addon={addon}
+                                            isBuying={
+                                                buyingAddonId === addon.id
+                                            }
+                                            isDisabled={Boolean(buyingAddonId)}
+                                            onBuy={handleBuyAddon}
+                                        />
+                                    ))}
                                 </div>
                             )}
                         </section>
 
-                        {upgradePlans.length > 0 ? (
+                        {isFreeCurrentPlan && upgradePlans.length > 0 ? (
                             <section className={cx('section')}>
                                 <h2 className={cx('sectionTitle')}>
                                     Nâng cấp để mở khóa nhiều quyền lợi hơn
@@ -561,24 +516,31 @@ function UpgradeAccount() {
                                     {upgradePlans.map((plan) => {
                                         const features =
                                             buildPlanFeatures(plan);
+                                        const isPopular = Boolean(
+                                            plan?.is_popular,
+                                        );
 
                                         return (
                                             <article
                                                 key={plan.id}
-                                                className={cx('upgradeCard')}
+                                                className={cx('upgradeCard', {
+                                                    popular: isPopular,
+                                                })}
                                             >
                                                 <div
                                                     className={cx(
                                                         'upgradeInfo',
                                                     )}
                                                 >
-                                                    <span
-                                                        className={cx(
-                                                            'recommendBadge',
-                                                        )}
-                                                    >
-                                                        Khuyên dùng
-                                                    </span>
+                                                    {isPopular ? (
+                                                        <span
+                                                            className={cx(
+                                                                'recommendBadge',
+                                                            )}
+                                                        >
+                                                            Khuyên dùng
+                                                        </span>
+                                                    ) : null}
 
                                                     <h3>{plan.name}</h3>
 
@@ -601,7 +563,7 @@ function UpgradeAccount() {
                                                     <p>{plan.description}</p>
 
                                                     <Button
-                                                        primary
+                                                        primary={isPopular}
                                                         type="button"
                                                         onClick={() =>
                                                             handleUpgradePlan(
