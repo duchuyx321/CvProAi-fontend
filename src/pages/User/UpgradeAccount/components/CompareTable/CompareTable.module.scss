@@ -1,0 +1,85 @@
+.compareCard {
+    margin-top: 38px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+
+    h2 {
+        margin: 0;
+        padding: 22px 24px;
+        color: #111827;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+}
+
+.compareTableWrap {
+    overflow-x: auto;
+}
+
+.compareTable {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        color: #0f172a;
+        font-size: 1.35rem;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    th:first-child,
+    td:first-child {
+        width: 38%;
+        color: #475569;
+        text-align: left;
+        font-weight: 800;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 1.15rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    td {
+        font-weight: 700;
+    }
+}
+
+.currentCol {
+    background: #eef2ff !important;
+    color: #4338ca !important;
+    font-weight: 900 !important;
+}
+
+@media (max-width: 768px) {
+    .compareCard {
+        margin-top: 30px;
+        border-radius: 16px;
+
+        h2 {
+            padding: 18px 20px;
+            font-size: 1.55rem;
+        }
+    }
+
+    .compareTable {
+        min-width: 680px;
+
+        th,
+        td {
+            padding: 14px 18px;
+            font-size: 1.25rem;
+        }
+    }
+}

@@ -38,6 +38,7 @@ import AdminOrders from '~/pages/Admin/AdminOrders';
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
 import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
+import UpgradeAccount from '~/pages/User/UpgradeAccount';
 
 // public router
 const PublicRouter = [
@@ -142,8 +143,8 @@ const UserRouter = [
         layout: DetailLayout,
     },
     {
-        path: config.router.upgradePremium,
-        component: Pricing,
+        path: config.router.upgradeAccount,
+        component: UpgradeAccount,
         layout: DefaultLayout,
     },
     {
