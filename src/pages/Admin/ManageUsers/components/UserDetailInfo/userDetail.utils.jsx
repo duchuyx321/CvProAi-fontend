@@ -100,13 +100,10 @@ export const buildFallbackUserDetail = (user) => {
         quotas: {
             aiUsed: toNumber(latestQuota?.ai_runs_used, 0),
             aiLimit: toNumber(latestQuota?.ai_runs_limit, 0),
-            exportUsed: toNumber(latestQuota?.exports_used, 0),
-            exportLimit: toNumber(latestQuota?.exports_limit, 0),
         },
         stats: {
             cvCount: toNumber(latestQuota?.cvs_used, normalizedUser.cvCount),
             aiUsageCount: toNumber(latestQuota?.ai_runs_used, 0),
-            exportCount: toNumber(latestQuota?.exports_used, 0),
             totalTransactions: 0,
             totalSpent: 0,
         },
@@ -181,18 +178,6 @@ export const normalizeAdminUserDetail = (payload, fallbackUser = null) => {
                 quota?.ai_limit ?? quota?.aiLimit ?? latestQuota?.ai_runs_limit,
                 0,
             ),
-            exportUsed: toNumber(
-                quota?.export_used ??
-                    quota?.exportUsed ??
-                    latestQuota?.exports_used,
-                0,
-            ),
-            exportLimit: toNumber(
-                quota?.export_limit ??
-                    quota?.exportLimit ??
-                    latestQuota?.exports_limit,
-                0,
-            ),
         },
         stats: {
             cvCount: toNumber(
@@ -206,12 +191,6 @@ export const normalizeAdminUserDetail = (payload, fallbackUser = null) => {
                 stats?.ai_usage_count ??
                     stats?.aiUsageCount ??
                     latestQuota?.ai_runs_used,
-                0,
-            ),
-            exportCount: toNumber(
-                stats?.export_count ??
-                    stats?.exportCount ??
-                    latestQuota?.exports_used,
                 0,
             ),
             totalTransactions: toNumber(

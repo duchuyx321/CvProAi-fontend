@@ -111,8 +111,9 @@ export const POST = async (path, data = {}, config = {}) => {
     const response = await httpsRequests.post(path, data, config);
     return response.data;
 };
-export const PATCH = async (path, option = {}) => {
-    const response = await httpsRequests.patch(path, option);
+// eslint-disable-next-line react-refresh/only-export-components
+export const PATCH = async (path, data, config = {}) => {
+    const response = await httpsRequests.patch(path, data, config);
     return response.data;
 };
 

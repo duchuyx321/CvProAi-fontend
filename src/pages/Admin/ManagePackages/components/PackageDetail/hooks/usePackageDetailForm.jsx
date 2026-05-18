@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getPackageDetail, updatePackage } from '~/services/managePackageService';
-import { DEFAULT_FORM_DATA } from '../../../managePackages.utils';
+import { DEFAULT_FORM_DATA, getApiMessage } from '../../../managePackages.utils';
 import {
     buildUpdatePayload,
     createFormSnapshot,
@@ -10,74 +10,65 @@ import {
     validatePackageDetailForm,
 } from '../utils/packageDetailHelpers';
 
-export function usePackageDetailForm({
-    packageId,
-    packageRecordId,
-    isReadOnly,
-    onNotFound,
-    routePackage,
-}) {
+function getPackageDetailPayload(response) {
+    const payload = response?.data ?? response;
+
+    return payload?.data ?? payload?.plan ?? payload?.item ?? payload;
+}
+
+export function usePackageDetailForm({ slug, isReadOnly, onNotFound }) {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
-    const [recordId, setRecordId] = useState(packageRecordId || '');
     const [errors, setErrors] = useState({});
     const [savedSnapshot, setSavedSnapshot] = useState(
-        createFormSnapshot(DEFAULT_FORM_DATA)
+        createFormSnapshot(DEFAULT_FORM_DATA),
     );
 
     const currentSnapshot = useMemo(
         () => createFormSnapshot(formData),
-        [formData]
+        [formData],
     );
 
     const isDirty = currentSnapshot !== savedSnapshot;
 
     const loadPackageDetail = useCallback(async () => {
-        if (routePackage) {
-            const normalizedPackage = normalizePackageDetail(routePackage);
-            const nextSnapshot = createFormSnapshot(normalizedPackage);
-            setRecordId(normalizedPackage.id || packageRecordId || '');
-            setSavedSnapshot(nextSnapshot);
-            setFormData(normalizedPackage);
-            setLoading(false);
+        if (!slug) {
+            toast.error('Không tìm thấy gói dịch vụ.');
+            onNotFound?.();
+            return;
         }
 
         try {
-            if (!routePackage) setLoading(true);
-            const response = await getPackageDetail(packageId);
-            const raw =
-                response?.data?.item ??
-                response?.data?.plan ??
-                response?.data?.data ??
-                response?.plan ??
-                response?.data ??
-                response;
+            setLoading(true);
+            const response = await getPackageDetail(slug);
 
-            if (!raw || response?.success === false) {
-                if (!routePackage) {
-                    toast.error('Không tìm thấy gói dịch vụ.');
-                    onNotFound?.();
-                }
+            if (response?.success === false) {
+                toast.error(getApiMessage(response, 'Không tìm thấy gói dịch vụ.'));
+                onNotFound?.();
                 return;
             }
 
-            const normalizedPackage = normalizePackageDetail(raw);
-            const nextSnapshot = createFormSnapshot(normalizedPackage);
-            if (normalizedPackage.id && normalizedPackage.id !== packageId) {
-                setRecordId(normalizedPackage.id);
+            const rawPackage = getPackageDetailPayload(response);
+
+            if (!rawPackage) {
+                toast.error('Không tìm thấy gói dịch vụ.');
+                onNotFound?.();
+                return;
             }
+
+            const normalizedPackage = normalizePackageDetail(rawPackage);
+            const nextSnapshot = createFormSnapshot(normalizedPackage);
+
             setSavedSnapshot(nextSnapshot);
             setFormData(normalizedPackage);
         } catch {
-            if (!routePackage) {
-                toast.error('Không thể tải chi tiết gói dịch vụ.');
-                onNotFound?.();
-            }
+            toast.error('Không thể tải chi tiết gói dịch vụ.');
+            onNotFound?.();
         } finally {
             setLoading(false);
         }
-    }, [onNotFound, packageId, packageRecordId, routePackage]);
+    }, [onNotFound, slug]);
 
     useEffect(() => {
         loadPackageDetail();
@@ -145,7 +136,7 @@ export function usePackageDetailForm({
                 };
             });
         },
-        [isReadOnly]
+        [isReadOnly],
     );
 
     const handleToggleField = useCallback(
@@ -159,7 +150,7 @@ export function usePackageDetailForm({
                 [field]: !previousState[field],
             }));
         },
-        [isReadOnly]
+        [isReadOnly],
     );
 
     const submitPackageDetail = useCallback(async () => {
@@ -179,10 +170,7 @@ export function usePackageDetailForm({
 
         try {
             const payload = buildUpdatePayload(formData);
-            const response = await updatePackage(
-                recordId || formData.id || packageId,
-                payload,
-            );
+            const response = await updatePackage(formData.id || slug, payload);
 
             const isFailed =
                 response?.success === false ||
@@ -190,9 +178,7 @@ export function usePackageDetailForm({
 
             if (isFailed) {
                 toast.error(
-                    response?.message ||
-                        response?.data?.message ||
-                        'Cập nhật gói dịch vụ thất bại.'
+                    getApiMessage(response, 'Cập nhật gói dịch vụ thất bại.'),
                 );
                 return false;
             }
@@ -200,9 +186,7 @@ export function usePackageDetailForm({
             setSavedSnapshot(createFormSnapshot(formData));
 
             toast.success(
-                response?.message ||
-                    response?.data?.message ||
-                    'Lưu thay đổi thành công.'
+                getApiMessage(response, 'Lưu thay đổi thành công.'),
             );
 
             return true;
@@ -212,14 +196,7 @@ export function usePackageDetailForm({
         } finally {
             setSubmitting(false);
         }
-    }, [
-        formData,
-        isDirty,
-        isReadOnly,
-        packageId,
-        recordId,
-        submitting,
-    ]);
+    }, [formData, isDirty, isReadOnly, slug, submitting]);
 
     return {
         loading,

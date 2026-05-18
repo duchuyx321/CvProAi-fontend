@@ -45,7 +45,6 @@ export const router = {
     adminSettings: '/admin/settings',
     managePackages: '/admin/packages',
     createPackage: '/admin/packages/create',
-    packageDetail: '/admin/packages/:packageId',
-    packageActions: '/admin/packages/:packageId/actions',
+    packageDetail: '/admin/packages/:slug',
     adminOrders: '/admin/orders',
 };

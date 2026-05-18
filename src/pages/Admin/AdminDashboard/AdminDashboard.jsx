@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    createElement,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
@@ -102,12 +109,12 @@ function formatRelativeTime(dateString) {
     }).format(date);
 }
 
-function StatCard({ icon: Icon, label, value, change }) {
+function StatCard({ icon, label, value, change }) {
     return (
         <div className={cx('statCard')}>
             <div className={cx('statTop')}>
                 <div className={cx('statIcon')}>
-                    <Icon />
+                    {icon ? createElement(icon) : null}
                 </div>
                 <span className={cx('statChange')}>{change}</span>
             </div>

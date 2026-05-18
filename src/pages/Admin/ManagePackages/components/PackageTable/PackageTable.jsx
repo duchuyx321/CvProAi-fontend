@@ -5,7 +5,7 @@ const cx = classNames.bind(styles);
 
 function PackageTable({
     loading,
-    packages,
+    packages = [],
     formatCurrency,
     formatDuration,
     renderActions,
@@ -15,17 +15,17 @@ function PackageTable({
             <div className={cx('wrapper')}>
                 <table className={cx('table')}>
                     <thead>
-    <tr>
-        <th>ID</th>
-        <th>TÊN GÓI</th>
-        <th>GIÁ (VND)</th>
-        <th>THỜI HẠN</th>
-        <th>QUYỀN LỢI</th>
-        <th>NGƯỜI DÙNG</th>
-        <th>TRẠNG THÁI</th>
-        <th>HÀNH ĐỘNG</th>
-    </tr>
-</thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên gói</th>
+                            <th>Giá</th>
+                            <th>Thời hạn</th>
+                            <th>Quyền lợi</th>
+                            <th>Người dùng</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
 
                     <tbody>
                         {loading ? (
@@ -42,10 +42,13 @@ function PackageTable({
                             </tr>
                         ) : (
                             packages.map((item) => (
-                                <tr key={item.id}>
-                                    <td className={cx('code')}>
-                                        <span className={cx('codeText')}>
-                                            {item.code}
+                                <tr key={item.id || item.slug || item.code}>
+                                    <td className={cx('idCell')}>
+                                        <span
+                                            className={cx('idText')}
+                                            title={item.id || ''}
+                                        >
+                                            {item.displayId}
                                         </span>
                                     </td>
 
@@ -61,7 +64,7 @@ function PackageTable({
                                         <span className={cx('durationText')}>
                                             {formatDuration(
                                                 item.durationUnit,
-                                                item.durationValue
+                                                item.durationValue,
                                             )}
                                         </span>
                                     </td>
@@ -71,7 +74,7 @@ function PackageTable({
                                             {item.benefits.length > 0 ? (
                                                 item.benefits.map((benefit) => (
                                                     <span
-                                                        key={`${item.id}-${benefit}`}
+                                                        key={`${item.code}-${benefit}`}
                                                         className={cx('chip')}
                                                     >
                                                         {benefit}
@@ -95,7 +98,7 @@ function PackageTable({
                                                 'status',
                                                 item.status === 'ACTIVE'
                                                     ? 'statusActive'
-                                                    : 'statusPaused'
+                                                    : 'statusPaused',
                                             )}
                                         >
                                             {item.status === 'ACTIVE'

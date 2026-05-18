@@ -105,7 +105,7 @@ export function useCreatePackageForm() {
                 currency: formData.currency,
                 billing_cycle: toBillingCycle(formData.durationUnit),
                 cv_limit: Number(formData.maxCv) || 0,
-                export_limit: Number(formData.maxCv) || 0,
+                export_limit: 0,
                 ai_limit: Number(formData.aiLimit) || 0,
                 premium_template: Boolean(formData.premiumCv),
                 remove_watermark: Boolean(formData.removeWatermark),

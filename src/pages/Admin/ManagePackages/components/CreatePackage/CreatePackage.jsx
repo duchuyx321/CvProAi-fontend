@@ -54,7 +54,12 @@ function CreatePackage() {
                     </div>
 
                     <div className={cx('actionGroup')}>
-                        <Button outlineText onClick={handleBack} disabled={submitting}>
+                        <Button
+                            type="button"
+                            outlineText
+                            onClick={handleBack}
+                            disabled={submitting}
+                        >
                             Hủy
                         </Button>
 

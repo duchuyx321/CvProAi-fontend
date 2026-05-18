@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js';
+
 export class helper {
     static hashValidate(text) {
         return CryptoJS.AES.encrypt(
@@ -6,6 +7,7 @@ export class helper {
             import.meta.env.VITE_SECRET_KEY,
         ).toString();
     }
+
     static decryptValidate(text) {
         const bytes = CryptoJS.AES.decrypt(
             text,
@@ -14,6 +16,7 @@ export class helper {
 
         return bytes.toString(CryptoJS.enc.Utf8);
     }
+
     static buildPlanFeatures(plan) {
         const features = [];
 
@@ -23,10 +26,6 @@ export class helper {
 
         if (plan.ai_limit) {
             features.push(`Phân tích AI ${plan.ai_limit} lần/tháng`);
-        }
-
-        if (plan.export_limit) {
-            features.push(`Xuất file ${plan.export_limit} lần/tháng`);
         }
 
         if (plan.view_full_ai_analysis) {

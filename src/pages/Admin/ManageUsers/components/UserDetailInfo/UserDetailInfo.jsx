@@ -275,10 +275,6 @@ function UserDetailInfo({
         detail.quotas.aiUsed,
         detail.quotas.aiLimit,
     );
-    const exportQuotaPercent = getQuotaPercent(
-        detail.quotas.exportUsed,
-        detail.quotas.exportLimit,
-    );
     const initials = buildInitialLetters(detail.fullName) || 'U';
     const statusIcon = detail.isLocked ? UnlockKeyhole : LockKeyhole;
     const StatusIcon = submittingStatus ? RefreshCw : statusIcon;
@@ -530,25 +526,6 @@ function UserDetailInfo({
                                     </div>
                                 </div>
 
-                                <div className={cx('quotaItem')}>
-                                    <div className={cx('quotaTop')}>
-                                        <span>Export quota</span>
-                                        <strong>
-                                            {getQuotaText(
-                                                detail.quotas.exportUsed,
-                                                detail.quotas.exportLimit,
-                                            )}
-                                        </strong>
-                                    </div>
-                                    <div className={cx('quotaBar')}>
-                                        <span
-                                            className={cx('greenBar')}
-                                            style={{
-                                                width: `${exportQuotaPercent}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
                             </div>
                         </section>
 
@@ -625,14 +602,6 @@ function UserDetailInfo({
                                         <strong>
                                             {formatNumber(
                                                 detail.stats.aiUsageCount,
-                                            )}
-                                        </strong>
-                                    </div>
-                                    <div className={cx('metricRow')}>
-                                        <span>Tổng lượt export</span>
-                                        <strong>
-                                            {formatNumber(
-                                                detail.stats.exportCount,
                                             )}
                                         </strong>
                                     </div>

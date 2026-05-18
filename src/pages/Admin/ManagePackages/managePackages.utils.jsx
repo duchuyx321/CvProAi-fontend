@@ -1,68 +1,88 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
-import { deletePackage, getPackages } from '~/services/managePackageService';
+import { updatePackageStatus } from '~/services/managePackageService';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+export const PAGE_SIZE = 8;
 
-export const PAGE_SIZE = 4;
+export const PackageSortBy = {
+    CREATED_AT: 'createdAt',
+    UPDATED_AT: 'updatedAt',
+    NAME: 'name',
+    PRICE: 'price',
+};
+
+export const SortOrder = {
+    ASC: 'ASC',
+    DESC: 'DESC',
+};
 
 export const PACKAGE_SORT_OPTIONS = [
-    { label: 'Tạo mới nhất', sort_by: 'createdAt', sort_order: 'DESC' },
-    { label: 'Tạo cũ nhất', sort_by: 'createdAt', sort_order: 'ASC' },
-    { label: 'Tên: A → Z', sort_by: 'name', sort_order: 'ASC' },
-    { label: 'Tên: Z → A', sort_by: 'name', sort_order: 'DESC' },
-    { label: 'Giá: Cao → Thấp', sort_by: 'price', sort_order: 'DESC' },
-    { label: 'Giá: Thấp → Cao', sort_by: 'price', sort_order: 'ASC' },
+    {
+        label: 'Tạo mới nhất',
+        sort_by: PackageSortBy.CREATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Tạo cũ nhất',
+        sort_by: PackageSortBy.CREATED_AT,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Cập nhật mới nhất',
+        sort_by: PackageSortBy.UPDATED_AT,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Tên: A -> Z',
+        sort_by: PackageSortBy.NAME,
+        sort_order: SortOrder.ASC,
+    },
+    {
+        label: 'Tên: Z -> A',
+        sort_by: PackageSortBy.NAME,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Giá: Cao -> Thấp',
+        sort_by: PackageSortBy.PRICE,
+        sort_order: SortOrder.DESC,
+    },
+    {
+        label: 'Giá: Thấp -> Cao',
+        sort_by: PackageSortBy.PRICE,
+        sort_order: SortOrder.ASC,
+    },
 ];
 
 export const PACKAGE_RANGE_OPTIONS = [
     { label: 'Tất cả thời gian', value: 'all' },
-    { label: '7 ngày qua', value: '7days' },
-    { label: '30 ngày qua', value: '30days' },
+    { label: '7 ngày qua', value: '7d' },
+    { label: '30 ngày qua', value: '30d' },
+    { label: 'Tháng này', value: 'month' },
+    { label: 'Năm nay', value: 'year' },
     { label: 'Tùy chỉnh', value: 'custom' },
 ];
 
-export const INITIAL_FILTERS = {
-    status: 'ALL',
-    createdPreset: 'all',
-    createdFrom: '',
-    createdTo: '',
+export const DEFAULT_FILTERS = {
+    search: '',
+    sort_by: PackageSortBy.CREATED_AT,
+    sort_order: SortOrder.DESC,
+    range: 'all',
+    from: '',
+    to: '',
 };
 
-export const STATUS_LABEL_MAP = {
-    ACTIVE: 'Hoạt động',
-    PAUSED: 'Tạm ngưng',
-};
-
-export const EXPORT_COLUMN_OPTIONS = [
-    { value: 'id', label: 'ID', defaultChecked: true },
-    { value: 'name', label: 'Tên gói', defaultChecked: true },
-    { value: 'price', label: 'Giá', defaultChecked: true },
-    { value: 'duration', label: 'Thời hạn', defaultChecked: true },
-    { value: 'benefits', label: 'Quyền lợi', defaultChecked: true },
-    { value: 'totalUsers', label: 'Số người dùng', defaultChecked: false },
-    { value: 'status', label: 'Trạng thái', defaultChecked: true },
-];
-
-export const EXPORT_DATE_RANGE_OPTIONS = [
-    { value: 'all', label: 'Tất cả thời gian' },
-    { value: 'today', label: 'Hôm nay' },
-    { value: '7days', label: '7 ngày gần đây' },
-    { value: '30days', label: '30 ngày gần đây' },
-    { value: '90days', label: '90 ngày gần đây' },
-];
-
-export const DEFAULT_EXPORT_CONFIG = {
-    format: 'json',
-    columns: EXPORT_COLUMN_OPTIONS.filter((item) => item.defaultChecked).map(
-        (item) => item.value,
-    ),
-    dateRange: 'all',
+export const DEFAULT_META = {
+    page: 1,
+    limit: PAGE_SIZE,
+    total_items: 0,
+    total_pages: 1,
 };
 
 export const DEFAULT_FORM_DATA = {
     id: '',
     code: '',
+    slug: '',
     name: '',
     price: '',
     durationUnit: 'year',
@@ -80,8 +100,6 @@ export const DEFAULT_FORM_DATA = {
     status: 'ACTIVE',
 };
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
 export function toSafeString(value = '') {
     return String(value ?? '').trim();
 }
@@ -92,7 +110,11 @@ export function toSafeNumber(value = 0) {
 }
 
 export function formatCurrency(value = 0) {
-    return `${new Intl.NumberFormat('vi-VN').format(toSafeNumber(value))}đ`;
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        maximumFractionDigits: 0,
+    }).format(toSafeNumber(value));
 }
 
 export function formatDuration(unit, value) {
@@ -101,125 +123,86 @@ export function formatDuration(unit, value) {
     return `${toSafeNumber(value) || 1} tháng`;
 }
 
-// ─── Date / Filter helpers ────────────────────────────────────────────────────
-
-export function startOfDay(value) {
-    const date = new Date(value);
-    date.setHours(0, 0, 0, 0);
-    return date;
+export function getErrorMessage(
+    error,
+    fallback = 'Có lỗi xảy ra, vui lòng thử lại sau.',
+) {
+    return (
+        error?.response?.data?.error?.[0] ||
+        error?.response?.data?.message ||
+        error?.data?.message ||
+        error?.message ||
+        fallback
+    );
 }
 
-export function endOfDay(value) {
-    const date = new Date(value);
-    date.setHours(23, 59, 59, 999);
-    return date;
+export function getApiMessage(response, fallback) {
+    return (
+        response?.message ||
+        response?.data?.message ||
+        response?.error?.[0] ||
+        fallback
+    );
 }
 
-export function matchesCreatedFilter(sourceDate, filters) {
-    const { createdPreset, createdFrom, createdTo } = filters;
+function normalizeStatus(item = {}) {
+    const value = item?.is_active ?? item?.status;
 
-    if (createdPreset === 'all' && !toSafeString(createdFrom) && !toSafeString(createdTo)) {
-        return true;
-    }
-
-    if (!sourceDate) return false;
-
-    const createdDate = new Date(sourceDate);
-    if (Number.isNaN(createdDate.getTime())) return false;
-
-    const now = new Date();
-
-    if (createdPreset === '7days') {
-        const from = startOfDay(now);
-        from.setDate(from.getDate() - 6);
-        return createdDate >= from && createdDate <= endOfDay(now);
-    }
-
-    if (createdPreset === '30days') {
-        const from = startOfDay(now);
-        from.setDate(from.getDate() - 29);
-        return createdDate >= from && createdDate <= endOfDay(now);
-    }
-
-    if (createdPreset === 'custom') {
-        const from = createdFrom ? startOfDay(createdFrom) : null;
-        const to = createdTo ? endOfDay(createdTo) : null;
-
-        if (from && to && from > to) return false;
-        if (from && createdDate < from) return false;
-        if (to && createdDate > to) return false;
-        return true;
-    }
-
-    return true;
-}
-
-export function filterPackages(packageList = [], filters, keyword = '') {
-    const normalizedKeyword = toSafeString(keyword).toLowerCase();
-
-    return packageList.filter((item) => {
-        const matchStatus =
-            filters.status === 'ALL' || item.status === filters.status;
-        const matchKeyword =
-            !normalizedKeyword ||
-            item.code.toLowerCase().includes(normalizedKeyword) ||
-            item.name.toLowerCase().includes(normalizedKeyword);
-        const matchDate = matchesCreatedFilter(item.createdAt, filters);
-
-        return matchStatus && matchKeyword && matchDate;
-    });
-}
-
-// ─── Normalize ────────────────────────────────────────────────────────────────
-
-function normalizeStatus(value) {
     if (typeof value === 'boolean') return value ? 'ACTIVE' : 'PAUSED';
     if (typeof value === 'number') return value === 1 ? 'ACTIVE' : 'PAUSED';
 
-    return toSafeString(value).toUpperCase() === 'PAUSED' ? 'PAUSED' : 'ACTIVE';
+    const normalizedValue = toSafeString(value).toUpperCase();
+
+    return normalizedValue === 'ACTIVE' || normalizedValue === 'TRUE'
+        ? 'ACTIVE'
+        : 'PAUSED';
 }
 
 function normalizeDurationUnit(value) {
-    const v = toSafeString(value).toLowerCase();
-    if (['permanent', 'lifetime', 'forever', 'vinh_vien'].includes(v)) return 'permanent';
-    if (['year', 'years', 'annual', 'yearly'].includes(v)) return 'year';
+    const normalizedValue = toSafeString(value).toUpperCase();
+
+    if (normalizedValue === 'LIFETIME') return 'permanent';
+    if (normalizedValue === 'YEAR') return 'year';
+
     return 'month';
 }
 
-function normalizeBenefits(value) {
-    if (Array.isArray(value)) return value.map((item) => toSafeString(item)).filter(Boolean);
-    if (typeof value === 'string') return value.split(/[|,]/).map((item) => item.trim()).filter(Boolean);
-    return [];
-}
-
-function getPackageBenefits(item) {
-    const benefits = normalizeBenefits(item?.benefits || item?.features || item?.privileges);
-
-    if (benefits.length > 0) return benefits;
-
+function getPackageBenefits(item = {}) {
     return [
-        item?.premium_template || item?.premiumCv ? 'Dùng template premium' : '',
-        item?.remove_watermark || item?.removeWatermark ? 'Xuất CV không watermark' : '',
-        item?.custom_domain || item?.customDomain ? 'Tên miền tùy chỉnh' : '',
-        item?.priority_support || item?.support247 ? 'Hỗ trợ 24/7' : '',
-        item?.can_purchase_ai_addon || item?.allowAiAddon ? 'Cho phép mua thêm AI add-on' : '',
-        item?.view_full_ai_analysis || item?.fullAiAnalysis ? 'Xem full phân tích AI' : '',
+        toSafeNumber(item?.cv_limit) > 0
+            ? `${toSafeNumber(item.cv_limit)} CV`
+            : '',
+        toSafeNumber(item?.ai_limit) > 0
+            ? `AI ${toSafeNumber(item.ai_limit)} lượt`
+            : '',
+        item?.premium_template ? 'Dùng template premium' : '',
+        item?.remove_watermark ? 'Xuất CV không watermark' : '',
+        item?.custom_domain ? 'Tên miền tùy chỉnh' : '',
+        item?.priority_support ? 'Hỗ trợ 24/7' : '',
+        item?.can_purchase_ai_addon ? 'Cho phép mua thêm AI add-on' : '',
+        item?.view_full_ai_analysis ? 'Xem full phân tích AI' : '',
     ].filter(Boolean);
 }
 
-export function normalizePackage(item, index) {
+export function normalizePackage(item = {}, index = 0) {
+    const id = toSafeString(item?.id);
+    const slug = toSafeString(item?.slug);
+
     return {
-        id: toSafeString(item?.id || item?._id || item?.packageId) || `pkg-${index + 1}`,
-        slug: toSafeString(item?.slug || item?.code || item?.packageCode),
-        code: toSafeString(item?.code || item?.packageCode) || `PKG-${String(index + 1).padStart(3, '0')}`,
-        name: toSafeString(item?.name || item?.packageName || item?.title) || 'Chưa đặt tên',
-        price: toSafeNumber(item?.price || item?.amount || item?.fee),
-        durationUnit: normalizeDurationUnit(item?.durationUnit || item?.cycle || item?.billingUnit || item?.billing_cycle),
-        durationValue: item?.durationValue ?? item?.duration ?? item?.billingCycleValue ?? 1,
+        id,
+        displayId: id ? `#${id.slice(0, 8)}` : '--',
+        slug,
+        code: slug || (id ? `PKG-${id.slice(0, 8)}` : `PKG-${index + 1}`),
+        name: toSafeString(item?.name) || 'Chưa đặt tên',
+        price: toSafeNumber(item?.price),
+        durationUnit: normalizeDurationUnit(item?.billing_cycle),
+        durationValue: 1,
         benefits: getPackageBenefits(item),
-        totalUsers: toSafeNumber(item?.totalUsers || item?.users || item?.subscribers || item?.totalSubscriptions),
-        status: normalizeStatus(item?.status ?? item?.state ?? item?.is_active ?? item?.isActive),
-        createdAt: item?.createdAt || item?.created_date || item?.createdDate || '',
+        totalUsers: toSafeNumber(item?.total_users ?? item?.totalUsers),
+        status: normalizeStatus(item),
+        createdAt: item?.createdAt || item?.created_at || '',
+        updatedAt: item?.updatedAt || item?.updated_at || '',
+        raw: item,
     };
 }
 
@@ -227,365 +210,222 @@ export function normalizePackageList(items = []) {
     return items.map(normalizePackage);
 }
 
-function getPackageItemsFromResponse(response) {
-    const candidates = [
-        response?.data?.items,
-        response?.data?.data,
-        response?.data?.plans,
-        response?.data?.rows,
-        response?.items,
-        response?.plans,
-        response?.rows,
-        response?.data,
-        response,
-    ];
-
-    return candidates.find((item) => Array.isArray(item)) || [];
-}
-
-// ─── Export (PDF / Excel / JSON) ──────────────────────────────────────────────
-
-const EXPORT_COLUMN_LABEL_MAP = Object.fromEntries(
-    EXPORT_COLUMN_OPTIONS.map((item) => [item.value, item.label]),
-);
-
-let xlsxModulePromise;
-let pdfMakePromise;
-
-async function loadXlsxModule() {
-    if (!xlsxModulePromise) {
-        xlsxModulePromise = import('xlsx-js-style').then((m) => m.default || m);
-    }
-    return xlsxModulePromise;
-}
-
-async function loadPdfMake() {
-    if (!pdfMakePromise) {
-        pdfMakePromise = Promise.all([
-            import('pdfmake/build/pdfmake'),
-            import('pdfmake/build/vfs_fonts'),
-        ]).then(([pdfMakeModule, pdfFontsModule]) => {
-            const pdfMake = pdfMakeModule.default || pdfMakeModule;
-            const pdfFonts = pdfFontsModule.default || pdfFontsModule;
-            pdfMake.vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs || pdfFonts;
-            return pdfMake;
-        });
-    }
-    return pdfMakePromise;
-}
-
-function getExportCellValue(item, column) {
-    switch (column) {
-        case 'id': return item.code || item.id || '-';
-        case 'name': return item.name || '-';
-        case 'price': return formatCurrency(item.price);
-        case 'duration': return formatDuration(item.durationUnit, item.durationValue);
-        case 'benefits': return item.benefits?.length ? item.benefits.join(' | ') : '-';
-        case 'totalUsers': return toSafeNumber(item.totalUsers).toLocaleString('vi-VN');
-        case 'status': return STATUS_LABEL_MAP[item.status] || STATUS_LABEL_MAP.ACTIVE;
-        default: return '';
-    }
-}
-
-function getExcelCellValue(item, column) {
-    if (column === 'price') return toSafeNumber(item.price);
-    if (column === 'totalUsers') return toSafeNumber(item.totalUsers);
-    return getExportCellValue(item, column);
-}
-
-function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
-}
-
-function createExportFilename(extension) {
-    const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_');
-    return `danh-sach-goi-dich-vu_${date}.${extension}`;
-}
-
-function filterRowsByDateRange(rows = [], range = 'all') {
-    if (range === 'all') return rows;
-
-    const now = new Date();
-
-    if (range === 'today') {
-        const from = startOfDay(now);
-        const to = endOfDay(now);
-        return rows.filter((item) => {
-            if (!item.createdAt) return false;
-            const d = new Date(item.createdAt);
-            return d >= from && d <= to;
-        });
+function getPackageResponsePayload(response) {
+    if (
+        Array.isArray(response?.data) &&
+        (response?.meta || response?.pagination || response?.total_items)
+    ) {
+        return response;
     }
 
-    const from = startOfDay(now);
-    if (range === '7days') from.setDate(from.getDate() - 6);
-    else if (range === '30days') from.setDate(from.getDate() - 29);
-    else if (range === '90days') from.setDate(from.getDate() - 89);
-
-    return rows.filter((item) => {
-        if (!item.createdAt) return false;
-        const d = new Date(item.createdAt);
-        if (Number.isNaN(d.getTime())) return false;
-        return d >= from && d <= endOfDay(now);
-    });
+    return response?.data || response || {};
 }
 
-function exportRowsAsJson(rows = [], columns = []) {
-    const jsonRows = rows.map((item) => {
-        const row = {};
-        columns.forEach((col) => {
-            row[EXPORT_COLUMN_LABEL_MAP[col] || col] = getExportCellValue(item, col);
-        });
-        return row;
-    });
-    const blob = new Blob([JSON.stringify(jsonRows, null, 2)], { type: 'application/json;charset=utf-8;' });
-    downloadBlob(blob, createExportFilename('json'));
+export function getPackageItemsFromResponse(response) {
+    const payload = getPackageResponsePayload(response);
+
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.plans)) return payload.plans;
+    if (Array.isArray(payload?.items)) return payload.items;
+
+    return [];
 }
 
-async function exportRowsAsExcel(rows = [], columns = []) {
-    const XLSX = await loadXlsxModule();
-    const headers = columns.map((col) => EXPORT_COLUMN_LABEL_MAP[col] || col);
-    const bodyRows = rows.map((item) => columns.map((col) => getExcelCellValue(item, col)));
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...bodyRows]);
-    const range = XLSX.utils.decode_range(worksheet['!ref']);
+export function getPaginationFromResponse(response, fallbackPageSize = PAGE_SIZE) {
+    const payload = getPackageResponsePayload(response);
+    const pagination =
+        payload?.pagination ||
+        payload?.meta?.pagination ||
+        payload?.meta ||
+        payload?.page;
 
-    worksheet['!autofilter'] = { ref: worksheet['!ref'] };
-    worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
-    worksheet['!cols'] = columns.map((col) => {
-        const widthMap = { id: 14, name: 24, price: 16, duration: 14, benefits: 34, totalUsers: 16, status: 16 };
-        return { wch: widthMap[col] || 18 };
-    });
-
-    for (let row = range.s.r; row <= range.e.r; row += 1) {
-        for (let col = range.s.c; col <= range.e.c; col += 1) {
-            const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-            const cell = worksheet[cellAddress];
-            if (!cell) continue;
-
-            const isHeader = row === 0;
-            const columnKey = columns[col];
-
-            cell.s = {
-                font: { name: 'Calibri', sz: isHeader ? 12 : 11, bold: isHeader, color: { rgb: isHeader ? 'FFFFFF' : '1F2937' } },
-                fill: { fgColor: { rgb: isHeader ? '6366F1' : row % 2 === 0 ? 'F8FAFC' : 'FFFFFF' } },
-                alignment: { vertical: 'center', horizontal: columnKey === 'price' || columnKey === 'totalUsers' ? 'right' : 'left', wrapText: true },
-                border: { top: { style: 'thin', color: { rgb: 'E2E8F0' } }, bottom: { style: 'thin', color: { rgb: 'E2E8F0' } }, left: { style: 'thin', color: { rgb: 'E2E8F0' } }, right: { style: 'thin', color: { rgb: 'E2E8F0' } } },
-            };
-
-            if (!isHeader && columnKey === 'price' && typeof cell.v === 'number') cell.z = '#,##0"đ"';
-            if (!isHeader && columnKey === 'totalUsers' && typeof cell.v === 'number') cell.z = '#,##0';
-        }
-    }
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Danh sách gói');
-    XLSX.writeFile(workbook, createExportFilename('xlsx'));
-}
-
-async function exportRowsAsPdf(rows = [], columns = []) {
-    const pdfMake = await loadPdfMake();
-    const headers = columns.map((col) => EXPORT_COLUMN_LABEL_MAP[col] || col);
-    const body = rows.map((item) => columns.map((col) => String(getExportCellValue(item, col) ?? '')));
-
-    pdfMake.createPdf({
-        pageSize: 'A4',
-        pageOrientation: 'landscape',
-        pageMargins: [32, 28, 32, 28],
-        defaultStyle: { font: 'Roboto', fontSize: 10 },
-        content: [
-            { text: 'Danh sách gói dịch vụ', fontSize: 18, bold: true, margin: [0, 0, 0, 6] },
-            { text: `Ngày xuất: ${new Date().toLocaleString('vi-VN')}`, fontSize: 10, color: '#64748b', margin: [0, 0, 0, 12] },
-            {
-                table: { headerRows: 1, widths: headers.map(() => '*'), body: [headers, ...body] },
-                layout: {
-                    fillColor: (rowIndex) => (rowIndex === 0 ? '#F8FAFC' : rowIndex % 2 === 0 ? '#FCFDFF' : null),
-                    hLineColor: () => '#E2E8F0',
-                    vLineColor: () => '#E2E8F0',
-                    hLineWidth: () => 0.8,
-                    vLineWidth: () => 0.8,
-                    paddingLeft: () => 8,
-                    paddingRight: () => 8,
-                    paddingTop: () => 6,
-                    paddingBottom: () => 6,
-                },
-            },
-        ],
-    }).download(createExportFilename('pdf'));
-}
-
-export async function exportPackageRows(rows = [], config = {}) {
-    const selectedColumns = config.columns || [];
-    if (selectedColumns.length === 0) return;
-
-    const scopedRows = filterRowsByDateRange(rows, config.dateRange);
-
-    if (config.format === 'json') { exportRowsAsJson(scopedRows, selectedColumns); return; }
-    if (config.format === 'excel') { await exportRowsAsExcel(scopedRows, selectedColumns); return; }
-    if (config.format === 'pdf') { await exportRowsAsPdf(scopedRows, selectedColumns); }
-}
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-
-export function useDebounce(value, delay = 350) {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-
-    useEffect(() => {
-        const id = window.setTimeout(() => setDebouncedValue(value), delay);
-        return () => window.clearTimeout(id);
-    }, [value, delay]);
-
-    return debouncedValue;
-}
-
-export function usePackageList() {
-    const [packageList, setPackageList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState('');
-
-    const loadPackages = useCallback(async () => {
-        setLoading(true);
-        setLoadError('');
-
-        try {
-            const response = await getPackages();
-
-            if (response?.success === false) {
-                setLoadError('Không thể tải dữ liệu từ máy chủ.');
-                setPackageList([]);
-                return;
-            }
-
-            const apiItems = getPackageItemsFromResponse(response);
-            const normalized = normalizePackageList(apiItems);
-            setPackageList(normalized);
-        } catch {
-            setLoadError('Không thể tải dữ liệu từ máy chủ.');
-            setPackageList([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { loadPackages(); }, [loadPackages]);
-
-    return { packageList, setPackageList, loading, loadError, loadPackages };
-}
-
-const DEFAULT_SORT = { sort_by: 'createdAt', sort_order: 'DESC' };
-
-function sortPackages(list, { sort_by, sort_order }) {
-    return [...list].sort((a, b) => {
-        let aVal = a[sort_by];
-        let bVal = b[sort_by];
-        if (sort_by === 'createdAt') { aVal = new Date(aVal).getTime() || 0; bVal = new Date(bVal).getTime() || 0; }
-        if (aVal < bVal) return sort_order === 'ASC' ? -1 : 1;
-        if (aVal > bVal) return sort_order === 'ASC' ? 1 : -1;
-        return 0;
-    });
-}
-
-export function usePackageFilters(packageList = []) {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchValue, setSearchValue] = useState('');
-    const [filters, setFilters] = useState(INITIAL_FILTERS);
-    const [sortConfig, setSortConfig] = useState(DEFAULT_SORT);
-
-    const debouncedKeyword = useDebounce(searchValue, 350);
-
-    const filteredPackages = useMemo(() => {
-        const filtered = filterPackages(packageList, filters, debouncedKeyword);
-        return sortPackages(filtered, sortConfig);
-    }, [packageList, filters, debouncedKeyword, sortConfig]);
-
-    const totalPages = Math.max(1, Math.ceil(filteredPackages.length / PAGE_SIZE));
-    const currentPageForView = Math.min(currentPage, totalPages);
-
-    const paginatedPackages = useMemo(() => {
-        const start = (currentPageForView - 1) * PAGE_SIZE;
-        return filteredPackages.slice(start, start + PAGE_SIZE);
-    }, [currentPageForView, filteredPackages]);
-
-    const handleChangePage = useCallback(
-        (page) => setCurrentPage(Math.min(Math.max(1, page), totalPages)),
-        [totalPages],
+    const hasPagination = Boolean(
+        pagination || payload?.total_items || payload?.totalItems,
     );
 
-    const handleChangeFilter = useCallback((field, value) => {
-        setFilters((prev) => ({ ...prev, [field]: value }));
-        setCurrentPage(1);
-    }, []);
+    const totalItems = toSafeNumber(
+        pagination?.total_items ??
+            pagination?.totalItems ??
+            payload?.total_items ??
+            payload?.totalItems ??
+            getPackageItemsFromResponse(response).length,
+        0,
+    );
 
-    const handleToolbarChange = useCallback(({ search, sort, range }) => {
-        if (search !== undefined) setSearchValue(search);
-        if (sort) setSortConfig(sort);
-        if (range !== undefined) {
-            if (typeof range === 'string') {
-                setFilters((prev) => ({ ...prev, createdPreset: range || 'all', createdFrom: '', createdTo: '' }));
-            } else if (range && typeof range === 'object') {
-                setFilters((prev) => ({ ...prev, createdPreset: 'custom', createdFrom: range.from || '', createdTo: range.to || '' }));
-            }
-        }
-        setCurrentPage(1);
-    }, []);
+    const limit = toSafeNumber(
+        pagination?.limit ?? pagination?.page_size ?? pagination?.pageSize,
+        fallbackPageSize,
+    );
+
+    const page = toSafeNumber(
+        pagination?.page ?? pagination?.currentPage ?? pagination?.current_page,
+        1,
+    );
+
+    const totalPages = Math.max(
+        toSafeNumber(
+            pagination?.total_pages ??
+                pagination?.totalPages ??
+                (limit > 0 ? Math.ceil(totalItems / limit) : 1),
+            1,
+        ),
+        1,
+    );
 
     return {
-        filters,
-        searchValue,
-        currentPage: currentPageForView,
-        totalPages,
-        filteredPackages,
-        paginatedPackages,
-        setCurrentPage: handleChangePage,
-        handleChangeFilter,
-        handleToolbarChange,
+        hasPagination,
+        meta: {
+            page,
+            limit,
+            total_items: totalItems,
+            total_pages: totalPages,
+        },
     };
 }
 
-export function usePackageDelete({ setPackageList, loadPackages }) {
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [selectedPackage, setSelectedPackage] = useState(null);
-    const [deleting, setDeleting] = useState(false);
+export function buildPackageQuery({
+    page = 1,
+    limit = PAGE_SIZE,
+    search = '',
+    range = 'all',
+    from = '',
+    to = '',
+    sort_by = PackageSortBy.CREATED_AT,
+    sort_order = SortOrder.DESC,
+}) {
+    const query = {
+        page,
+        limit,
+        search: search.trim(),
+        sort_by,
+        sort_order,
+    };
 
-    const handleOpenDeleteModal = useCallback((item) => {
-        setSelectedPackage(item);
-        setIsDeleteModalOpen(true);
-    }, []);
+    if (range && range !== 'all' && range !== 'custom') {
+        query.range = range;
+    } else if (from && to) {
+        query.from = from;
+        query.to = to;
+    }
 
-    const handleCloseDeleteModal = useCallback(() => {
-        if (deleting) return;
-        setIsDeleteModalOpen(false);
-        setSelectedPackage(null);
-    }, [deleting]);
+    return query;
+}
 
-    const handleConfirmDelete = useCallback(async () => {
-        if (!selectedPackage?.id) return;
+export function normalizeToolbarFilters({ search, sort, range }) {
+    const nextFilters = {
+        search: search?.trim() || '',
+        sort_by: sort?.sort_by || DEFAULT_FILTERS.sort_by,
+        sort_order: sort?.sort_order || DEFAULT_FILTERS.sort_order,
+        range: 'all',
+        from: '',
+        to: '',
+    };
 
-        setDeleting(true);
+    if (typeof range === 'string') {
+        nextFilters.range = range || 'all';
+        return nextFilters;
+    }
+
+    nextFilters.range = 'custom';
+    nextFilters.from = range?.from || '';
+    nextFilters.to = range?.to || '';
+
+    return nextFilters;
+}
+
+export function isSamePackageFilters(currentFilters, nextFilters) {
+    return (
+        currentFilters.search === nextFilters.search &&
+        currentFilters.sort_by === nextFilters.sort_by &&
+        currentFilters.sort_order === nextFilters.sort_order &&
+        currentFilters.range === nextFilters.range &&
+        currentFilters.from === nextFilters.from &&
+        currentFilters.to === nextFilters.to
+    );
+}
+
+function buildUpdatedPackageStatusPayload(item, response, shouldDisable) {
+    const payload = getPackageResponsePayload(response);
+    const responseData =
+        payload && typeof payload === 'object' && !Array.isArray(payload)
+            ? payload
+            : {};
+
+    return {
+        ...item.raw,
+        ...responseData,
+        id: item.id,
+        slug: responseData.slug ?? item.slug ?? item.raw?.slug,
+        name: responseData.name ?? item.name ?? item.raw?.name,
+        price: responseData.price ?? item.raw?.price ?? item.price,
+        is_active: !shouldDisable,
+        status: shouldDisable ? 'PAUSED' : 'ACTIVE',
+    };
+}
+
+export function usePackageStatusAction({ onStatusChanged } = {}) {
+    const [submittingPackageId, setSubmittingPackageId] = useState('');
+
+    const handleTogglePackageStatus = useCallback(async (item) => {
+        if (!item?.id) {
+            toast.error('Không tìm thấy ID gói dịch vụ để cập nhật trạng thái.');
+            return;
+        }
+
+        if (submittingPackageId === item.id) return;
+
+        const shouldDisable = item.status === 'ACTIVE';
+        setSubmittingPackageId(item.id);
 
         try {
-            const response = await deletePackage(selectedPackage.id);
+            const response = await updatePackageStatus(item.id, {
+                action: shouldDisable ? 'disable' : 'restore',
+            });
 
             if (response?.success === false || response?.data?.success === false) {
-                toast.error(response?.message || response?.data?.message || 'Xóa gói dịch vụ thất bại.');
-                return;
+                throw new Error(
+                    getApiMessage(
+                        response,
+                        shouldDisable
+                            ? 'Khóa gói dịch vụ thất bại.'
+                            : 'Mở khóa gói dịch vụ thất bại.',
+                    ),
+                );
             }
 
-            toast.success('Gói dịch vụ đã được xóa khỏi hệ thống.');
-            setPackageList((prev) => prev.filter((item) => item.id !== selectedPackage.id));
-            setIsDeleteModalOpen(false);
-            setSelectedPackage(null);
-            loadPackages();
-        } catch {
-            toast.error('Không thể xóa gói dịch vụ.');
-        } finally {
-            setDeleting(false);
-        }
-    }, [loadPackages, selectedPackage, setPackageList]);
+            const updatedPackage = normalizePackage(
+                buildUpdatedPackageStatusPayload(item, response, shouldDisable),
+            );
 
-    return { isDeleteModalOpen, selectedPackage, deleting, handleOpenDeleteModal, handleCloseDeleteModal, handleConfirmDelete };
+            onStatusChanged?.(updatedPackage);
+            toast.success(
+                getApiMessage(
+                    response,
+                    shouldDisable
+                        ? 'Đã khóa gói dịch vụ.'
+                        : 'Đã mở khóa gói dịch vụ.',
+                ),
+            );
+
+            return true;
+        } catch (error) {
+            toast.error(
+                getErrorMessage(
+                    error,
+                    shouldDisable
+                        ? 'Không thể khóa gói dịch vụ.'
+                        : 'Không thể mở khóa gói dịch vụ.',
+                ),
+            );
+            return false;
+        } finally {
+            setSubmittingPackageId('');
+        }
+    }, [onStatusChanged, submittingPackageId]);
+
+    return {
+        submittingPackageId,
+        handleTogglePackageStatus,
+    };
 }

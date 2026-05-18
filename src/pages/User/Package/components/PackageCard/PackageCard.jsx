@@ -52,7 +52,6 @@ function buildPlanBenefits(plan = {}) {
     return [
         `Tạo tối đa ${plan.cv_limit || 0} CV`,
         `${plan.ai_limit || 0} lượt phân tích AI mỗi tháng`,
-        `${plan.export_limit || 0} lượt xuất CV mỗi tháng`,
         plan.view_full_ai_analysis
             ? 'Xem đầy đủ phân tích AI'
             : 'Phân tích AI cơ bản',

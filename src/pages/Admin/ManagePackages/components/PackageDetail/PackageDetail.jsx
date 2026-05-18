@@ -1,11 +1,6 @@
 import classNames from 'classnames/bind';
 import { useCallback } from 'react';
-import {
-    useLocation,
-    useNavigate,
-    useParams,
-    useSearchParams,
-} from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Button from '~/components/Button';
 import { config } from '~/config';
 import { BasicInfoCard, BenefitsCard } from './components';
@@ -16,26 +11,24 @@ const cx = classNames.bind(styles);
 
 function PackageDetail() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const { packageId } = useParams();
+    const { slug } = useParams();
     const [searchParams] = useSearchParams();
 
     const isReadOnly = searchParams.get('mode') === 'view';
-    const routePackage = location.state?.package || null;
 
     const managePackagesRoute =
         config?.router?.managePackages || '/admin/packages';
 
     const packageDetailRoute =
-        config?.router?.packageDetail || '/admin/packages/:packageId';
+        config?.router?.packageDetail || '/admin/packages/:slug';
 
     const handleBackToList = useCallback(() => {
         navigate(managePackagesRoute);
     }, [managePackagesRoute, navigate]);
 
     const handleGoToEdit = useCallback(() => {
-        navigate(packageDetailRoute.replace(':packageId', packageId));
-    }, [navigate, packageDetailRoute, packageId]);
+        navigate(packageDetailRoute.replace(':slug', slug));
+    }, [navigate, packageDetailRoute, slug]);
 
     const {
         loading,
@@ -47,11 +40,9 @@ function PackageDetail() {
         handleToggleField,
         submitPackageDetail,
     } = usePackageDetailForm({
-        packageId,
-        packageRecordId: routePackage?.id,
+        slug,
         isReadOnly,
         onNotFound: handleBackToList,
-        routePackage,
     });
 
     const handleSubmit = useCallback(() => {

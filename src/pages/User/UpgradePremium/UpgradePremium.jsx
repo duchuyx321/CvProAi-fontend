@@ -115,7 +115,7 @@ function UpgradePremium() {
         }
 
         const optionPath = config.router.upgradeOptions.replace(
-            ':packageId',
+            ':slug',
             packageId,
         );
         navigate(optionPath);

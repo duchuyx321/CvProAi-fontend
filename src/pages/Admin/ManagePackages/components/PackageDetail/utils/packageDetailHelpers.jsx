@@ -14,97 +14,32 @@ export function toDigitsOnly(value = '') {
 }
 
 function normalizeDurationUnit(value) {
-    const normalizedValue = toSafeString(value).toLowerCase();
+    const normalizedValue = toSafeString(value).toUpperCase();
 
-    if (
-        ['permanent', 'lifetime', 'forever', 'vinh_vien', 'vĩnh viễn'].includes(
-            normalizedValue
-        )
-    ) {
-        return 'permanent';
-    }
-
-    if (['year', 'years', 'annual', 'yearly', 'năm'].includes(normalizedValue)) {
-        return 'year';
-    }
+    if (normalizedValue === 'LIFETIME') return 'permanent';
+    if (normalizedValue === 'YEAR') return 'year';
 
     return 'month';
 }
 
-function normalizeBoolean(value, fallback = false) {
-    if (typeof value === 'boolean') {
-        return value;
-    }
+function normalizeBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
 
-    if (typeof value === 'number') {
-        return value === 1;
-    }
-
-    const normalizedValue = toSafeString(value).toLowerCase();
-
-    if (['true', '1', 'yes', 'y', 'on'].includes(normalizedValue)) {
-        return true;
-    }
-
-    if (['false', '0', 'no', 'n', 'off'].includes(normalizedValue)) {
-        return false;
-    }
-
-    return fallback;
+    return toSafeString(value).toLowerCase() === 'true';
 }
 
-function normalizeStatus(value) {
+function normalizeStatus(packageItem = {}) {
+    const value = packageItem?.is_active ?? packageItem?.status;
+
     if (typeof value === 'boolean') return value ? 'ACTIVE' : 'PAUSED';
     if (typeof value === 'number') return value === 1 ? 'ACTIVE' : 'PAUSED';
 
     const normalizedValue = toSafeString(value).toUpperCase();
-    return normalizedValue === 'PAUSED' || normalizedValue === 'INACTIVE'
-        ? 'PAUSED'
-        : 'ACTIVE';
-}
 
-function normalizeBenefits(value) {
-    if (Array.isArray(value)) {
-        return value.map((item) => toSafeString(item)).filter(Boolean);
-    }
-
-    if (typeof value === 'string') {
-        return value
-            .split(/[|,]/)
-            .map((item) => item.trim())
-            .filter(Boolean);
-    }
-
-    return [];
-}
-
-function extractFeatureFlags(packageItem) {
-    const benefits = normalizeBenefits(
-        packageItem?.benefits || packageItem?.features || packageItem?.privileges
-    ).map((item) => item.toLowerCase());
-
-    const hasBenefit = (matcher) => benefits.some((item) => matcher.test(item));
-
-    return {
-        premiumCv:
-            normalizeBoolean(packageItem?.premiumCv ?? packageItem?.premium_template, false) ||
-            hasBenefit(/premium|template/),
-        removeWatermark:
-            normalizeBoolean(packageItem?.removeWatermark ?? packageItem?.remove_watermark, false) ||
-            hasBenefit(/watermark/),
-        customDomain:
-            normalizeBoolean(packageItem?.customDomain ?? packageItem?.custom_domain, false) ||
-            hasBenefit(/tên\s*miền|domain/),
-        support247:
-            normalizeBoolean(packageItem?.support247 ?? packageItem?.priority_support, false) ||
-            hasBenefit(/24\/7|hỗ\s*trợ/),
-        allowAiAddon:
-            normalizeBoolean(packageItem?.allowAiAddon ?? packageItem?.can_purchase_ai_addon, false) ||
-            hasBenefit(/add[\s-]*on/),
-        fullAiAnalysis:
-            normalizeBoolean(packageItem?.fullAiAnalysis ?? packageItem?.view_full_ai_analysis, false) ||
-            hasBenefit(/full\s*phân\s*tích|phân\s*tích\s*ai/),
-    };
+    return normalizedValue === 'ACTIVE' || normalizedValue === 'TRUE'
+        ? 'ACTIVE'
+        : 'PAUSED';
 }
 
 export function normalizePackageDetail(packageItem) {
@@ -112,141 +47,29 @@ export function normalizePackageDetail(packageItem) {
         return DEFAULT_FORM_DATA;
     }
 
-    const featureFlags = extractFeatureFlags(packageItem);
-    const normalizedDurationUnit = normalizeDurationUnit(
-        packageItem?.durationUnit ||
-            packageItem?.cycle ||
-            packageItem?.billingUnit ||
-            packageItem?.billing_cycle
-    );
+    const durationUnit = normalizeDurationUnit(packageItem?.billing_cycle);
 
     return {
-        id: toSafeString(
-            packageItem?.id ||
-                packageItem?._id ||
-                packageItem?.packageId ||
-                packageItem?.code
-        ),
-        slug: toSafeString(packageItem?.slug || packageItem?.code || packageItem?.packageCode),
-        code: toSafeString(packageItem?.code || packageItem?.packageCode),
-        name: toSafeString(
-            packageItem?.name || packageItem?.packageName || packageItem?.title
-        ),
-        price: String(
-            packageItem?.price ?? packageItem?.amount ?? packageItem?.fee ?? ''
-        ),
-        durationUnit: normalizedDurationUnit,
-        durationValue:
-            normalizedDurationUnit === 'permanent'
-                ? ''
-                : String(
-                      packageItem?.durationValue ??
-                          packageItem?.duration ??
-                          packageItem?.billingCycleValue ??
-                          1
-                  ),
-        description: toSafeString(
-            packageItem?.description || packageItem?.shortDescription
-        ),
-        maxCv: String(
-            packageItem?.maxCv ??
-                packageItem?.maxCV ??
-                packageItem?.cv_limit ??
-                packageItem?.maxResume ??
-                packageItem?.resumeLimit ??
-                50
-        ),
-        aiLimit: String(
-            packageItem?.aiLimit ??
-                packageItem?.ai_limit ??
-                packageItem?.aiUsageLimit ??
-                packageItem?.analysisLimit ??
-                100
-        ),
-        premiumCv: featureFlags.premiumCv,
-        removeWatermark: featureFlags.removeWatermark,
-        customDomain: featureFlags.customDomain,
-        support247: featureFlags.support247,
-        allowAiAddon: featureFlags.allowAiAddon,
-        fullAiAnalysis: featureFlags.fullAiAnalysis,
-        totalUsers: toSafeNumber(
-            packageItem?.totalUsers ||
-                packageItem?.users ||
-                packageItem?.subscribers ||
-                packageItem?.totalSubscriptions
-        ),
-        status: normalizeStatus(
-            packageItem?.status ??
-                packageItem?.state ??
-                packageItem?.is_active ??
-                packageItem?.isActive
-        ),
+        ...DEFAULT_FORM_DATA,
+        id: toSafeString(packageItem?.id),
+        slug: toSafeString(packageItem?.slug),
+        code: toSafeString(packageItem?.slug),
+        name: toSafeString(packageItem?.name),
+        price: String(packageItem?.price ?? ''),
+        durationUnit,
+        durationValue: durationUnit === 'permanent' ? '' : '1',
+        description: toSafeString(packageItem?.description),
+        maxCv: String(packageItem?.cv_limit ?? DEFAULT_FORM_DATA.maxCv),
+        aiLimit: String(packageItem?.ai_limit ?? DEFAULT_FORM_DATA.aiLimit),
+        premiumCv: normalizeBoolean(packageItem?.premium_template),
+        removeWatermark: normalizeBoolean(packageItem?.remove_watermark),
+        customDomain: normalizeBoolean(packageItem?.custom_domain),
+        support247: normalizeBoolean(packageItem?.priority_support),
+        allowAiAddon: normalizeBoolean(packageItem?.can_purchase_ai_addon),
+        fullAiAnalysis: normalizeBoolean(packageItem?.view_full_ai_analysis),
+        totalUsers: toSafeNumber(packageItem?.total_users),
+        status: normalizeStatus(packageItem),
     };
-}
-
-export function getPackageCollection(response) {
-    const primaryData = response?.data ?? response ?? {};
-    const collections = [
-        primaryData?.items,
-        primaryData?.data,
-        primaryData?.packages,
-        primaryData?.results,
-        primaryData,
-    ];
-
-    return collections.find((item) => Array.isArray(item)) || [];
-}
-
-export function findPackageById(packageList = [], packageId) {
-    const normalizedId = String(packageId);
-
-    return packageList.find((item) =>
-        [
-            item?.id,
-            item?._id,
-            item?.packageId,
-            item?.code,
-            item?.packageCode,
-        ].some((value) => String(value) === normalizedId)
-    );
-}
-
-export function buildBenefitsPreview(formData) {
-    const benefits = [];
-
-    if (toSafeNumber(formData.maxCv) > 0) {
-        benefits.push(`${toSafeNumber(formData.maxCv)} CV`);
-    }
-
-    if (toSafeNumber(formData.aiLimit) > 0) {
-        benefits.push(`AI ${toSafeNumber(formData.aiLimit)} lượt`);
-    }
-
-    if (formData.premiumCv) {
-        benefits.push('Dùng template premium');
-    }
-
-    if (formData.removeWatermark) {
-        benefits.push('Xuất CV không watermark');
-    }
-
-    if (formData.customDomain) {
-        benefits.push('Tên miền tùy chỉnh');
-    }
-
-    if (formData.support247) {
-        benefits.push('Hỗ trợ 24/7');
-    }
-
-    if (formData.allowAiAddon) {
-        benefits.push('Cho phép mua thêm AI add-on');
-    }
-
-    if (formData.fullAiAnalysis) {
-        benefits.push('Xem full phân tích AI');
-    }
-
-    return benefits;
 }
 
 export function createFormSnapshot(formData) {
@@ -312,7 +135,7 @@ export function buildUpdatePayload(formData) {
         billing_cycle: billingCycleMap[formData.durationUnit] || 'MONTH',
         description: toSafeString(formData.description),
         cv_limit: toSafeNumber(formData.maxCv),
-        export_limit: toSafeNumber(formData.maxCv),
+        export_limit: 0,
         ai_limit: toSafeNumber(formData.aiLimit),
         premium_template: Boolean(formData.premiumCv),
         remove_watermark: Boolean(formData.removeWatermark),

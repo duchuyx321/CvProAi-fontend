@@ -2,7 +2,7 @@ export function formatPrice(price, currency = 'VND') {
     const amount = Number(price ?? 0);
 
     if (!Number.isFinite(amount)) {
-        return '—';
+        return '--';
     }
 
     if (currency === 'VND') {
@@ -34,13 +34,13 @@ export function mapBillingCycleToUnit(billingCycle) {
 
 export function formatDate(dateString) {
     if (!dateString) {
-        return '—';
+        return '--';
     }
 
     const date = new Date(dateString);
 
     if (Number.isNaN(date.getTime())) {
-        return '—';
+        return '--';
     }
 
     return date.toLocaleDateString('vi-VN');
@@ -48,13 +48,13 @@ export function formatDate(dateString) {
 
 export function formatDateTime(dateString) {
     if (!dateString) {
-        return '—';
+        return '--';
     }
 
     const date = new Date(dateString);
 
     if (Number.isNaN(date.getTime())) {
-        return '—';
+        return '--';
     }
 
     return date.toLocaleString('vi-VN');
@@ -146,10 +146,6 @@ export function buildPlanBenefits(plan = {}) {
         benefits.push(`${plan.ai_limit} lượt phân tích AI mỗi tháng`);
     }
 
-    if (Number(plan.export_limit) > 0) {
-        benefits.push(`${plan.export_limit} lượt xuất CV mỗi tháng`);
-    }
-
     if (plan.view_full_ai_analysis) {
         benefits.push('Xem đầy đủ phân tích AI');
     }
@@ -181,9 +177,6 @@ export function buildQuotaItems(plan = {}, usage = {}) {
     const aiUsed = toSafeNumber(usage.ai_runs_used);
     const aiLimit = toSafeNumber(usage.ai_runs_limit ?? plan.ai_limit);
 
-    const exportsUsed = toSafeNumber(usage.exports_used);
-    const exportsLimit = toSafeNumber(usage.exports_limit ?? plan.export_limit);
-
     const quotaItems = [
         {
             key: 'ai-runs',
@@ -191,13 +184,6 @@ export function buildQuotaItems(plan = {}, usage = {}) {
             used: aiUsed,
             limit: aiLimit,
             remaining: getRemainingQuota(aiUsed, aiLimit),
-        },
-        {
-            key: 'exports',
-            label: 'Xuất file',
-            used: exportsUsed,
-            limit: exportsLimit,
-            remaining: getRemainingQuota(exportsUsed, exportsLimit),
         },
     ];
 
