@@ -14,6 +14,14 @@ import QRCodeScreen from './components/QRCodeScreen';
 
 const cx = classNames.bind(styles);
 
+function toNumber(value) {
+    return Number(value) || 0;
+}
+
+function normalizeText(value = '') {
+    return String(value || '').trim();
+}
+
 function Payment() {
     const { payment_id } = useParams();
     const navigate = useNavigate();
@@ -26,7 +34,7 @@ function Payment() {
         let isMounted = true;
 
         const fetchCheckout = async () => {
-            const safePaymentId = String(payment_id || '').trim();
+            const safePaymentId = normalizeText(payment_id);
 
             if (!safePaymentId) {
                 setErrorMessage('Không tìm thấy mã thanh toán hợp lệ.');
@@ -39,13 +47,12 @@ function Payment() {
 
             const result = await getDetailCheckout(safePaymentId);
 
-            if (!isMounted) {
-                return;
-            }
+            if (!isMounted) return;
 
             if (!result?.success || !result?.data) {
                 const message =
                     result?.message || 'Không thể tải thông tin thanh toán.';
+
                 setErrorMessage(message);
                 setIsLoading(false);
                 toast.error(message);
@@ -57,12 +64,11 @@ function Payment() {
         };
 
         fetchCheckout().catch((error) => {
-            if (!isMounted) {
-                return;
-            }
+            if (!isMounted) return;
 
             const message =
                 error?.message || 'Không thể tải thông tin thanh toán.';
+
             setErrorMessage(message);
             setIsLoading(false);
             toast.error(message);
@@ -72,8 +78,9 @@ function Payment() {
             isMounted = false;
         };
     }, [payment_id]);
+
     useEffect(() => {
-        const safePaymentId = String(payment_id || '').trim();
+        const safePaymentId = normalizeText(payment_id);
 
         if (!safePaymentId) return;
 
@@ -90,25 +97,32 @@ function Payment() {
                     return;
                 }
 
-                const status = String(result.data?.status || '').toUpperCase();
+                const status = normalizeText(result.data?.status).toUpperCase();
 
                 setResultCheckout((prev) => ({
                     ...prev,
-                    status,
+
+                    // Giữ data detail cũ để không mất plan/addon
                     ...result.data,
+
+                    // Chuẩn hóa status
+                    status,
                 }));
 
                 if (status === 'PAID') {
-                    clearInterval(intervalId);
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                    }
 
                     toast.success(
                         'Thanh toán thành công. Tài khoản đã được kích hoạt.',
                     );
+
                     setTimeout(() => {
                         navigate(
                             config.router.paymentSuccess.replace(
                                 ':orderId',
-                                payment_id,
+                                safePaymentId,
                             ),
                             {
                                 replace: true,
@@ -122,13 +136,17 @@ function Payment() {
                     status === 'CANCELED' ||
                     status === 'REFUNDED'
                 ) {
-                    clearInterval(intervalId);
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                    }
+
                     toast.error('Thanh toán thất bại hoặc đã bị hủy.');
+
                     setTimeout(() => {
                         navigate(
                             config.router.paymentSuccess.replace(
                                 ':orderId',
-                                payment_id,
+                                safePaymentId,
                             ),
                             {
                                 replace: true,
@@ -155,34 +173,137 @@ function Payment() {
             }
         };
     }, [payment_id, navigate]);
+
     const checkoutForRender = useMemo(() => {
         const normalized = normalizeOrderForUi(resultCheckout || {});
-        const safeAmount = Number(
-            normalized?.amount || resultCheckout?.amount_cents || 0,
+
+        const plan =
+            resultCheckout?.plan ||
+            resultCheckout?.package ||
+            resultCheckout?.paymentable ||
+            resultCheckout?.subscription?.plan ||
+            normalized?.plan ||
+            normalized?.package ||
+            null;
+
+        const addon =
+            resultCheckout?.addon ||
+            resultCheckout?.addOn ||
+            resultCheckout?.addon_package ||
+            resultCheckout?.addonPackage ||
+            resultCheckout?.ai_addon_package ||
+            normalized?.addon ||
+            normalized?.addOn ||
+            null;
+
+        const paymentableType = normalizeText(
+            resultCheckout?.paymentable_type ||
+                resultCheckout?.paymentableType ||
+                normalized?.paymentable_type ||
+                normalized?.paymentableType,
+        ).toUpperCase();
+
+        const displayItem = addon || plan || {};
+
+        const displayName =
+            displayItem?.name ||
+            resultCheckout?.name ||
+            resultCheckout?.title ||
+            normalized?.name ||
+            normalized?.title ||
+            '';
+
+        const displayDescription =
+            displayItem?.description ||
+            resultCheckout?.description ||
+            normalized?.description ||
+            '';
+
+        const displayPrice =
+            displayItem?.price ||
+            resultCheckout?.amount ||
+            resultCheckout?.amount_cents ||
+            normalized?.amount ||
+            0;
+
+        const displayCurrency =
+            displayItem?.currency ||
+            resultCheckout?.currency ||
+            normalized?.currency ||
+            'VND';
+
+        const displayBillingCycle = plan?.billing_cycle || '';
+
+        const safeAmount = toNumber(
+            normalized?.amount ||
+                resultCheckout?.amount_cents ||
+                resultCheckout?.amount ||
+                displayPrice,
         );
 
         return {
             ...resultCheckout,
             ...normalized,
-            amount_cents:
-                Number.isFinite(safeAmount) && safeAmount > 0 ? safeAmount : 0,
-            qrCode: resultCheckout?.qrCode || normalized?.qrCodeUrl || '',
-            bank: resultCheckout?.bank || normalized?.bankName || '',
+
+            plan,
+            addon,
+            paymentable_type: paymentableType,
+
+            amount_cents: safeAmount > 0 ? safeAmount : 0,
+
+            qrCode:
+                resultCheckout?.qrCode ||
+                resultCheckout?.qr_code ||
+                normalized?.qrCode ||
+                normalized?.qrCodeUrl ||
+                '',
+
+            bank:
+                resultCheckout?.bank ||
+                resultCheckout?.bankName ||
+                normalized?.bank ||
+                normalized?.bankName ||
+                '',
+
             acc:
                 resultCheckout?.acc ||
                 resultCheckout?.accountNumber ||
+                resultCheckout?.account_number ||
                 normalized?.accountNumber ||
+                normalized?.account_number ||
                 '',
+
             order_code:
                 resultCheckout?.order_code ||
                 normalized?.orderCode ||
                 normalized?.orderId ||
                 '',
-            addon:
-                resultCheckout?.addon ||
-                resultCheckout?.addOn ||
-                normalized?.addOn ||
+
+            status:
+                resultCheckout?.status ||
+                normalized?.status ||
+                'PENDING',
+
+            paid_at:
+                resultCheckout?.paid_at ||
+                normalized?.paid_at ||
                 null,
+
+            // Field an toàn cho UI, tránh undefined
+            displayName,
+            displayDescription,
+            displayPrice,
+            displayCurrency,
+            displayBillingCycle,
+            displayRuns: addon?.runs || null,
+
+            // Field fallback để component cũ vẫn đọc được
+            name: displayName,
+            description: displayDescription,
+            price: displayPrice,
+            currency: displayCurrency,
+            billing_cycle: displayBillingCycle,
+            runs: addon?.runs || null,
         };
     }, [resultCheckout]);
 
@@ -201,12 +322,15 @@ function Payment() {
 
                 <div className={cx('content-grid')}>
                     <aside className={cx('left-column')}>
-                        <PackageCard pkg={checkoutForRender} />
+                        {!isLoading && !errorMessage ? (
+                            <PackageCard pkg={checkoutForRender} />
+                        ) : null}
 
                         <div className={cx('guide-card')}>
                             <h3 className={cx('guide-title')}>
                                 Hướng dẫn thanh toán
                             </h3>
+
                             <div className={cx('guide-list')}>
                                 {GUIDE_STEPS.map((step, index) => (
                                     <div
@@ -216,6 +340,7 @@ function Payment() {
                                         <span className={cx('guide-index')}>
                                             {index + 1}
                                         </span>
+
                                         <div>
                                             <p
                                                 className={cx(
@@ -243,15 +368,12 @@ function Payment() {
                             <div className={cx('security-note')}>
                                 Đang tải thông tin thanh toán...
                             </div>
-                        ) : (
-                            <QRCodeScreen pkg={checkoutForRender} />
-                        )}
-
-                        {!isLoading && errorMessage ? (
+                        ) : errorMessage ? (
                             <>
                                 <div className={cx('security-note')}>
                                     {errorMessage}
                                 </div>
+
                                 <button
                                     type="button"
                                     className={cx('btn-inline')}
@@ -264,7 +386,9 @@ function Payment() {
                                     Quay lại trang nâng cấp
                                 </button>
                             </>
-                        ) : null}
+                        ) : (
+                            <QRCodeScreen pkg={checkoutForRender} />
+                        )}
                     </section>
                 </div>
 
