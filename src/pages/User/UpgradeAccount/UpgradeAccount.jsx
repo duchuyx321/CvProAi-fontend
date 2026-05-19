@@ -11,6 +11,7 @@ import {
     Check,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+
 import Button from '~/components/Button';
 import { useAuth } from '~/context/AuthContext';
 import { getPricing } from '~/services/pricing.service';
@@ -19,6 +20,7 @@ import {
     getAiAddonPackages,
 } from '~/services/upgrade.service';
 import { config } from '~/config';
+
 import AddonCard from './components/AddonCard';
 import CompareTable from './components/CompareTable';
 import styles from './UpgradeAccount.module.scss';
@@ -72,6 +74,21 @@ function formatPrice(value, currency = 'VND') {
         currency,
         maximumFractionDigits: currency === 'VND' ? 0 : 2,
     }).format(amount);
+}
+
+// NEW: format ngày hết hạn subscriptionCurrent.current_period_end
+function formatDate(value) {
+    if (!value) return '';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
 }
 
 function getBillingText(value) {
@@ -133,6 +150,9 @@ function UpgradeAccount() {
 
     const authCurrentPlan = user?.planCurrent || null;
 
+    // NEW: lấy subscriptionCurrent từ profile trong AuthContext
+    const subscriptionCurrent = user?.subscriptionCurrent || null;
+
     const currentPlan = useMemo(() => {
         if (!authCurrentPlan) return null;
 
@@ -158,6 +178,35 @@ function UpgradeAccount() {
     const canBuyAiAddon = Boolean(currentPlan?.can_purchase_ai_addon);
     const isFreeCurrentPlan = currentPlanSlug === 'free';
 
+    // NEW: lấy ngày hết hạn từ subscriptionCurrent.current_period_end
+    const subscriptionEndDate = formatDate(
+        subscriptionCurrent?.current_period_end,
+    );
+
+    // NEW: check trạng thái subscription hiện tại
+    const isActiveSubscription = subscriptionCurrent?.status === 'ACTIVE';
+
+    // NEW: text hiển thị ở card gói hiện tại
+    const currentPlanStatusText = (() => {
+        if (isFreeCurrentPlan) {
+            return currentPlan?.is_active
+                ? 'Gói miễn phí đang được áp dụng'
+                : 'Gói hiện không còn hoạt động';
+        }
+
+        if (isActiveSubscription && subscriptionEndDate) {
+            return `Hiệu lực đến ${subscriptionEndDate}`;
+        }
+
+        if (subscriptionEndDate) {
+            return `Hết hạn vào ${subscriptionEndDate}`;
+        }
+
+        return currentPlan?.is_active
+            ? 'Đang sử dụng'
+            : 'Gói hiện không còn hoạt động';
+    })();
+
     useEffect(() => {
         let cancelled = false;
 
@@ -170,8 +219,8 @@ function UpgradeAccount() {
                 if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
                         result?.message ||
-                        result?.messsage ||
-                        'Không thể tải danh sách gói dịch vụ',
+                            result?.messsage ||
+                            'Không thể tải danh sách gói dịch vụ',
                     );
                 }
 
@@ -186,9 +235,9 @@ function UpgradeAccount() {
                 if (!cancelled) {
                     toast.error(
                         error?.response?.data?.message ||
-                        error?.response?.data?.messsage ||
-                        error?.message ||
-                        'Có lỗi xảy ra khi tải danh sách gói dịch vụ',
+                            error?.response?.data?.messsage ||
+                            error?.message ||
+                            'Có lỗi xảy ra khi tải danh sách gói dịch vụ',
                     );
                     setPlans([]);
                 }
@@ -224,8 +273,8 @@ function UpgradeAccount() {
                 if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
                         result?.message ||
-                        result?.messsage ||
-                        'Không thể tải danh sách gói mua thêm',
+                            result?.messsage ||
+                            'Không thể tải danh sách gói mua thêm',
                     );
                 }
 
@@ -240,9 +289,9 @@ function UpgradeAccount() {
                 if (!cancelled) {
                     toast.error(
                         error?.response?.data?.message ||
-                        error?.response?.data?.messsage ||
-                        error?.message ||
-                        'Có lỗi xảy ra khi tải gói mua thêm',
+                            error?.response?.data?.messsage ||
+                            error?.message ||
+                            'Có lỗi xảy ra khi tải gói mua thêm',
                     );
                     setAddonPackages([]);
                 }
@@ -330,8 +379,8 @@ function UpgradeAccount() {
                 if (!result?.success) {
                     throw new Error(
                         result?.message ||
-                        result?.messsage ||
-                        'Hệ thống đang xảy ra lỗi, vui lòng thử lại sau vài phút.',
+                            result?.messsage ||
+                            'Hệ thống đang xảy ra lỗi, vui lòng thử lại sau vài phút.',
                     );
                 }
 
@@ -422,10 +471,9 @@ function UpgradeAccount() {
                                     </span>
                                 </div>
 
+                                {/* UPDATED: hiển thị hạn sử dụng subscriptionCurrent.current_period_end */}
                                 <p className={cx('activeText')}>
-                                    {currentPlan?.is_active
-                                        ? 'Đang sử dụng'
-                                        : 'Gói hiện không còn hoạt động'}
+                                    {currentPlanStatusText}
                                 </p>
 
                                 <div className={cx('currentActions')}>
@@ -436,7 +484,6 @@ function UpgradeAccount() {
                                     >
                                         Quản lý gói
                                     </Button>
-
                                 </div>
                             </div>
 
