@@ -13,14 +13,20 @@ function normalizeSlug(value = '') {
     return String(value).trim().toLowerCase();
 }
 
+function toNumber(value) {
+    return Number(value) || 0;
+}
+
+function getPlansFromResponse(result) {
+    return Array.isArray(result?.data?.data) ? result.data.data : [];
+}
+
 function Pricing() {
     const { isAuthenticated, user, isInitialized } = useAuth();
 
     const currentPlanSlug = useMemo(() => {
         return normalizeSlug(user?.planCurrent?.slug || '');
     }, [user]);
-
-    const isCurrentPremium = isAuthenticated && currentPlanSlug === 'premium';
 
     const [pricing, setPricing] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,11 +48,9 @@ function Pricing() {
                     );
                 }
 
-                const plans = Array.isArray(result?.data?.data)
-                    ? result.data.data
-                    : [];
-
-                const activePlans = plans.filter((plan) => plan?.is_active);
+                const activePlans = getPlansFromResponse(result)
+                    .filter((plan) => plan?.is_active)
+                    .sort((a, b) => toNumber(a.price) - toNumber(b.price));
 
                 if (!cancelled) {
                     setPricing(activePlans);
@@ -82,6 +86,8 @@ function Pricing() {
         return currentPlanSlug === normalizeSlug(plan?.slug);
     };
 
+    const isReadyAuthenticated = isInitialized && isAuthenticated;
+
     return (
         <section className={cx('wrapper')}>
             <div className={cx('inner')}>
@@ -101,17 +107,14 @@ function Pricing() {
                         </p>
                     ) : (
                         pricing.map((plan) => (
-                            <PricingCard
-                                key={plan.id}
-                                plan={plan}
-                                isAuthenticated={
-                                    isInitialized && isAuthenticated
-                                }
-                                isCurrentPlan={checkIsCurrentPlan(plan)}
-                                isCurrentPremium={
-                                    isInitialized && isCurrentPremium
-                                }
-                            />
+                            <div key={plan.id} className={cx('cardItem')}>
+                                <PricingCard
+                                    plan={plan}
+                                    isPopular={Boolean(plan?.is_popular)}
+                                    isAuthenticated={isReadyAuthenticated}
+                                    isCurrentPlan={checkIsCurrentPlan(plan)}
+                                />
+                            </div>
                         ))
                     )}
                 </div>
