@@ -23,7 +23,6 @@ const getErrorResponse = (error, fallback = DEFAULT_ERROR_MESSAGE) => {
         message:
             data?.error?.[0] ||
             data?.message ||
-            data?.messsage ||
             error?.message ||
             fallback,
         status: error?.response?.status || error?.status,

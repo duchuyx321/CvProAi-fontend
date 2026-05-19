@@ -59,6 +59,7 @@ export function normalizePackageDetail(packageItem) {
         code: toSafeString(packageItem?.slug),
         name: toSafeString(packageItem?.name),
         price: String(packageItem?.price ?? ''),
+        currency: toSafeString(packageItem?.currency) || 'VND',
         durationUnit,
         durationValue: durationUnit === 'permanent' ? '' : '1',
         description: toSafeString(packageItem?.description),
@@ -138,7 +139,7 @@ export function buildUpdatePayload(formData) {
     return {
         name: toSafeString(formData.name),
         price: toSafeNumber(formData.price),
-        currency: 'VND',
+        currency: toSafeString(formData.currency) || 'VND',
         billing_cycle: billingCycleMap[formData.durationUnit] || 'MONTH',
         description: toSafeString(formData.description),
         cv_limit: toSafeNumber(formData.maxCv),
