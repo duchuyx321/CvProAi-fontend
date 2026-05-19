@@ -58,6 +58,27 @@ function getUsageStatus(used, limit) {
     return '';
 }
 
+function buildPlanWithSubscription(planCurrent, subscriptionCurrent) {
+    if (!planCurrent) return null;
+
+    return {
+        ...planCurrent,
+
+        // lấy ngày bắt đầu từ subscriptionCurrent.current_period_start
+        subscription_started_at:
+            subscriptionCurrent?.current_period_start || null,
+
+        // lấy ngày hết hạn từ subscriptionCurrent.current_period_end
+        subscription_expires_at:
+            subscriptionCurrent?.current_period_end || null,
+
+        // lưu thêm trạng thái subscription nếu sau này cần dùng
+        subscription_status: subscriptionCurrent?.status || null,
+        cancel_at_period_end:
+            subscriptionCurrent?.cancel_at_period_end || false,
+    };
+}
+
 function PackageUsage({ plan = {}, usage = {} }) {
     const usageItems = useMemo(() => {
         return USAGE_CONFIG.map((item) => {
@@ -85,7 +106,7 @@ function PackageUsage({ plan = {}, usage = {} }) {
                 </p>
             </div>
 
-            <div className={cx('usageGrid')}>
+            <div className={cx('usageList')}>
                 {usageItems.map((item) => (
                     <article
                         key={item.key}
@@ -153,14 +174,21 @@ function PackageMain() {
 
                 const profileData = result?.data || {};
                 const nextPlanCurrent = profileData?.planCurrent || null;
+                const subscriptionCurrent =
+                    profileData?.subscriptionCurrent || null;
                 const nextUsage = profileData?.usage || {};
 
                 if (!nextPlanCurrent) {
                     throw new Error('Không tìm thấy thông tin gói hiện tại');
                 }
 
+                const nextPlanWithSubscription = buildPlanWithSubscription(
+                    nextPlanCurrent,
+                    subscriptionCurrent,
+                );
+
                 if (!cancelled) {
-                    setPlanCurrent(nextPlanCurrent);
+                    setPlanCurrent(nextPlanWithSubscription);
                     setUsage(nextUsage);
                 }
             } catch (error) {
@@ -209,9 +237,15 @@ function PackageMain() {
 
     return (
         <div className={cx('wrapper')}>
-            <PackageCard plan={planCurrent} />
+            <div className={cx('contentGrid')}>
+                <div className={cx('leftCol')}>
+                    <PackageCard plan={planCurrent} />
+                </div>
 
-            <PackageUsage plan={planCurrent} usage={usage} />
+                <div className={cx('rightCol')}>
+                    <PackageUsage plan={planCurrent} usage={usage} />
+                </div>
+            </div>
         </div>
     );
 }
