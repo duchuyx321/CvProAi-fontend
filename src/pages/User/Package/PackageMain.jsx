@@ -14,24 +14,27 @@ const USAGE_CONFIG = [
     {
         key: 'cv',
         label: 'CV đã tạo',
-        usageKey: 'cv_used',
-        limitKey: 'cv_limit',
+        usageKey: 'cvs_used',
+        limitKey: 'cvs_limit',
+        planLimitKey: 'cv_limit',
         icon: <FileText />,
         tone: 'primary',
     },
     {
         key: 'ai',
         label: 'Lượt phân tích AI',
-        usageKey: 'ai_used',
-        limitKey: 'ai_limit',
+        usageKey: 'ai_runs_used',
+        limitKey: 'ai_runs_limit',
+        planLimitKey: 'ai_limit',
         icon: <Brain />,
         tone: 'warning',
     },
     {
         key: 'export',
         label: 'Lượt xuất PDF',
-        usageKey: 'export_used',
-        limitKey: 'export_limit',
+        usageKey: 'exports_used',
+        limitKey: 'exports_limit',
+        planLimitKey: 'export_limit',
         icon: <Download />,
         tone: 'info',
     },
@@ -39,6 +42,16 @@ const USAGE_CONFIG = [
 
 function toNumber(value) {
     return Number(value) || 0;
+}
+
+function getLimitValue(quotaLimit, planLimit) {
+    const quotaLimitNumber = toNumber(quotaLimit);
+
+    if (quotaLimitNumber > 0) {
+        return quotaLimitNumber;
+    }
+
+    return toNumber(planLimit);
 }
 
 function getUsagePercent(used, limit) {
@@ -64,26 +77,28 @@ function buildPlanWithSubscription(planCurrent, subscriptionCurrent) {
     return {
         ...planCurrent,
 
-        // lấy ngày bắt đầu từ subscriptionCurrent.current_period_start
         subscription_started_at:
             subscriptionCurrent?.current_period_start || null,
 
-        // lấy ngày hết hạn từ subscriptionCurrent.current_period_end
         subscription_expires_at:
             subscriptionCurrent?.current_period_end || null,
 
-        // lưu thêm trạng thái subscription nếu sau này cần dùng
         subscription_status: subscriptionCurrent?.status || null,
         cancel_at_period_end:
             subscriptionCurrent?.cancel_at_period_end || false,
     };
 }
 
-function PackageUsage({ plan = {}, usage = {} }) {
+function PackageUsage({ plan = {}, quota = {} }) {
     const usageItems = useMemo(() => {
         return USAGE_CONFIG.map((item) => {
-            const used = toNumber(usage?.[item.usageKey]);
-            const limit = toNumber(plan?.[item.limitKey]);
+            const used = toNumber(quota?.[item.usageKey]);
+
+            const limit = getLimitValue(
+                quota?.[item.limitKey],
+                plan?.[item.planLimitKey],
+            );
+
             const percent = getUsagePercent(used, limit);
             const status = getUsageStatus(used, limit);
 
@@ -95,7 +110,7 @@ function PackageUsage({ plan = {}, usage = {} }) {
                 status,
             };
         });
-    }, [plan, usage]);
+    }, [plan, quota]);
 
     return (
         <section className={cx('usageSection')}>
@@ -152,7 +167,7 @@ function PackageUsage({ plan = {}, usage = {} }) {
 
 function PackageMain() {
     const [planCurrent, setPlanCurrent] = useState(null);
-    const [usage, setUsage] = useState({});
+    const [quotaCurrent, setQuotaCurrent] = useState({});
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -176,7 +191,7 @@ function PackageMain() {
                 const nextPlanCurrent = profileData?.planCurrent || null;
                 const subscriptionCurrent =
                     profileData?.subscriptionCurrent || null;
-                const nextUsage = profileData?.usage || {};
+                const nextQuotaCurrent = profileData?.quotaCurrent || {};
 
                 if (!nextPlanCurrent) {
                     throw new Error('Không tìm thấy thông tin gói hiện tại');
@@ -189,12 +204,12 @@ function PackageMain() {
 
                 if (!cancelled) {
                     setPlanCurrent(nextPlanWithSubscription);
-                    setUsage(nextUsage);
+                    setQuotaCurrent(nextQuotaCurrent);
                 }
             } catch (error) {
                 if (!cancelled) {
                     setPlanCurrent(null);
-                    setUsage({});
+                    setQuotaCurrent({});
 
                     toast.error(
                         error?.response?.data?.message ||
@@ -243,7 +258,7 @@ function PackageMain() {
                 </div>
 
                 <div className={cx('rightCol')}>
-                    <PackageUsage plan={planCurrent} usage={usage} />
+                    <PackageUsage plan={planCurrent} quota={quotaCurrent} />
                 </div>
             </div>
         </div>
