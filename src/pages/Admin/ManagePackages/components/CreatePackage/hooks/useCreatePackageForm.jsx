@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { config } from '~/config';
 import { createPackage } from '~/services/managePackageService';
+import { normalizeNumberInput } from '../../../managePackages.utils';
 
 const INITIAL_FORM_DATA = {
     code: '',
@@ -24,8 +25,6 @@ const INITIAL_FORM_DATA = {
 };
 
 const FIELD_ORDER = ['name', 'description', 'price', 'currency', 'durationUnit', 'maxCv', 'aiLimit'];
-
-const sanitizeDigits = (value = '') => String(value).replace(/\D/g, '');
 
 const toBillingCycle = (durationUnit) => {
     const billingCycleMap = {
@@ -63,7 +62,9 @@ export function useCreatePackageForm() {
         const numericFields = ['price', 'maxCv', 'aiLimit', 'durationValue'];
         setFormData((prev) => ({
             ...prev,
-            [field]: numericFields.includes(field) ? sanitizeDigits(value) : value,
+            [field]: numericFields.includes(field)
+                ? normalizeNumberInput(value)
+                : value,
         }));
         setErrors((prev) => (prev[field] ? { ...prev, [field]: '' } : prev));
         setSubmitError('');

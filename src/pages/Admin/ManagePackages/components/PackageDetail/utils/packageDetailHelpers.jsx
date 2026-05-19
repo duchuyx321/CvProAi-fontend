@@ -1,4 +1,7 @@
-import { DEFAULT_FORM_DATA } from '../../../managePackages.utils';
+import {
+    DEFAULT_FORM_DATA,
+    normalizeNumberInput,
+} from '../../../managePackages.utils';
 
 export function toSafeString(value = '') {
     return String(value ?? '').trim();
@@ -10,7 +13,7 @@ export function toSafeNumber(value = 0) {
 }
 
 export function toDigitsOnly(value = '') {
-    return String(value ?? '').replace(/\D/g, '');
+    return normalizeNumberInput(value);
 }
 
 function normalizeDurationUnit(value) {
@@ -67,7 +70,11 @@ export function normalizePackageDetail(packageItem) {
         support247: normalizeBoolean(packageItem?.priority_support),
         allowAiAddon: normalizeBoolean(packageItem?.can_purchase_ai_addon),
         fullAiAnalysis: normalizeBoolean(packageItem?.view_full_ai_analysis),
-        totalUsers: toSafeNumber(packageItem?.total_users),
+        totalUsers: toSafeNumber(
+            packageItem?.usage_count ??
+                packageItem?.total_users ??
+                packageItem?.totalUsers,
+        ),
         status: normalizeStatus(packageItem),
     };
 }

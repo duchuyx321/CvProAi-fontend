@@ -98,12 +98,16 @@ export function toSafeNumber(value = 0) {
     return Number.isFinite(parsedValue) ? parsedValue : 0;
 }
 
-export function formatNumberInput(value = '') {
+export function normalizeNumberInput(value = '') {
     const digits = String(value ?? '').replace(/\D/g, '');
 
     if (!digits) return '';
 
-    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return digits.replace(/^0+(?=\d)/, '');
+}
+
+export function formatNumberInput(value = '') {
+    return normalizeNumberInput(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function formatCurrency(value = 0) {
@@ -195,7 +199,9 @@ export function normalizePackage(item = {}, index = 0) {
         durationUnit: normalizeDurationUnit(item?.billing_cycle),
         durationValue: 1,
         benefits: getPackageBenefits(item),
-        totalUsers: toSafeNumber(item?.total_users ?? item?.totalUsers),
+        totalUsers: toSafeNumber(
+            item?.usage_count ?? item?.total_users ?? item?.totalUsers,
+        ),
         status: normalizeStatus(item),
         createdAt: item?.createdAt || item?.created_at || '',
         updatedAt: item?.updatedAt || item?.updated_at || '',
