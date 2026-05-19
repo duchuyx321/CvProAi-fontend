@@ -14,6 +14,10 @@ import styles from './ProfileMain.module.scss';
 
 const cx = classNames.bind(styles);
 
+const getApiMessage = (response, fallback) => {
+    return response?.message || response?.messsage || fallback;
+};
+
 const getValidateKey = (fieldKey) => {
     if (fieldKey === 'full_name') return 'fullName';
 
@@ -41,29 +45,43 @@ const validateFieldValue = (fieldKey, value, fieldConfig) => {
     return '';
 };
 
-
 const mapProfileResponse = (data = {}) => {
     const profile = data.profile || {};
 
     return {
-        ...data,
+        id: data.id || '',
+        email: data.email || '',
+        full_name: data.full_name || '',
+        role: data.role || '',
 
-        phone: profile.phone ?? '',
-        summary: profile.summary ?? '',
-        avatar_url: profile.avatar_url ?? '',
-        cover: profile.cover ?? data.cover ?? '',
+        phone: profile.phone || '',
+        avatar_url: profile.avatar_url || '',
+        dob: profile.dob || '',
+        location: profile.location || '',
+        headline: profile.headline || '',
+        summary: profile.summary || '',
+        links: profile.links || '',
+        cover: profile.cover || data.cover || '',
+
+        planCurrent: data.planCurrent || null,
+        last_login_at: data.last_login_at || '',
+        createdAt: data.createdAt || '',
+        updatedAt: data.updatedAt || '',
 
         profile,
     };
 };
 
-
 const getUpdatePayload = (fieldKey, value) => {
     const payloadMap = {
-        full_name: 'name', 
+        full_name: 'full_name',
         phone: 'phone',
-        email: 'email',
         summary: 'summary',
+        headline: 'headline',
+        location: 'location',
+        dob: 'dob',
+        avatar_url: 'avatar_url',
+        links: 'links',
     };
 
     const payloadKey = payloadMap[fieldKey];
@@ -79,6 +97,7 @@ const getUpdatePayload = (fieldKey, value) => {
 
 function ProfileMain({ LIST_CONTENT = [] }) {
     const [user, setUser] = useState({});
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [editingField, setEditingField] = useState(null);
     const [fieldValue, setFieldValue] = useState('');
@@ -92,8 +111,8 @@ function ProfileMain({ LIST_CONTENT = [] }) {
                 typeof rawValue === 'string'
                     ? rawValue.trim()
                     : rawValue
-                      ? String(rawValue)
-                      : '';
+                        ? String(rawValue)
+                        : '';
 
             return {
                 ...item,
@@ -106,7 +125,7 @@ function ProfileMain({ LIST_CONTENT = [] }) {
     const initialValue = useMemo(() => {
         if (!editingField?.key) return '';
 
-        return (user?.[editingField.key] || '').trim();
+        return String(user?.[editingField.key] || '').trim();
     }, [editingField, user]);
 
     const currentValue = fieldValue.trim();
@@ -118,11 +137,16 @@ function ProfileMain({ LIST_CONTENT = [] }) {
 
         const fetchProfile = async () => {
             try {
+                setLoading(true);
+
                 const result = await getProfile();
 
-                if (!result?.success) {
+                if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
-                        result?.message || 'Không thể tải thông tin cá nhân',
+                        getApiMessage(
+                            result,
+                            'Không thể tải thông tin cá nhân',
+                        ),
                     );
                 }
 
@@ -133,9 +157,14 @@ function ProfileMain({ LIST_CONTENT = [] }) {
                 if (!cancelled) {
                     toast.error(
                         error?.response?.data?.message ||
-                            error?.message ||
-                            'Có lỗi xảy ra, vui lòng thử lại sau',
+                        error?.response?.data?.messsage ||
+                        error?.message ||
+                        'Có lỗi xảy ra, vui lòng thử lại sau',
                     );
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
                 }
             }
         };
@@ -154,7 +183,7 @@ function ProfileMain({ LIST_CONTENT = [] }) {
             return;
         }
 
-        setFieldValue(user?.[editingField.key] || '');
+        setFieldValue(String(user?.[editingField.key] || ''));
         setFieldError('');
     }, [editingField, user]);
 
@@ -201,9 +230,6 @@ function ProfileMain({ LIST_CONTENT = [] }) {
 
         const payload = getUpdatePayload(currentField.key, currentValue);
 
-        console.log('Update field:', currentField.key);
-        console.log('Update payload:', payload);
-
         if (Object.keys(payload).length === 0) {
             toast.error('Trường cập nhật không hợp lệ');
             return;
@@ -213,11 +239,9 @@ function ProfileMain({ LIST_CONTENT = [] }) {
             setSubmitting(true);
 
             const updatePromise = updateProfile(payload).then((result) => {
-                console.log('Update profile result:', result);
-
-                if (!result?.success) {
+                if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
-                        result?.message || 'Cập nhật thông tin thất bại',
+                        getApiMessage(result, 'Cập nhật thông tin thất bại'),
                     );
                 }
 
@@ -228,13 +252,17 @@ function ProfileMain({ LIST_CONTENT = [] }) {
                 pending: 'Đang cập nhật...',
                 success: {
                     render({ data }) {
-                        return data?.message || 'Cập nhật thông tin thành công';
+                        return getApiMessage(
+                            data,
+                            'Cập nhật thông tin thành công',
+                        );
                     },
                 },
                 error: {
                     render({ data }) {
                         return (
                             data?.message ||
+                            data?.messsage ||
                             'Có lỗi xảy ra, vui lòng thử lại sau'
                         );
                     },
@@ -254,7 +282,7 @@ function ProfileMain({ LIST_CONTENT = [] }) {
 
             setEditingField(null);
         } catch {
-            // toast.promise đã hiển thị lỗi rồi, không cần xử lý thêm
+            // toast.promise đã hiển thị lỗi rồi
         } finally {
             setSubmitting(false);
         }
@@ -305,23 +333,24 @@ function ProfileMain({ LIST_CONTENT = [] }) {
         );
     };
 
+    if (loading) {
+        return (
+            <div className={cx('wrapper')}>
+                <p className={cx('loading')}>Đang tải thông tin cá nhân...</p>
+            </div>
+        );
+    }
+
     return (
         <div className={cx('wrapper')}>
             <HeaderMedia
                 fullName={user?.full_name || ''}
                 summary={user?.summary || ''}
                 avatarUrl={user?.avatar_url || ''}
-                cover={user?.cover || ''}
                 onAvatarUrlChange={(nextAvatarUrl) =>
                     setUser((prev) => ({
                         ...prev,
                         avatar_url: nextAvatarUrl,
-                    }))
-                }
-                onCoverChange={(nextCover) =>
-                    setUser((prev) => ({
-                        ...prev,
-                        cover: nextCover,
                     }))
                 }
             />

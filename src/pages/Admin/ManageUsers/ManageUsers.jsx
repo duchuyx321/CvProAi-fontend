@@ -296,13 +296,13 @@ function ManageUsers() {
                 </div>
 
                 <div className={cx('summaryCard')}>
-                    <span>Tổng người dùng</span>
+                    {/* <span>Tổng người dùng</span>
                     <strong>{formatNumber(totalItems)}</strong>
                     <small>
                         {loading
                             ? 'Đang cập nhật...'
                             : `Trang ${page}/${totalPages}`}
-                    </small>
+                    </small> */}
                 </div>
             </header>
 
@@ -501,8 +501,8 @@ function ManageUsers() {
 
                 <div className={cx('tableFooter')}>
                     <p>
-                        Hiển thị {startItem} - {endItem} của {totalItems} người
-                        dùng
+                        {/* Hiển thị {startItem} - {endItem} của {totalItems} người
+                        dùng */}
                     </p>
 
                     <Pagination

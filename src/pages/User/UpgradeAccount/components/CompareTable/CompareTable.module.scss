@@ -1,0 +1,149 @@
+.compareCard {
+    margin-top: 38px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+
+    h2 {
+        margin: 0;
+        padding: 22px 24px;
+        color: #111827;
+        font-size: 1.85rem;
+        font-weight: 850;
+        letter-spacing: -0.02em;
+    }
+}
+
+.compareTableWrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.compareTable {
+    width: 100%;
+    min-width: 760px;
+    table-layout: fixed;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: 18px 22px;
+        border-top: 1px solid #e2e8f0;
+        color: #0f172a;
+        font-size: 1.4rem;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    th:first-child,
+    td:first-child {
+        color: #475569;
+        text-align: left;
+        font-weight: 800;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 1.15rem;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    td {
+        font-weight: 800;
+    }
+}
+
+.planName {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.currentText {
+    display: block;
+    margin-top: 2px;
+    color: #4338ca;
+    font-size: 1.05rem;
+    font-weight: 900;
+    line-height: 1.2;
+
+    &::before {
+        content: '(';
+    }
+
+    &::after {
+        content: ')';
+    }
+}
+
+.currentCol {
+    background: #eef2ff !important;
+    color: #4338ca !important;
+    font-weight: 900 !important;
+}
+
+.twoPlans {
+    .compareTable {
+        min-width: 620px;
+
+        th,
+        td {
+            padding: 18px 28px;
+        }
+    }
+}
+
+.threePlans {
+    .compareTable {
+        min-width: 760px;
+    }
+}
+
+.manyPlans {
+    .compareTable {
+        min-width: 980px;
+
+        th,
+        td {
+            padding: 18px 20px;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .compareCard {
+        margin-top: 30px;
+        border-radius: 16px;
+
+        h2 {
+            padding: 18px 20px;
+            font-size: 1.6rem;
+        }
+    }
+
+    .compareTable {
+        min-width: 720px;
+
+        th,
+        td {
+            padding: 14px 16px;
+            font-size: 1.25rem;
+        }
+
+        th {
+            font-size: 1.05rem;
+        }
+    }
+
+    .manyPlans {
+        .compareTable {
+            min-width: 920px;
+        }
+    }
+}

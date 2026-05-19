@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames/bind';
 import { Link, NavLink } from 'react-router-dom';
 import styles from './SidebarDefault.module.scss';
@@ -8,7 +8,9 @@ import { FiAward } from 'react-icons/fi';
 import { IoDocumentTextOutline } from 'react-icons/io5';
 import { GoHome } from 'react-icons/go';
 import { RiAiGenerate2, RiFolderUserLine } from 'react-icons/ri';
+import { MdManageSearch } from 'react-icons/md';
 import { config } from '~/config';
+import { getDashboardOverview } from '~/services/dashboard.service';
 
 const cx = classNames.bind(styles);
 
@@ -25,6 +27,11 @@ const MAIN_MENU = [
         Icon: RiFolderUserLine,
     },
     {
+        title: 'Lịch sử phân tích CV',
+        to: config.router.cvAnalysisHistory,
+        Icon: MdManageSearch,
+    },
+    {
         title: 'Phân tích CV bằng AI',
         to: config.router.aiAnalysis,
         Icon: RiAiGenerate2,
@@ -33,31 +40,56 @@ const MAIN_MENU = [
 
 const ACCOUNT_MENU = [
     {
-        title: 'Nâng cấp Premium',
-        to: config.router.upgradePremium,
+        title: 'Nâng cấp tài khoản',
+        to: config.router.upgradeAccount,
         Icon: FiAward,
         isGold: true,
     },
 ];
 
 function SidebarDefault() {
+    const [aiQuota, setAiQuota] = useState({ use: 0, limit: 0, isLoading: true });
+
+    useEffect(() => {
+        const fetchQuota = async () => {
+            try {
+                const result = await getDashboardOverview();
+                if (result?.success) {
+                    setAiQuota({
+                        use: Number(result.data?.ai_use) || 0,
+                        limit: Number(result.data?.ai_limit) || 0,
+                        isLoading: false,
+                    });
+                } else {
+                    setAiQuota((prev) => ({ ...prev, isLoading: false }));
+                }
+            } catch (error) {
+                setAiQuota((prev) => ({ ...prev, isLoading: false }));
+            }
+        };
+        fetchQuota();
+    }, []);
+
+    const percent =
+        aiQuota.limit > 0 ? Math.min((aiQuota.use / aiQuota.limit) * 100, 100) : 0;
+
     return (
         <aside className={cx('sidebar')}>
             <div className={cx('logo-section')}>
-                <Link to={config.router.home} className={cx('logo-link')}> 
-                <div className={cx('logo-icon')}>
-                    <img
-                        src={images.logo}
-                        alt="CvProAI"
-                        className={cx('logo-img')}
-                    />
-                </div>
-                <div className={cx('brand-info')}>
-                    <h1 className={cx('brand-name')}>CvProAI</h1>
-                    <span className={cx('brand-slogan')}>
-                        Hệ thống tạo CV bằng AI
-                    </span>
-                </div>
+                <Link to={config.router.home} className={cx('logo-link')}>
+                    <div className={cx('logo-icon')}>
+                        <img
+                            src={images.logo}
+                            alt="CvProAI"
+                            className={cx('logo-img')}
+                        />
+                    </div>
+                    <div className={cx('brand-info')}>
+                        <h1 className={cx('brand-name')}>CvProAI</h1>
+                        <span className={cx('brand-slogan')}>
+                            Hệ thống tạo CV bằng AI
+                        </span>
+                    </div>
                 </Link>
             </div>
 
@@ -113,15 +145,23 @@ function SidebarDefault() {
             <div className={cx('capacity-section')}>
                 <div className={cx('capacity-box')}>
                     <div className={cx('capacity-title')}>Dung lượng AI</div>
-                    <div className={cx('progress-bar-bg')}>
-                        <div
-                            className={cx('progress-bar-fill')}
-                            style={{ width: '66.6%' }}
-                        ></div>
-                    </div>
-                    <div className={cx('capacity-text')}>
-                        8/12 phân tích còn lại trong tháng
-                    </div>
+                    {aiQuota.isLoading ? (
+                        <div className={cx('capacity-text')}>Đang tải...</div>
+                    ) : (
+                        <>
+                            <div className={cx('progress-bar-bg')}>
+                                <div
+                                    className={cx('progress-bar-fill')}
+                                    style={{ '--progress-width': `${percent}%` }}
+                                ></div>
+                            </div>
+                            <div className={cx('capacity-text')}>
+                                {aiQuota.limit > 0
+                                    ? `${aiQuota.use}/${aiQuota.limit} lượt đã sử dụng`
+                                    : `${aiQuota.use} lượt đã sử dụng`}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </aside>

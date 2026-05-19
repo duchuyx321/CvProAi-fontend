@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
-import {
-    FiAlertCircle,
-    FiArrowRight,
-    FiAward,
-    FiCheckCircle,
-    FiChevronDown,
-    FiLock,
-    FiRefreshCw,
-    FiTrendingUp,
-    FiZap,
-} from 'react-icons/fi';
+import { FiAlertCircle, FiRefreshCw, FiZap } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 import Button from '~/components/Button';
@@ -19,17 +9,16 @@ import { config } from '~/config';
 import { useAuth } from '~/context/AuthContext';
 import { getAiAnalysisResultByRunId } from '~/services/aiAnalysis.service';
 
+import { normalizeAiResult, normalizeTier } from './utils';
 import {
-    formatDateTime,
-    getPriorityMeta,
-    getSeverityMeta,
-    normalizeAiResult,
-    normalizeTier,
-    prettifyKey,
-    stringifyValue,
-} from './utils';
-import FeedbackValue from './FeedbackValue';
-import { ScoreBar, ScoreRing } from './ScoreIndicators';
+    HeroCard,
+    SummaryCard,
+    StrengthSection,
+    WeaknessSection,
+    SuggestionSection,
+    StructuredFeedbackSection,
+    UpsellCard,
+} from './ResultComponents';
 import styles from './ResultAi.module.scss';
 
 const cx = classNames.bind(styles);
@@ -146,9 +135,22 @@ function ResultAiPremium() {
             state?.planTier ??
             state?.packageTier ??
             state?.userTier;
-        const tierFromUser = user?.tier ?? user?.planTier ?? user?.packageTier;
 
-        return normalizeTier(aiResult?.tier || tierFromState || tierFromUser);
+        const planCurrent = user?.planCurrent || user?.plan_current;
+        const tierFromUser =
+            user?.tier ??
+            user?.planTier ??
+            user?.packageTier ??
+            planCurrent?.tier ??
+            planCurrent?.name ??
+            planCurrent?.id ??
+            (planCurrent?.view_full_ai_analysis ? 'premium' : 'free');
+
+        const isUserPremium = normalizeTier(tierFromUser) === 'premium';
+        const isStatePremium = normalizeTier(tierFromState) === 'premium';
+        const isResultPremium = normalizeTier(aiResult?.tier) === 'premium';
+
+        return isUserPremium || isStatePremium || isResultPremium ? 'premium' : 'free';
     }, [location?.state, user, aiResult?.tier]);
 
     const cvId = useMemo(() => {
@@ -297,68 +299,7 @@ function ResultAiPremium() {
     return (
         <div className={cx('wrapper')}>
             <div className={cx('pageShell')}>
-                <section className={cx('heroCard')}>
-                    <div className={cx('topbar')}>
-                        <div className={cx('titleBlock')}>
-                            <div className={cx('titleIcon')}>
-                                <FiAward />
-                            </div>
-                            <div>
-                                <h2 className={cx('title')}>
-                                    Báo cáo AI Analysis CV
-                                </h2>
-                                <p className={cx('subtitle')}>
-                                    Tập trung vào đúng vấn đề khiến CV rớt
-                                    ATS/recruiter và ưu tiên hành động theo tác
-                                    động.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className={cx('metaBlock')}>
-                            <span
-                                className={cx(
-                                    'tierPill',
-                                    isPremium ? 'premium' : 'free',
-                                )}
-                            >
-                                {isPremium ? 'PREMIUM' : 'FREE'}
-                            </span>
-                            {aiResult?.createdAt ? (
-                                <span className={cx('metaText')}>
-                                    Cập nhật:{' '}
-                                    {formatDateTime(aiResult.createdAt)}
-                                </span>
-                            ) : null}
-                        </div>
-                    </div>
-
-                    {isPremium ? (
-                        <div className={cx('premiumBanner')}>
-                            <FiCheckCircle />
-                            <span>
-                                Bạn đang xem đầy đủ toàn bộ phân tích Premium.
-                            </span>
-                        </div>
-                    ) : (
-                        <div className={cx('freeBanner')}>
-                            <div className={cx('freeBannerLeft')}>
-                                <FiLock />
-                                <span>
-                                    {aiResult?.upgradeHint ||
-                                        'Bạn đang dùng gói FREE. Một phần insight chuyên sâu đang bị ẩn.'}
-                                </span>
-                            </div>
-                            <Button
-                                to={config.router.upgradePremium}
-                                className={cx('upgradeBtn')}
-                                primary
-                            >
-                                Mở khóa Premium
-                            </Button>
-                        </div>
-                    )}
-                </section>
+                <HeroCard isPremium={isPremium} aiResult={aiResult} />
 
                 {errorMessage ? (
                     <div className={cx('errorCard')}>
@@ -392,360 +333,38 @@ function ResultAiPremium() {
                     </div>
                 ) : aiResult ? (
                     <div className={cx('grid')}>
-                        <section className={cx('card', 'summaryCard', 'wide')}>
-                            <div className={cx('cardHeader')}>
-                                <div className={cx('cardTitle')}>
-                                    Tổng quan điểm CV
-                                </div>
-                                <div className={cx('statusPill')}>
-                                    <FiCheckCircle />
-                                    <span>Hoàn tất</span>
-                                </div>
-                            </div>
-                            <div className={cx('summaryBody')}>
-                                <ScoreRing
-                                    title="Overall Score"
-                                    score={aiResult.overallScore}
-                                    subtitle="Đánh giá tổng thể"
-                                />
-                                <div className={cx('bars')}>
-                                    <ScoreBar
-                                        label="Độ tương thích ATS (ATS Score)"
-                                        score={aiResult.atsScore}
-                                    />
-                                    <ScoreBar
-                                        label="Mạch lạc & rõ ràng (Clarity)"
-                                        score={aiResult.clarityScore}
-                                    />
-                                    <ScoreBar
-                                        label="Mức độ ấn tượng (Impact)"
-                                        score={aiResult.impactScore}
-                                    />
-                                </div>
-                            </div>
-                        </section>
+                        <SummaryCard aiResult={aiResult} />
 
-                        <section className={cx('card')}>
-                            <div className={cx('cardHeader')}>
-                                <div className={cx('cardTitle')}>
-                                    Điểm mạnh nổi bật
-                                </div>
-                                <div className={cx('cardHint')}>
-                                    {totalStrengthCount} mục
-                                </div>
-                            </div>
-                            {visibleStrengths.length ? (
-                                <ul className={cx('strengthList')}>
-                                    {visibleStrengths.map((item) => (
-                                        <li
-                                            key={item.id}
-                                            className={cx('strengthItem')}
-                                        >
-                                            <h4>{item.title}</h4>
-                                            {item.description ? (
-                                                <p>{item.description}</p>
-                                            ) : null}
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className={cx('emptyState')}>
-                                    <span className={cx('muted')}>
-                                        Chưa có dữ liệu
-                                    </span>
-                                </div>
-                            )}
-                            {!isPremium && hiddenStrengthCount > 0 ? (
-                                <div className={cx('lockInline')}>
-                                    <FiLock />
-                                    <span>
-                                        Còn {hiddenStrengthCount} điểm mạnh chưa
-                                        mở khóa trong gói FREE.
-                                    </span>
-                                </div>
-                            ) : null}
-                        </section>
+                        <StrengthSection
+                            visibleStrengths={visibleStrengths}
+                            totalStrengthCount={totalStrengthCount}
+                            hiddenStrengthCount={hiddenStrengthCount}
+                            isPremium={isPremium}
+                        />
 
-                        <section className={cx('card')}>
-                            <div className={cx('cardHeader')}>
-                                <div className={cx('cardTitle')}>
-                                    Rủi ro chính cần xử lý
-                                </div>
-                                <div className={cx('cardHint')}>
-                                    {totalWeaknessCount} mục
-                                </div>
-                            </div>
-                            {visibleWeaknesses.length ? (
-                                <ul className={cx('weaknessList')}>
-                                    {visibleWeaknesses.map((item) => {
-                                        const severityMeta = getSeverityMeta(
-                                            item.severity,
-                                        );
-                                        return (
-                                            <li
-                                                key={item.id}
-                                                className={cx('weaknessItem')}
-                                            >
-                                                <div className={cx('itemHead')}>
-                                                    <h4>{item.title}</h4>
-                                                    <span
-                                                        className={cx(
-                                                            'tag',
-                                                            `tag-${severityMeta.className}`,
-                                                        )}
-                                                    >
-                                                        {severityMeta.label}
-                                                    </span>
-                                                </div>
-                                                {item.description ? (
-                                                    <p>{item.description}</p>
-                                                ) : null}
-                                                <div className={cx('itemMeta')}>
-                                                    {item.targetSection ? (
-                                                        <span>
-                                                            Section:{' '}
-                                                            {item.targetSection}
-                                                        </span>
-                                                    ) : null}
-                                                    {item.impactScore !=
-                                                    null ? (
-                                                        <span>
-                                                            Impact:{' '}
-                                                            {item.impactScore}
-                                                            /100
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-                                                {item.evidence ? (
-                                                    <div
-                                                        className={cx(
-                                                            'evidenceBlock',
-                                                        )}
-                                                    >
-                                                        {Object.entries(
-                                                            item.evidence,
-                                                        ).map(
-                                                            ([key, value]) => (
-                                                                <div key={key}>
-                                                                    <strong>
-                                                                        {prettifyKey(
-                                                                            key,
-                                                                        )}
-                                                                        :
-                                                                    </strong>{' '}
-                                                                    {stringifyValue(
-                                                                        value,
-                                                                    )}
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            ) : (
-                                <div className={cx('emptyState')}>
-                                    <span className={cx('muted')}>
-                                        Chưa có dữ liệu
-                                    </span>
-                                </div>
-                            )}
+                        <WeaknessSection
+                            visibleWeaknesses={visibleWeaknesses}
+                            totalWeaknessCount={totalWeaknessCount}
+                            hiddenWeaknessCount={hiddenWeaknessCount}
+                            isPremium={isPremium}
+                        />
 
-                            {!isPremium && hiddenWeaknessCount > 0 ? (
-                                <div className={cx('lockInline')}>
-                                    <FiLock />
-                                    <span>
-                                        Còn {hiddenWeaknessCount} vấn đề chưa mở
-                                        khóa trong gói FREE.
-                                    </span>
-                                </div>
-                            ) : null}
-                        </section>
+                        <SuggestionSection
+                            visibleSuggestions={visibleSuggestions}
+                            totalSuggestionCount={totalSuggestionCount}
+                            hiddenSuggestionCount={hiddenSuggestionCount}
+                            isPremium={isPremium}
+                        />
 
-                        <section className={cx('card', 'wide')}>
-                            <div className={cx('cardHeader')}>
-                                <div className={cx('cardTitle')}>
-                                    Đề xuất hành động ưu tiên
-                                </div>
-                                <div className={cx('cardHint')}>
-                                    {totalSuggestionCount} gợi ý
-                                </div>
-                            </div>
-                            {visibleSuggestions.length ? (
-                                <ol className={cx('suggestionList')}>
-                                    {visibleSuggestions.map((item) => {
-                                        const priorityMeta = getPriorityMeta(
-                                            item.priority,
-                                        );
-                                        return (
-                                            <li
-                                                key={item.id}
-                                                className={cx('suggestionItem')}
-                                            >
-                                                <div className={cx('itemHead')}>
-                                                    <h4>{item.title}</h4>
-                                                    <span
-                                                        className={cx(
-                                                            'tag',
-                                                            `tag-${priorityMeta.className}`,
-                                                        )}
-                                                    >
-                                                        {priorityMeta.label}
-                                                    </span>
-                                                </div>
-                                                {item.action || item.example ? (
-                                                    <div
-                                                        className={cx(
-                                                            'suggestionExample',
-                                                        )}
-                                                    >
-                                                        Hành động:{' '}
-                                                        {stringifyValue(
-                                                            item.action ||
-                                                                item.example,
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                            </li>
-                                        );
-                                    })}
-                                </ol>
-                            ) : (
-                                <div className={cx('emptyState')}>
-                                    <span className={cx('muted')}>
-                                        Chưa có dữ liệu
-                                    </span>
-                                </div>
-                            )}
-                            {!isPremium && hiddenSuggestionCount > 0 ? (
-                                <div className={cx('lockInline')}>
-                                    <FiZap />
-                                    <span>
-                                        Còn {hiddenSuggestionCount} gợi ý nâng
-                                        cấp CV chuyên sâu cho Premium.
-                                    </span>
-                                </div>
-                            ) : null}
-                        </section>
-
-                        <section className={cx('card', 'wide')}>
-                            <div className={cx('cardHeader')}>
-                                <div className={cx('cardTitle')}>
-                                    Structured Feedback (Recruiter View)
-                                </div>
-                                <div className={cx('cardHint')}>
-                                    {structuredFeedbackEntries.length
-                                        ? `${structuredFeedbackEntries.length} phần`
-                                        : 'Chưa có'}
-                                </div>
-                            </div>
-
-                            {visibleStructuredFeedback.length ? (
-                                <div className={cx('accordion')}>
-                                    {visibleStructuredFeedback.map(
-                                        ([key, value]) => (
-                                            <details
-                                                key={key}
-                                                className={cx('accordionItem')}
-                                            >
-                                                <summary
-                                                    className={cx(
-                                                        'accordionSummary',
-                                                    )}
-                                                >
-                                                    <span>
-                                                        {prettifyKey(key)}
-                                                    </span>
-                                                    <FiChevronDown
-                                                        className={cx(
-                                                            'accordionIcon',
-                                                        )}
-                                                    />
-                                                </summary>
-                                                <div
-                                                    className={cx(
-                                                        'accordionBody',
-                                                    )}
-                                                >
-                                                    <FeedbackValue
-                                                        value={value}
-                                                    />
-                                                </div>
-                                            </details>
-                                        ),
-                                    )}
-                                </div>
-                            ) : (
-                                <div className={cx('emptyState')}>
-                                    <span className={cx('muted')}>
-                                        Chưa có dữ liệu
-                                    </span>
-                                </div>
-                            )}
-
-                            {!isPremium && hiddenStructuredCount > 0 ? (
-                                <div className={cx('lockInline')}>
-                                    <FiTrendingUp />
-                                    <span>
-                                        Còn {hiddenStructuredCount} phân tích
-                                        recruiter-view chỉ có ở Premium.
-                                    </span>
-                                </div>
-                            ) : null}
-                        </section>
+                        <StructuredFeedbackSection
+                            visibleStructuredFeedback={visibleStructuredFeedback}
+                            structuredFeedbackEntries={structuredFeedbackEntries}
+                            hiddenStructuredCount={hiddenStructuredCount}
+                            isPremium={isPremium}
+                        />
 
                         {!isPremium ? (
-                            <section
-                                className={cx('card', 'wide', 'upsellCard')}
-                            >
-                                <div className={cx('upsellHeader')}>
-                                    <div>
-                                        <h3>
-                                            Mở khóa toàn bộ insight chuyên sâu
-                                        </h3>
-                                        <p>
-                                            Bạn đang bị ẩn{' '}
-                                            <strong>
-                                                {hiddenInsightCount}
-                                            </strong>{' '}
-                                            insight có thể cải thiện mạnh tỷ lệ
-                                            qua vòng lọc.
-                                        </p>
-                                    </div>
-                                    <Button
-                                        to={config.router.upgradePremium}
-                                        className={cx('upsellBtn')}
-                                        primary
-                                        rightIcon={<FiArrowRight />}
-                                    >
-                                        Nâng cấp Premium ngay
-                                    </Button>
-                                </div>
-
-                                <div className={cx('upsellGrid')}>
-                                    <div className={cx('upsellItem')}>
-                                        <FiLock />
-                                        <span>
-                                            Full evidence theo từng điểm yếu
-                                        </span>
-                                    </div>
-                                    <div className={cx('upsellItem')}>
-                                        <FiZap />
-                                        <span>
-                                            Gợi ý viết lại bullet theo chuẩn
-                                            recruiter
-                                        </span>
-                                    </div>
-                                    <div className={cx('upsellItem')}>
-                                        <FiTrendingUp />
-                                        <span>
-                                            Ưu tiên hành động theo Impact Score
-                                        </span>
-                                    </div>
-                                </div>
-                            </section>
+                            <UpsellCard hiddenInsightCount={hiddenInsightCount} />
                         ) : null}
                     </div>
                 ) : (

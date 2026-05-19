@@ -1,128 +1,221 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { toast } from 'react-toastify';
+import { FileText, Brain, Download } from 'lucide-react';
 
 import PackageCard from './components/PackageCard';
 import styles from './PackageMain.module.scss';
 
-import { useAuth } from '~/context/AuthContext';
-
-// import { getMyPackage } from '~/services/package.service';
+import { getProfile } from '~/services/profile.service';
 
 const cx = classNames.bind(styles);
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const PACKAGE_MOCKS = {
-    success: true,
-    message: 'Lấy thông tin gói dịch vụ thành công',
-    data: {
-        current_plan: {
-            // TEST user từng dùng Premium nhưng gói đã hết hạn
-            id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-            name: 'Premium',
-            description:
-                'Gói nâng cao cho người dùng cần tối ưu CV chuyên sâu, xem full phân tích AI và xuất file chất lượng cao.',
-            price: '199000',
-            currency: 'VND',
-            billing_cycle: 'MONTH',
-
-            cv_limit: 20,
-            export_limit: 15,
-            ai_limit: 10,
-
-            premium_template: true,
-            remove_watermark: true,
-            custom_domain: true,
-            priority_support: true,
-            allow_ai_addon_purchase: true,
-
-            is_active: true,
-            slug: 'premium',
-            view_full_ai_analysis: true,
-
-            created_at: '2026-03-15T00:00:00.000Z',
-            updated_at: '2026-04-15T00:00:00.000Z',
-        },
-
-        subscription: {
-            id: 'premium-expired-subscription-test-id',
-            user_id: 'test-user-id',
-            plan_id: '5ec4f731-9b3b-46b7-9a62-76f261af9819',
-            order_id: 'premium-order-test-id',
-            status: 'EXPIRED',
-            current_period_start: '2026-03-15T00:00:00.000Z',
-            current_period_end: '2026-04-15T00:00:00.000Z',
-            cancel_at_period_end: false,
-            canceled_at: null,
-            created_at: '2026-03-15T00:00:00.000Z',
-            updated_at: '2026-04-15T00:00:00.000Z',
-        },
-
-        usage: {
-            id: 'premium-expired-usage-quota-test-id',
-            user_id: 'test-user-id',
-            period_month: '2026-04',
-
-            ai_runs_used: 10,
-            ai_runs_limit: 10,
-
-            exports_used: 15,
-            exports_limit: 15,
-            cv_used: 20,
-            created_at: '2026-04-01T00:00:00.000Z',
-        },
+const USAGE_CONFIG = [
+    {
+        key: 'cv',
+        label: 'CV đã tạo',
+        usageKey: 'cvs_used',
+        limitKey: 'cvs_limit',
+        planLimitKey: 'cv_limit',
+        icon: <FileText />,
+        tone: 'primary',
     },
-    date: '08:39:35 21/04/2026',
-    path: '/api/v1/users/me/package',
-};
+    {
+        key: 'ai',
+        label: 'Lượt phân tích AI',
+        usageKey: 'ai_runs_used',
+        limitKey: 'ai_runs_limit',
+        planLimitKey: 'ai_limit',
+        icon: <Brain />,
+        tone: 'warning',
+    },
+    {
+        key: 'export',
+        label: 'Lượt xuất PDF',
+        usageKey: 'exports_used',
+        limitKey: 'exports_limit',
+        planLimitKey: 'export_limit',
+        icon: <Download />,
+        tone: 'info',
+    },
+];
+
+function toNumber(value) {
+    return Number(value) || 0;
+}
+
+function getLimitValue(quotaLimit, planLimit) {
+    const quotaLimitNumber = toNumber(quotaLimit);
+
+    if (quotaLimitNumber > 0) {
+        return quotaLimitNumber;
+    }
+
+    return toNumber(planLimit);
+}
+
+function getUsagePercent(used, limit) {
+    if (!limit) return 0;
+
+    return Math.min(Math.round((used / limit) * 100), 100);
+}
+
+function getUsageStatus(used, limit) {
+    if (!limit) return '';
+
+    const percent = getUsagePercent(used, limit);
+
+    if (percent >= 80) return 'Sắp hết';
+    if (percent <= 50) return 'Bình thường';
+
+    return '';
+}
+
+function buildPlanWithSubscription(planCurrent, subscriptionCurrent) {
+    if (!planCurrent) return null;
+
+    return {
+        ...planCurrent,
+
+        subscription_started_at:
+            subscriptionCurrent?.current_period_start || null,
+
+        subscription_expires_at:
+            subscriptionCurrent?.current_period_end || null,
+
+        subscription_status: subscriptionCurrent?.status || null,
+        cancel_at_period_end:
+            subscriptionCurrent?.cancel_at_period_end || false,
+    };
+}
+
+function PackageUsage({ plan = {}, quota = {} }) {
+    const usageItems = useMemo(() => {
+        return USAGE_CONFIG.map((item) => {
+            const used = toNumber(quota?.[item.usageKey]);
+
+            const limit = getLimitValue(
+                quota?.[item.limitKey],
+                plan?.[item.planLimitKey],
+            );
+
+            const percent = getUsagePercent(used, limit);
+            const status = getUsageStatus(used, limit);
+
+            return {
+                ...item,
+                used,
+                limit,
+                percent,
+                status,
+            };
+        });
+    }, [plan, quota]);
+
+    return (
+        <section className={cx('usageSection')}>
+            <div className={cx('sectionHead')}>
+                <h2 className={cx('sectionTitle')}>Mức sử dụng hiện tại</h2>
+                <p className={cx('sectionDesc')}>
+                    Theo dõi số lượt sử dụng còn lại trong gói dịch vụ của bạn.
+                </p>
+            </div>
+
+            <div className={cx('usageList')}>
+                {usageItems.map((item) => (
+                    <article
+                        key={item.key}
+                        className={cx('usageCard', item.tone)}
+                    >
+                        <div className={cx('usageTop')}>
+                            <span className={cx('usageIcon', item.tone)}>
+                                {item.icon}
+                            </span>
+
+                            {item.status ? (
+                                <span className={cx('usageStatus', item.tone)}>
+                                    {item.status}
+                                </span>
+                            ) : null}
+                        </div>
+
+                        <p className={cx('usageLabel')}>{item.label}</p>
+
+                        <strong className={cx('usageValue')}>
+                            {item.used}
+                            <span>/{item.limit}</span>
+                        </strong>
+
+                        <div className={cx('usageTrack')}>
+                            <span
+                                className={cx('usageBar', item.tone)}
+                                style={{
+                                    width: `${item.percent}%`,
+                                }}
+                            />
+                        </div>
+
+                        <p className={cx('usageRemaining')}>
+                            Còn lại: {Math.max(item.limit - item.used, 0)}
+                        </p>
+                    </article>
+                ))}
+            </div>
+        </section>
+    );
+}
 
 function PackageMain() {
-    const { isAuthenticated } = useAuth();
-
-    const [packageData, setPackageData] = useState(null);
+    const [planCurrent, setPlanCurrent] = useState(null);
+    const [quotaCurrent, setQuotaCurrent] = useState({});
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
 
-        const fetchPackage = async () => {
-            if (!isAuthenticated) {
-                setPackageData(null);
-                setIsLoading(false);
-                return;
-            }
-
-            setIsLoading(true);
-
+        const fetchProfile = async () => {
             try {
-                // const result = await getMyPackage();
+                setIsLoading(true);
 
-                const result = PACKAGE_MOCKS;
+                const result = await getProfile();
 
-                if (!result?.success) {
+                if (result?.status >= 400 || result?.success === false) {
                     throw new Error(
                         result?.message ||
-                        'Không thể tải thông tin gói dịch vụ',
+                            result?.messsage ||
+                            'Không thể tải thông tin gói dịch vụ',
                     );
                 }
 
-                if (!result?.data?.current_plan) {
-                    throw new Error('Dữ liệu gói hiện tại không hợp lệ');
+                const profileData = result?.data || {};
+                const nextPlanCurrent = profileData?.planCurrent || null;
+                const subscriptionCurrent =
+                    profileData?.subscriptionCurrent || null;
+                const nextQuotaCurrent = profileData?.quotaCurrent || {};
+
+                if (!nextPlanCurrent) {
+                    throw new Error('Không tìm thấy thông tin gói hiện tại');
                 }
 
-                if (!result?.data?.subscription) {
-                    throw new Error('Dữ liệu đăng ký gói không hợp lệ');
-                }
+                const nextPlanWithSubscription = buildPlanWithSubscription(
+                    nextPlanCurrent,
+                    subscriptionCurrent,
+                );
 
                 if (!cancelled) {
-                    setPackageData(result.data);
+                    setPlanCurrent(nextPlanWithSubscription);
+                    setQuotaCurrent(nextQuotaCurrent);
                 }
             } catch (error) {
                 if (!cancelled) {
+                    setPlanCurrent(null);
+                    setQuotaCurrent({});
+
                     toast.error(
                         error?.response?.data?.message ||
-                        error?.message ||
-                        'Có lỗi xảy ra, vui lòng thử lại sau',
+                            error?.response?.data?.messsage ||
+                            error?.message ||
+                            'Có lỗi xảy ra, vui lòng thử lại sau',
                     );
                 }
             } finally {
@@ -132,22 +225,12 @@ function PackageMain() {
             }
         };
 
-        fetchPackage();
+        fetchProfile();
 
         return () => {
             cancelled = true;
         };
-    }, [isAuthenticated]);
-
-    if (!isAuthenticated) {
-        return (
-            <div className={cx('wrapper')}>
-                <p className={cx('empty')}>
-                    Vui lòng đăng nhập để xem thông tin gói dịch vụ của bạn.
-                </p>
-            </div>
-        );
-    }
+    }, []);
 
     if (isLoading) {
         return (
@@ -159,7 +242,7 @@ function PackageMain() {
         );
     }
 
-    if (!packageData) {
+    if (!planCurrent) {
         return (
             <div className={cx('wrapper')}>
                 <p className={cx('empty')}>Không có dữ liệu gói dịch vụ.</p>
@@ -169,11 +252,15 @@ function PackageMain() {
 
     return (
         <div className={cx('wrapper')}>
-            <PackageCard
-                plan={packageData.current_plan}
-                subscription={packageData.subscription}
-                usage={packageData.usage}
-            />
+            <div className={cx('contentGrid')}>
+                <div className={cx('leftCol')}>
+                    <PackageCard plan={planCurrent} />
+                </div>
+
+                <div className={cx('rightCol')}>
+                    <PackageUsage plan={planCurrent} quota={quotaCurrent} />
+                </div>
+            </div>
         </div>
     );
 }

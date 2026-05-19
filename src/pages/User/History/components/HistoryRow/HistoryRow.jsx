@@ -1,99 +1,164 @@
 import classNames from 'classnames/bind';
 
 import styles from './HistoryRow.module.scss';
-import {
-    formatDate,
-    formatPrice,
-    mapBillingCycleToLabel,
-    mapPaymentMethod,
-    mapPaymentStatus,
-    mapPaymentStatusVariant,
-} from '~/utils/billing.utils';
 
 const cx = classNames.bind(styles);
 
-const ORDER_TYPES = {
-    SUBSCRIPTION: 'SUBSCRIPTION',
-    AI_ADDON: 'AI_ADDON',
+const VI_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+
+const STATUS_LABELS = {
+    PAID: 'Đã thanh toán',
+    PENDING: 'Đang chờ',
+    FAILED: 'Thất bại',
+    CANCELLED: 'Đã hủy',
+    RECONCILE_FAILED: 'Đối soát lỗi',
 };
 
-function getOrderTitle(item = {}) {
-    if (item.order_type === ORDER_TYPES.SUBSCRIPTION) {
-        return item.plan?.name ? `Gói ${item.plan.name}` : 'Gói dịch vụ';
-    }
+function formatCurrency(value, currency = 'VND') {
+    const amount = Number(value) || 0;
 
-    if (item.order_type === ORDER_TYPES.AI_ADDON) {
-        return item.addon_package?.name ?? 'Gói mua thêm AI';
-    }
-
-    return item.description ?? 'Giao dịch';
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: currency === 'VND' ? 0 : 2,
+    }).format(amount);
 }
 
-function getOrderSubTitle(item = {}) {
-    if (item.order_type === ORDER_TYPES.SUBSCRIPTION) {
-        const billingCycleLabel = mapBillingCycleToLabel(
-            item.plan?.billing_cycle,
-        );
-
-        return billingCycleLabel ? `(${billingCycleLabel})` : '';
-    }
-
-    if (item.order_type === ORDER_TYPES.AI_ADDON) {
-        const runs = item.addon_package?.runs;
-
-        return runs ? `(${runs} lượt AI)` : '';
-    }
-
-    return '';
+function isValidDate(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime());
 }
 
-function HistoryRow({ item = {} }) {
-    const statusText = mapPaymentStatus(item.status);
+function formatDateTime(value, timeZone = VI_TIME_ZONE) {
+    if (!value) return '--';
 
-    const statusVariant = mapPaymentStatusVariant(item.status);
+    const date = new Date(value);
 
-    const paymentMethodText = mapPaymentMethod();
+    if (!isValidDate(date)) return '--';
 
-    const displayDate = item.paid_at ?? item.created_at;
+    return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+}
 
-    const orderTitle = getOrderTitle(item);
-    const orderSubTitle = getOrderSubTitle(item);
+function formatTime(value, timeZone = VI_TIME_ZONE) {
+    if (!value) return '--';
+
+    const date = new Date(value);
+
+    if (!isValidDate(date)) return '--';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+}
+
+function formatOnlyDate(value, timeZone = VI_TIME_ZONE) {
+    if (!value) return '--';
+
+    const date = new Date(value);
+
+    if (!isValidDate(date)) return '--';
+
+    return new Intl.DateTimeFormat('vi-VN', {
+        timeZone,
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    }).format(date);
+}
+
+function formatPaidAt(value) {
+    return formatDateTime(value, 'UTC');
+}
+
+function getStatusLabel(status) {
+    return STATUS_LABELS[status] || status || '--';
+}
+
+function getPackageName(payment = {}) {
+    const planName = payment?.plan?.name;
+    const addonName = payment?.addon_package?.name;
+
+    if (planName && addonName) {
+        return `${planName} + ${addonName}`;
+    }
+
+    return planName || addonName || '--';
+}
+
+function HistoryRow({ payment }) {
+    const status = payment?.status;
+    const fullName = payment?.user?.full_name || '--';
+    const email = payment?.user?.email || '--';
+    const packageName = getPackageName(payment);
 
     return (
-        <div className={cx('row')}>
-            <div className={cx('cell', 'code')}>{item.order_code}</div>
+        <tr>
+            <td className={cx('codeCell')}>
+                <span title={payment?.order_code || ''}>
+                    {payment?.order_code || '--'}
+                </span>
+            </td>
 
-            <div className={cx('cell', 'date')}>
-                {formatDate(displayDate)}
-            </div>
+            <td>
+                <div className={cx('userInfo')}>
+                    <span className={cx('userName')} title={fullName}>
+                        {fullName}
+                    </span>
 
-            <div className={cx('cell', 'plan')}>
-                <span className={cx('planName')}>{orderTitle}</span>
+                    <small title={email}>{email}</small>
+                </div>
+            </td>
 
-                {orderSubTitle && (
-                    <span className={cx('planCycle')}>{orderSubTitle}</span>
-                )}
-            </div>
+            <td>
+                <div className={cx('packageInfo')}>
+                    <span className={cx('packageName')} title={packageName}>
+                        {packageName}
+                    </span>
 
-            <div className={cx('cell', 'amount')}>
-                {formatPrice(item.amount_cents, item.currency)}
-            </div>
+                    {payment?.paid_at ? (
+                        <small>
+                            Thanh toán lúc {formatPaidAt(payment.paid_at)}
+                        </small>
+                    ) : (
+                        <small>Chưa thanh toán</small>
+                    )}
+                </div>
+            </td>
 
-            <div className={cx('cell', 'method')}>{paymentMethodText}</div>
+            <td className={cx('amountCell')}>
+                {formatCurrency(payment?.amount_cents)}
+            </td>
 
-            <div className={cx('cell', 'status')}>
+            <td>
                 <span
                     className={cx('statusBadge', {
-                        success: statusVariant === 'success',
-                        failed: statusVariant === 'failed',
-                        pending: statusVariant === 'pending',
-                        refunded: statusVariant === 'refunded',
+                        paid: status === 'PAID',
+                        pending: status === 'PENDING',
+                        failed:
+                            status === 'FAILED' ||
+                            status === 'RECONCILE_FAILED',
+                        cancelled: status === 'CANCELLED',
                     })}
                 >
-                    {statusText}
+                    {getStatusLabel(status)}
                 </span>
-            </div>
-        </div>
+            </td>
+
+            <td>
+                <div className={cx('dateInfo')}>
+                    <span>{formatTime(payment?.createdAt)}</span>
+                    <small>{formatOnlyDate(payment?.createdAt)}</small>
+                </div>
+            </td>
+        </tr>
     );
 }
 

@@ -13,90 +13,103 @@ import styles from './PricingCard.module.scss';
 
 const cx = classNames.bind(styles);
 
-function getRoute(isPremium, isAuthenticated, slug) {
+const PLAN_SLUGS = {
+    FREE: 'free',
+};
+
+function normalizeSlug(value = '') {
+    return String(value).trim().toLowerCase();
+}
+
+function getUpgradeRoute({ isFree, isAuthenticated, slug }) {
     if (!isAuthenticated) return config.router.login;
 
-    if (isPremium && slug) {
+    if (!isFree && slug) {
         return config.router.upgradeOptions.replace(':slug', slug);
     }
 
     return undefined;
 }
 
-const PLAN_SLUGS = {
-    FREE: 'free',
-    PREMIUM: 'premium',
-};
-
-function normalizeSlug(value = '') {
-    return value.trim().toLowerCase();
-}
-
 function getCtaLabel({
+    planName,
     isFree,
-    isPremium,
     isCurrentPlan,
-    isCurrentPremium,
     isAuthenticated,
 }) {
     if (isCurrentPlan) return 'Gói hiện tại';
-    if (isCurrentPremium && isFree) return 'Free';
-    if (isAuthenticated && isFree) return 'Gói hiện tại';
-    if (isPremium) return 'Nâng cấp Premium';
 
-    return 'Bắt đầu ngay';
+    if (!isAuthenticated) {
+        return isFree ? 'Bắt đầu miễn phí' : `Chọn gói ${planName}`;
+    }
+
+    if (isFree) return 'Gói miễn phí';
+
+    return `Chọn gói ${planName}`;
 }
 
 function PricingCard({
     plan = {},
+    isPopular = false,
     isAuthenticated = false,
     isCurrentPlan = false,
-    isCurrentPremium = false,
 }) {
     const planSlug = normalizeSlug(plan.slug);
+    const planName = plan.name || 'dịch vụ';
 
     const isFree = planSlug === PLAN_SLUGS.FREE;
-    const isPremium = planSlug === PLAN_SLUGS.PREMIUM;
 
     const features = buildPlanFeatures(plan);
 
-    const route = getRoute(isPremium, isAuthenticated, planSlug);
+    const route = getUpgradeRoute({
+        isFree,
+        isAuthenticated,
+        slug: planSlug,
+    });
 
-    const isDisabled =
-        isCurrentPlan ||
-        (isCurrentPremium && isFree) ||
-        (isAuthenticated && isFree);
+    const isDisabled = isCurrentPlan || (isAuthenticated && isFree);
 
     const ctaLabel = getCtaLabel({
+        planName,
         isFree,
-        isPremium,
         isCurrentPlan,
-        isCurrentPremium,
         isAuthenticated,
     });
 
+    const isPrimaryButton = isPopular && !isDisabled;
+
     return (
-        <article className={cx('card', { popular: isPremium })}>
-            {isPremium && <span className={cx('badge')}>PHỔ BIẾN NHẤT</span>}
+        <article
+            className={cx('card', {
+                popular: isPopular,
+                current: isCurrentPlan,
+            })}
+        >
+            {isPopular ? (
+                <span className={cx('badge')}>PHỔ BIẾN NHẤT</span>
+            ) : null}
 
             <div className={cx('head')}>
-                <h2 className={cx('cardTitle')}>{plan.name}</h2>
+                <div className={cx('titleRow')}>
+                    <h2 className={cx('cardTitle')}>{plan.name || '--'}</h2>
 
-                {isCurrentPlan && (
-                    <span className={cx('currentBadge')}>
-                        <HiCheckBadge className={cx('currentBadgeIcon')} />
-                        <span>Đang sử dụng</span>
-                    </span>
-                )}
+                    {isCurrentPlan ? (
+                        <span className={cx('currentBadge')}>
+                            <HiCheckBadge className={cx('currentBadgeIcon')} />
+                            <span>Đang sử dụng</span>
+                        </span>
+                    ) : null}
+                </div>
 
-                {plan.description && (
+                {plan.description ? (
                     <p className={cx('cardDesc')}>{plan.description}</p>
-                )}
+                ) : null}
 
                 <div className={cx('priceBox')}>
                     <span className={cx('price')}>
                         {formatPrice(plan.price, plan.currency)}
                     </span>
+
                     <span className={cx('unit')}>
                         {mapBillingCycleToUnit(plan.billing_cycle)}
                     </span>
@@ -104,12 +117,6 @@ function PricingCard({
             </div>
 
             <div className={cx('body')}>
-                {isPremium && (
-                    <p className={cx('featureTitle')}>
-                        Mọi tính năng trong gói Miễn phí và:
-                    </p>
-                )}
-
                 <ul className={cx('list')}>
                     {features.map((item) => (
                         <li key={`${plan.id}-${item}`} className={cx('item')}>
@@ -125,10 +132,10 @@ function PricingCard({
             <div className={cx('actions')}>
                 <Button
                     to={isDisabled ? undefined : route}
-                    primary={isPremium && !isDisabled}
+                    primary={isPrimaryButton}
                     disabled={isDisabled}
                     className={cx('btn', {
-                        btnPrimary: isPremium && !isDisabled,
+                        btnPrimary: isPrimaryButton,
                         btnCurrent: isDisabled,
                     })}
                 >

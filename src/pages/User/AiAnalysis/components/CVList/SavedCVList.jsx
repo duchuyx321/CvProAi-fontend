@@ -1,8 +1,6 @@
 import classNames from 'classnames/bind';
 import {
     FiCheck,
-    FiDownload,
-    FiEye,
     FiFileText,
     FiMapPin,
 } from 'react-icons/fi';
@@ -26,8 +24,6 @@ function SavedCVList({
     loadingSavedCVs = false,
     selectedCV,
     onSelectSavedCV,
-    onPreviewCV,
-    onDownloadCV,
 }) {
     return (
         <section className={cx('savedSection')}>
@@ -124,28 +120,6 @@ function SavedCVList({
                                     </div>
 
                                     <div className={cx('savedCardActions')}>
-                                        <button
-                                            type="button"
-                                            className={cx('ghostAction')}
-                                            onClick={(e) =>
-                                                onPreviewCV(cv, e)
-                                            }
-                                            aria-label={`Xem trước ${cvName}`}
-                                        >
-                                            <FiEye />
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            className={cx('ghostAction')}
-                                            onClick={(e) =>
-                                                onDownloadCV(cv, e)
-                                            }
-                                            aria-label={`Tải xuống ${cvName}`}
-                                        >
-                                            <FiDownload />
-                                        </button>
-
                                         <button
                                             type="button"
                                             className={cx('primaryAction')}
