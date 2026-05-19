@@ -150,7 +150,6 @@ function TrashCvs() {
                 sort_by: sortParams.sort_by,
                 sort_order: sortParams.sort_order,
             });
-
             if (!res?.success) {
                 const message =
                     res?.message ||
@@ -632,74 +631,72 @@ function TrashCvs() {
             </div>
 
             <Modal
-                isOpen={!!restoreItem}
-                onClose={closeRestoreModal}
-                title="Xác nhận khôi phục CV"
-                description={
-                    restoreItem
-                        ? 'Để khôi phục CV này, vui lòng nhập đúng tên CV bên dưới.'
-                        : ''
-                }
-                footer={restoreFooter}
-                size="sm"
-            >
+    isOpen={!!restoreItem}
+    onClose={closeRestoreModal}
+    title="Xác nhận khôi phục CV"
+    footer={restoreFooter}
+    size="sm"
+>
                 <div className={cx('modalBody')}>
                     <div className={cx('restoreIcon')}>
                         <FiRotateCcw />
                     </div>
 
                     <div className={cx('confirmBox')}>
-                        <strong className={cx('confirmName')}>
-                            {restoreItem?.name}
-                        </strong>
+    <strong className={cx('confirmName')}>
+        {restoreItem?.name}
+    </strong>
 
-                        <input
-                            type="text"
-                            className={cx('confirmInput')}
-                            value={confirmName}
-                            onChange={(event) =>
-                                setConfirmName(event.target.value)
-                            }
-                            placeholder="Nhập tên CV..."
-                            autoFocus
-                        />
-                    </div>
+    <p className={cx('confirmText')}>
+        Để khôi phục CV này, vui lòng nhập đúng tên CV.
+    </p>
+
+    <input
+        type="text"
+        className={cx('confirmInput')}
+        value={confirmName}
+        onChange={(event) =>
+            setConfirmName(event.target.value)
+        }
+        placeholder="Nhập tên CV..."
+        autoFocus
+    />
+</div>
                 </div>
             </Modal>
 
             <Modal
-                isOpen={!!deleteForeverItem}
-                onClose={closeDeleteForeverModal}
-                title="Xóa vĩnh viễn CV"
-                description={
-                    deleteForeverItem
-                        ? 'Hành động này không thể hoàn tác. Vui lòng nhập đúng tên CV để tiếp tục.'
-                        : ''
-                }
-                footer={modalFooter}
-                size="sm"
-            >
+    isOpen={!!deleteForeverItem}
+    onClose={closeDeleteForeverModal}
+    title="Xóa vĩnh viễn CV"
+    footer={modalFooter}
+    size="sm"
+>
                 <div className={cx('modalBody')}>
                     <div className={cx('warningIcon')}>
                         <FiTrash2 />
                     </div>
 
                     <div className={cx('confirmBox')}>
-                        <strong className={cx('confirmName')}>
-                            {deleteForeverItem?.name}
-                        </strong>
+    <strong className={cx('confirmName')}>
+        {deleteForeverItem?.name}
+    </strong>
 
-                        <input
-                            type="text"
-                            className={cx('confirmInput')}
-                            value={confirmName}
-                            onChange={(event) =>
-                                setConfirmName(event.target.value)
-                            }
-                            placeholder="Nhập tên CV..."
-                            autoFocus
-                        />
-                    </div>
+    <p className={cx('confirmText')}>
+        Để xóa vĩnh viễn CV này, vui lòng nhập đúng tên CV.
+    </p>
+
+    <input
+        type="text"
+        className={cx('confirmInput')}
+        value={confirmName}
+        onChange={(event) =>
+            setConfirmName(event.target.value)
+        }
+        placeholder="Nhập tên CV..."
+        autoFocus
+    />
+</div>
                 </div>
             </Modal>
         </>

@@ -148,7 +148,7 @@ function MyCvs() {
                 sort_by: sortParams.sort_by,
                 sort_order: sortParams.sort_order,
             });
-
+            
             if (!res?.success) {
                 const message =
                     res?.message || res?.messsage || 'Không tải được danh sách CV';
