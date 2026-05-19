@@ -265,7 +265,7 @@ function ManagePackages() {
                     defaultSortBy={DEFAULT_FILTERS.sort_by}
                     defaultSortOrder={DEFAULT_FILTERS.sort_order}
                     defaultRange={DEFAULT_FILTERS.range}
-                    searchPlaceholder="Tìm kiếm theo mã hoặc tên gói..."
+                    searchPlaceholder="Tìm kiếm theo tên gói..."
                     searchLoading={loading && Boolean(filters.search)}
                     onChange={handleToolbarChange}
                 />

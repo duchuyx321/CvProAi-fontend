@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
 import { MdInfoOutline, MdKeyboardArrowDown } from 'react-icons/md';
+import { formatNumberInput } from '../../../../managePackages.utils';
 import styles from './BasicInfoSection.module.scss';
 
 const cx = classNames.bind(styles);
@@ -83,9 +84,9 @@ function BasicInfoSection({
                             })}
                             type="text"
                             inputMode="numeric"
-                            value={formData.price}
+                            value={formatNumberInput(formData.price)}
                             disabled={disabled}
-                            placeholder="0.00"
+                            placeholder="0"
                             onChange={handleChange('price')}
                         />
 

@@ -8,7 +8,6 @@ export const PackageSortBy = {
     CREATED_AT: 'createdAt',
     UPDATED_AT: 'updatedAt',
     NAME: 'name',
-    PRICE: 'price',
 };
 
 export const SortOrder = {
@@ -41,16 +40,6 @@ export const PACKAGE_SORT_OPTIONS = [
         label: 'Tên: Z -> A',
         sort_by: PackageSortBy.NAME,
         sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Giá: Cao -> Thấp',
-        sort_by: PackageSortBy.PRICE,
-        sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Giá: Thấp -> Cao',
-        sort_by: PackageSortBy.PRICE,
-        sort_order: SortOrder.ASC,
     },
 ];
 
@@ -107,6 +96,14 @@ export function toSafeString(value = '') {
 export function toSafeNumber(value = 0) {
     const parsedValue = Number(value);
     return Number.isFinite(parsedValue) ? parsedValue : 0;
+}
+
+export function formatNumberInput(value = '') {
+    const digits = String(value ?? '').replace(/\D/g, '');
+
+    if (!digits) return '';
+
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 export function formatCurrency(value = 0) {

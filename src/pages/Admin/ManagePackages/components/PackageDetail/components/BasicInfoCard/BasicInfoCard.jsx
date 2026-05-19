@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
 import { MdInfoOutline, MdKeyboardArrowDown } from 'react-icons/md';
+import { formatNumberInput } from '../../../../managePackages.utils';
 import styles from './BasicInfoCard.module.scss';
 
 const cx = classNames.bind(styles);
@@ -64,7 +65,7 @@ function BasicInfoCard({
                         <input
                             type="text"
                             inputMode="numeric"
-                            value={formData.price}
+                            value={formatNumberInput(formData.price)}
                             placeholder="0"
                             onChange={handleChange('price')}
                             disabled={isReadOnly}
