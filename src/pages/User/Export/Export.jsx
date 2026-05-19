@@ -9,6 +9,7 @@ import {
     FiSearch,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+
 import Button from '~/components/Button';
 import {
     downloadExportFile,
@@ -25,25 +26,25 @@ const SORT_OPTIONS = [
         value: 'newest',
         label: 'Mới nhất',
         sort_by: 'created_at',
-        sort_order: 'desc',
+        sort_order: 'DESC',
     },
     {
         value: 'oldest',
         label: 'Cũ nhất',
         sort_by: 'created_at',
-        sort_order: 'asc',
+        sort_order: 'ASC',
     },
     {
         value: 'az',
         label: 'Từ A-Z',
         sort_by: 'file_name',
-        sort_order: 'asc',
+        sort_order: 'ASC',
     },
     {
         value: 'za',
         label: 'Từ Z-A',
         sort_by: 'file_name',
-        sort_order: 'desc',
+        sort_order: 'DESC',
     },
 ];
 
@@ -111,13 +112,6 @@ function normalizeExportItem(item = {}) {
                 item.created_at ||
                 '',
         ),
-        downloadUrl:
-            item.downloadUrl ||
-            item.download_url ||
-            item.fileUrl ||
-            item.file_url ||
-            item.url ||
-            '',
     };
 }
 
@@ -181,6 +175,9 @@ function Export() {
     }, [totalItems]);
 
     const isSearching = loading && Boolean(debouncedSearch || searchValue.trim());
+
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -266,11 +263,6 @@ function Export() {
             return;
         }
 
-        if (item.downloadUrl) {
-            window.open(item.downloadUrl, '_blank', 'noopener,noreferrer');
-            return;
-        }
-
         setDownloadId(item.id);
 
         try {
@@ -281,6 +273,14 @@ function Export() {
             }
 
             const blob = res?.data instanceof Blob ? res.data : res;
+
+            if (!(blob instanceof Blob)) {
+                throw new Error('Dữ liệu tải xuống không hợp lệ');
+            }
+
+            if (blob.size === 0) {
+                throw new Error('File tải xuống rỗng');
+            }
 
             downloadBlob(blob, item.fileName);
 
@@ -348,8 +348,6 @@ function Export() {
         });
     };
 
-    const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
-
     return (
         <div className={cx('wrapper')}>
             <h1 className={cx('title')}>Lịch sử export</h1>
@@ -364,7 +362,7 @@ function Export() {
 
                     <input
                         value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
+                        onChange={(event) => setSearchValue(event.target.value)}
                         placeholder="Tìm kiếm lịch sử export..."
                     />
                 </div>
@@ -564,8 +562,8 @@ function Export() {
 
                 <div className={cx('footer')}>
                     <p className={cx('note')}>
-                        Hiển thị <strong>{endItem}</strong> trên {totalItems}{' '}
-                        file đã xuất
+                        Hiển thị {startItem} - {endItem} trong số{' '}
+                        <strong>{totalItems}</strong> file đã xuất
                     </p>
 
                     <div className={cx('pagination')}>
