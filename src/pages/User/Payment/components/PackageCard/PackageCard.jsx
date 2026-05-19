@@ -52,14 +52,15 @@ function PackageCard({ pkg = {} }) {
 
     const currency =
         pkg?.displayCurrency ||
-        plan?.currency ||
         addon?.currency ||
+        plan?.currency ||
         'VND';
 
     const totalAmount =
         toNumber(pkg?.amount_cents) ||
         toNumber(pkg?.displayPrice) ||
-        toNumber(plan?.price) + toNumber(addon?.price);
+        toNumber(addon?.price) ||
+        toNumber(plan?.price);
 
     const billingCycle =
         pkg?.displayBillingCycle || plan?.billing_cycle || '';
@@ -74,6 +75,15 @@ function PackageCard({ pkg = {} }) {
             : hasAddon && addon?.runs
               ? `Mua thêm ${addon.runs} lượt phân tích AI`
               : '';
+
+    const shouldShowPlanPrice =
+        hasPlan && Boolean(pkg?.planPriceIncluded);
+
+    const shouldShowPlanContext =
+        hasPlan && hasAddon && !pkg?.planPriceIncluded;
+
+    const shouldShowAddonPrice =
+        hasAddon && Boolean(pkg?.addonPriceIncluded);
 
     return (
         <div className={cx('package-card')}>
@@ -97,7 +107,7 @@ function PackageCard({ pkg = {} }) {
                         {formatPrice(totalAmount, currency)}
                     </span>
 
-                    {billingCycleLabel ? (
+                    {billingCycleLabel && !hasAddon ? (
                         <span className={cx('pkg-interval')}>
                             / {billingCycleLabel}
                         </span>
@@ -106,21 +116,33 @@ function PackageCard({ pkg = {} }) {
             ) : null}
 
             <div className={cx('order-summary')}>
-                {hasPlan ? (
+                {shouldShowPlanPrice ? (
                     <div className={cx('summary-row')}>
                         <span>{plan.name}</span>
-                        <strong>{formatPrice(plan.price, plan.currency)}</strong>
+                        <strong>
+                            {formatPrice(plan.price, plan.currency || currency)}
+                        </strong>
                     </div>
                 ) : null}
 
-                {hasAddon ? (
+                {shouldShowPlanContext ? (
+                    <div className={cx('summary-row')}>
+                        <span>Gói hiện tại: {plan.name}</span>
+                        <strong>Đang sử dụng</strong>
+                    </div>
+                ) : null}
+
+                {shouldShowAddonPrice ? (
                     <div className={cx('summary-row')}>
                         <span>
                             {addon.name ||
                                 `Add-on ${addon.runs || 0} lượt AI`}
                         </span>
                         <strong>
-                            {formatPrice(addon.price, addon.currency || currency)}
+                            {formatPrice(
+                                addon.price,
+                                addon.currency || currency,
+                            )}
                         </strong>
                     </div>
                 ) : null}

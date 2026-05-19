@@ -22,6 +22,15 @@ function normalizeText(value = '') {
     return String(value || '').trim();
 }
 
+function getPaymentableType(resultCheckout = {}, normalized = {}) {
+    return normalizeText(
+        resultCheckout?.paymentable_type ||
+            resultCheckout?.paymentableType ||
+            normalized?.paymentable_type ||
+            normalized?.paymentableType,
+    ).toUpperCase();
+}
+
 function Payment() {
     const { payment_id } = useParams();
     const navigate = useNavigate();
@@ -101,11 +110,7 @@ function Payment() {
 
                 setResultCheckout((prev) => ({
                     ...prev,
-
-                    // Giữ data detail cũ để không mất plan/addon
                     ...result.data,
-
-                    // Chuẩn hóa status
                     status,
                 }));
 
@@ -177,15 +182,6 @@ function Payment() {
     const checkoutForRender = useMemo(() => {
         const normalized = normalizeOrderForUi(resultCheckout || {});
 
-        const plan =
-            resultCheckout?.plan ||
-            resultCheckout?.package ||
-            resultCheckout?.paymentable ||
-            resultCheckout?.subscription?.plan ||
-            normalized?.plan ||
-            normalized?.package ||
-            null;
-
         const addon =
             resultCheckout?.addon ||
             resultCheckout?.addOn ||
@@ -196,50 +192,86 @@ function Payment() {
             normalized?.addOn ||
             null;
 
-        const paymentableType = normalizeText(
-            resultCheckout?.paymentable_type ||
-                resultCheckout?.paymentableType ||
-                normalized?.paymentable_type ||
-                normalized?.paymentableType,
-        ).toUpperCase();
+        const plan =
+            resultCheckout?.plan ||
+            resultCheckout?.package ||
+            resultCheckout?.paymentable ||
+            resultCheckout?.subscription?.plan ||
+            normalized?.plan ||
+            normalized?.package ||
+            null;
 
-        const displayItem = addon || plan || {};
+        const paymentableType = getPaymentableType(resultCheckout, normalized);
+
+        const hasPlan = Boolean(plan?.id || plan?.name);
+        const hasAddon = Boolean(addon?.id || addon?.name);
+
+        const isSubscriptionPayment = paymentableType === 'SUBSCRIPTION';
+        const isAddonPayment = paymentableType === 'AI_ADDON';
+        const isBothPayment = paymentableType === 'BOTH';
+
+        const planPriceIncluded =
+            isSubscriptionPayment ||
+            isBothPayment ||
+            (!hasAddon && hasPlan);
+
+        const addonPriceIncluded =
+            isAddonPayment || isBothPayment || hasAddon;
+
+        const displayItems = [plan, addon].filter(Boolean);
 
         const displayName =
-            displayItem?.name ||
+            displayItems
+                .map((item) => item?.name)
+                .filter(Boolean)
+                .join(' + ') ||
             resultCheckout?.name ||
             resultCheckout?.title ||
             normalized?.name ||
             normalized?.title ||
-            '';
+            'Thông tin đơn hàng';
 
         const displayDescription =
-            displayItem?.description ||
+            displayItems
+                .map((item) => item?.description)
+                .filter(Boolean)
+                .join(' ') ||
             resultCheckout?.description ||
             normalized?.description ||
             '';
 
-        const displayPrice =
-            displayItem?.price ||
-            resultCheckout?.amount ||
-            resultCheckout?.amount_cents ||
-            normalized?.amount ||
-            0;
-
         const displayCurrency =
-            displayItem?.currency ||
+            addon?.currency ||
+            plan?.currency ||
             resultCheckout?.currency ||
             normalized?.currency ||
             'VND';
 
-        const displayBillingCycle = plan?.billing_cycle || '';
-
-        const safeAmount = toNumber(
-            normalized?.amount ||
-                resultCheckout?.amount_cents ||
+        const amountFromBackend = toNumber(
+            resultCheckout?.amount_cents ||
                 resultCheckout?.amount ||
-                displayPrice,
+                normalized?.amount,
         );
+
+        const fallbackAmount = (() => {
+            if (amountFromBackend > 0) return amountFromBackend;
+
+            if (isBothPayment) {
+                return toNumber(plan?.price) + toNumber(addon?.price);
+            }
+
+            if (isAddonPayment || hasAddon) {
+                return toNumber(addon?.price);
+            }
+
+            if (isSubscriptionPayment || hasPlan) {
+                return toNumber(plan?.price);
+            }
+
+            return 0;
+        })();
+
+        const displayBillingCycle = plan?.billing_cycle || '';
 
         return {
             ...resultCheckout,
@@ -249,7 +281,10 @@ function Payment() {
             addon,
             paymentable_type: paymentableType,
 
-            amount_cents: safeAmount > 0 ? safeAmount : 0,
+            planPriceIncluded,
+            addonPriceIncluded,
+
+            amount_cents: fallbackAmount > 0 ? fallbackAmount : 0,
 
             qrCode:
                 resultCheckout?.qrCode ||
@@ -289,18 +324,16 @@ function Payment() {
                 normalized?.paid_at ||
                 null,
 
-            // Field an toàn cho UI, tránh undefined
             displayName,
             displayDescription,
-            displayPrice,
+            displayPrice: fallbackAmount,
             displayCurrency,
             displayBillingCycle,
             displayRuns: addon?.runs || null,
 
-            // Field fallback để component cũ vẫn đọc được
             name: displayName,
             description: displayDescription,
-            price: displayPrice,
+            price: fallbackAmount,
             currency: displayCurrency,
             billing_cycle: displayBillingCycle,
             runs: addon?.runs || null,
