@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { CgProfile } from 'react-icons/cg';
 import { FiLogOut } from 'react-icons/fi';
@@ -44,6 +44,7 @@ function getInitial(name = '') {
 
 function UserActions({ user = {} }) {
     const navigate = useNavigate();
+    const location = useLocation();
     const dropdownRef = useRef(null);
     const { clearAuthState } = useAuth();
 
@@ -84,7 +85,12 @@ function UserActions({ user = {} }) {
             <button
                 type="button"
                 className={cx('userInfo')}
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={() => {
+                    if (!location.pathname.startsWith('/admin')) {
+                        setIsOpen((prev) => !prev);
+                    }
+                }}
+                style={{ cursor: location.pathname.startsWith('/admin') ? 'default' : 'pointer' }}
                 aria-label="Mở menu người dùng"
             >
                 <div className={cx('textBlock')}>

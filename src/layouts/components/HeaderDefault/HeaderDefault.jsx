@@ -50,7 +50,7 @@ function HeaderDefault() {
             <div className={cx('leftSection')}>
                 <div className={cx('greetingWrapper')}>
                     <h2 className={cx('greetingTitle')}>
-                        Xin chào, <span className={cx('highlight')}>{displayName}</span> <span className={cx('wave')}>👋</span>
+                        Xin chào, <span className={cx('highlight')}>{displayName}</span>
                     </h2>
                     <div className={cx('greetingDateWrapper')}>
                         <p className={cx('greetingDate')}>
