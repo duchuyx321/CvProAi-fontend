@@ -12,11 +12,9 @@ import {
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import { LuDownload, LuFileText, LuUsers } from 'react-icons/lu';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
+import { toast } from 'react-toastify';
 
 import { config } from '~/config';
-import styles from './AdminDashboard.module.scss';
-
-import { toast } from 'react-toastify';
 import {
     downloadBlob,
     EXPORT_CONFIG,
@@ -24,16 +22,34 @@ import {
     getAdminDashboard,
     getFileNameFromHeaders,
 } from '~/services/dashboard.service';
+import styles from './AdminDashboard.module.scss';
 
 const cx = classNames.bind(styles);
 
+const FILTER_OPTIONS = {
+    '7d': '7 ngày gần nhất',
+    '30d': '30 ngày gần nhất',
+    month: 'Tháng này',
+    year: 'Năm nay',
+    custom: 'Khoảng thời gian',
+};
+
+function formatPercent(value, digits = 1) {
+    const numberValue = Number(value) || 0;
+    const fixedValue = numberValue.toFixed(digits);
+
+    return `${Number(fixedValue)}%`;
+}
+
 function formatNumber(value) {
     if (value === null || value === undefined || value === '') return '0';
+
     return new Intl.NumberFormat('vi-VN').format(Number(value) || 0);
 }
 
 function formatMoney(value) {
     if (value === null || value === undefined || value === '') return '0đ';
+
     return `${new Intl.NumberFormat('vi-VN').format(Number(value) || 0)}đ`;
 }
 
@@ -51,10 +67,13 @@ function formatMoneyShort(value) {
     return `${amount}`;
 }
 
-function formatGrowthPercent(value) {
+function formatGrowthPercent(value, digits = 1) {
     if (value === null || value === undefined) return '+0%';
+
     const numberValue = Number(value) || 0;
-    return `${numberValue >= 0 ? '+' : ''}${numberValue}%`;
+    const fixedValue = Number(numberValue.toFixed(digits));
+
+    return `${fixedValue >= 0 ? '+' : ''}${fixedValue}%`;
 }
 
 function formatRelativeTime(dateString) {
@@ -83,7 +102,6 @@ function formatRelativeTime(dateString) {
     }).format(date);
 }
 
-// eslint-disable-next-line no-unused-vars
 function StatCard({ icon: Icon, label, value, change }) {
     return (
         <div className={cx('statCard')}>
@@ -174,9 +192,7 @@ function TrendChart({ chartData = [] }) {
                     <div className={cx('xAxis')}>
                         {safeChartData.length > 0 ? (
                             safeChartData.map((item, index) => (
-                                <span
-                                    key={`${item?.label || 'label'}-${index}`}
-                                >
+                                <span key={`${item?.label || 'label'}-${index}`}>
                                     {item?.label || `W${index + 1}`}
                                 </span>
                             ))
@@ -194,7 +210,7 @@ function TrendChart({ chartData = [] }) {
 
             <div className={cx('legend')}>
                 <span className={cx('legendItem')}>
-                    <i className={cx('dot', 'blue')} />
+                    <i className={cx('dot', 'yellow')} />
                     Người dùng
                 </span>
                 <span className={cx('legendItem')}>
@@ -367,11 +383,16 @@ function RecentOrdersTable({ orders = [] }) {
 }
 
 export default function AdminDashboard() {
-    const [filterType, setFilterType] = useState('30d');
+    const [appliedFilterType, setAppliedFilterType] = useState('30d');
+    const [appliedFromDate, setAppliedFromDate] = useState('');
+    const [appliedToDate, setAppliedToDate] = useState('');
+
+    const [draftFilterType, setDraftFilterType] = useState('30d');
+    const [draftFromDate, setDraftFromDate] = useState('');
+    const [draftToDate, setDraftToDate] = useState('');
+
     const [selectedRangeLabel, setSelectedRangeLabel] =
         useState('30 ngày gần nhất');
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
     const [isOpenFilter, setIsOpenFilter] = useState(false);
 
     const [stats, setStats] = useState([]);
@@ -386,6 +407,7 @@ export default function AdminDashboard() {
     });
 
     const [loading, setLoading] = useState(false);
+    const [firstLoading, setFirstLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -394,17 +416,23 @@ export default function AdminDashboard() {
     const hasDashboardDataRef = useRef(false);
 
     const filterParams = useMemo(() => {
-        if (filterType === 'custom') {
+        if (appliedFilterType === 'custom') {
             return {
-                from: fromDate,
-                to: toDate,
+                from: appliedFromDate,
+                to: appliedToDate,
             };
         }
 
         return {
-            range: filterType,
+            range: appliedFilterType,
         };
-    }, [filterType, fromDate, toDate]);
+    }, [appliedFilterType, appliedFromDate, appliedToDate]);
+
+    const hasData =
+        stats.length > 0 ||
+        chartData.length > 0 ||
+        recentOrders.length > 0 ||
+        Number(chartPieData?.totalRevenues) > 0;
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -417,6 +445,7 @@ export default function AdminDashboard() {
         };
 
         document.addEventListener('mousedown', handleClickOutside);
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -532,101 +561,124 @@ export default function AdminDashboard() {
     }, []);
 
     const fetchDashboardData = useCallback(
-        async (params, showRefresh = false) => {
-            const shouldShowErrorState =
-                !showRefresh || !hasDashboardDataRef.current;
+    async (params, showRefresh = false) => {
+        const shouldShowErrorState =
+            !showRefresh || !hasDashboardDataRef.current;
 
-            try {
-                if (showRefresh) {
-                    setRefreshing(true);
-                } else {
-                    setLoading(true);
-                }
+        try {
+            if (showRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
 
-                if (!showRefresh) {
-                    setErrorMessage('');
-                }
-
-                const res = await getAdminDashboard(params);
-
-                if (!res?.success) {
-                    const message =
-                        res?.message ||
-                        res?.messsage ||
-                        'Không tải được dashboard';
-                    if (shouldShowErrorState) {
-                        setErrorMessage(message);
-                    }
-                    return { success: false, message };
-                }
-
-                const dashboardData = res?.data || {};
-
-                hasDashboardDataRef.current = true;
+            if (!showRefresh) {
                 setErrorMessage('');
-                setStats(mapStats(dashboardData?.summary));
-                setChartData(mapChartData(dashboardData?.chartLineData));
-                setChartPieData(dashboardData?.chartPieData || {});
+            }
 
-                setSubscriptionData({
-                    premiumUpgradeRate: `${
-                        dashboardData?.chartProgress?.premiumRate || 0
-                    }%`,
-                    paymentSuccessRate: `${
-                        dashboardData?.chartProgress?.paymentPaidRate || 0
-                    }%`,
-                    pendingOrders: dashboardData?.chartProgress?.pending || 0,
-                    failedPayments: dashboardData?.chartProgress?.canceled || 0,
-                });
+            const res = await getAdminDashboard(params);
 
-                setRecentOrders(
-                    mapRecentOrders(
-                        dashboardData?.payments?.data?.data || [],
-                    ).slice(0, 4),
-                );
-                return { success: true };
-            } catch (error) {
+            if (!res?.success) {
                 const message =
-                    error?.message || 'Có lỗi xảy ra khi tải dashboard';
+                    res?.message ||
+                    res?.messsage ||
+                    'Không tải được dashboard';
+
                 if (shouldShowErrorState) {
                     setErrorMessage(message);
                 }
-                return { success: false, message };
-            } finally {
-                setLoading(false);
-                setRefreshing(false);
+
+                return {
+                    success: false,
+                    message,
+                };
             }
-        },
-        [mapChartData, mapRecentOrders, mapStats],
-    );
+
+            const dashboardData = res?.data || {};
+
+            setStats(mapStats(dashboardData?.summary));
+            setChartData(mapChartData(dashboardData?.chartLineData));
+            setChartPieData(dashboardData?.chartPieData || {});
+
+            setSubscriptionData({
+                premiumUpgradeRate: formatPercent(
+                    dashboardData?.chartProgress?.premiumRate,
+                    1,
+                ),
+                paymentSuccessRate: formatPercent(
+                    dashboardData?.chartProgress?.paymentPaidRate,
+                    1,
+                ),
+                pendingOrders: dashboardData?.chartProgress?.pending || 0,
+                failedPayments: dashboardData?.chartProgress?.canceled || 0,
+            });
+
+            setRecentOrders(
+                mapRecentOrders(
+                    dashboardData?.payments?.data?.data || [],
+                ).slice(0, 4),
+            );
+
+            hasDashboardDataRef.current = true;
+
+            return {
+                success: true,
+            };
+        } catch {
+            const message = 'Có lỗi xảy ra khi tải dashboard';
+
+            if (shouldShowErrorState) {
+                setErrorMessage(message);
+            }
+
+            return {
+                success: false,
+                message,
+            };
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+            setFirstLoading(false);
+        }
+    },
+    [mapChartData, mapStats, mapRecentOrders],
+);
 
     useEffect(() => {
         fetchDashboardData(filterParams);
     }, [fetchDashboardData, filterParams]);
 
     const handleResetFilter = () => {
-        setFilterType('30d');
+        setDraftFilterType('30d');
+        setDraftFromDate('');
+        setDraftToDate('');
+
+        setAppliedFilterType('30d');
+        setAppliedFromDate('');
+        setAppliedToDate('');
         setSelectedRangeLabel('30 ngày gần nhất');
-        setFromDate('');
-        setToDate('');
         setIsOpenFilter(false);
     };
 
     const handleApplyFilter = () => {
-        if (filterType === '7d') {
-            setSelectedRangeLabel('7 ngày gần nhất');
-        } else if (filterType === '30d') {
-            setSelectedRangeLabel('30 ngày gần nhất');
-        } else if (filterType === 'month') {
-            setSelectedRangeLabel('Tháng này');
-        } else if (filterType === 'year') {
-            setSelectedRangeLabel('Năm nay');
-        } else if (filterType === 'custom') {
-            if (!fromDate || !toDate) return;
-            if (fromDate > toDate) return;
-            setSelectedRangeLabel('Khoảng thời gian');
+        if (draftFilterType === 'custom') {
+            if (!draftFromDate || !draftToDate) {
+                toast.warning(
+                    'Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.',
+                );
+                return;
+            }
+
+            if (draftFromDate > draftToDate) {
+                toast.warning('Ngày bắt đầu không được lớn hơn ngày kết thúc.');
+                return;
+            }
         }
 
+        setAppliedFilterType(draftFilterType);
+        setAppliedFromDate(draftFromDate);
+        setAppliedToDate(draftToDate);
+        setSelectedRangeLabel(FILTER_OPTIONS[draftFilterType]);
         setIsOpenFilter(false);
     };
 
@@ -641,13 +693,10 @@ export default function AdminDashboard() {
         toast.error(result?.message || 'Không thể làm mới dashboard.');
     };
 
-    const fetchApi = async (filterParams, format = 'excel') => {
-        const response = await exportAdminDashboardReport(filterParams, format);
-
+    const fetchApi = async (params, format = 'excel') => {
+        const response = await exportAdminDashboardReport(params, format);
         const config = EXPORT_CONFIG[format] || EXPORT_CONFIG.excel;
 
-        // Nếu Response.POST trả về axios response thì blob nằm ở response.data
-        // Nếu Response.POST trả thẳng data thì response chính là blob
         const blobData = response?.data || response;
 
         if (!(blobData instanceof Blob)) {
@@ -694,6 +743,9 @@ export default function AdminDashboard() {
         }
     };
 
+    const showInitialLoading = firstLoading && loading;
+    const showContent = !showInitialLoading && !errorMessage && hasData;
+
     return (
         <div className={cx('page')}>
             <div className={cx('headerRow')}>
@@ -712,7 +764,7 @@ export default function AdminDashboard() {
                             type="button"
                             className={cx('filterBtn')}
                             onClick={() => setIsOpenFilter((prev) => !prev)}
-                            disabled={loading || refreshing}
+                            disabled={showInitialLoading || refreshing}
                         >
                             <FiCalendar />
                             <span>{selectedRangeLabel}</span>
@@ -725,9 +777,9 @@ export default function AdminDashboard() {
                                     <button
                                         type="button"
                                         className={cx('filterTab', {
-                                            active: filterType === '7d',
+                                            active: draftFilterType === '7d',
                                         })}
-                                        onClick={() => setFilterType('7d')}
+                                        onClick={() => setDraftFilterType('7d')}
                                     >
                                         7 ngày
                                     </button>
@@ -735,9 +787,9 @@ export default function AdminDashboard() {
                                     <button
                                         type="button"
                                         className={cx('filterTab', {
-                                            active: filterType === '30d',
+                                            active: draftFilterType === '30d',
                                         })}
-                                        onClick={() => setFilterType('30d')}
+                                        onClick={() => setDraftFilterType('30d')}
                                     >
                                         30 ngày
                                     </button>
@@ -745,9 +797,11 @@ export default function AdminDashboard() {
                                     <button
                                         type="button"
                                         className={cx('filterTab', {
-                                            active: filterType === 'month',
+                                            active: draftFilterType === 'month',
                                         })}
-                                        onClick={() => setFilterType('month')}
+                                        onClick={() =>
+                                            setDraftFilterType('month')
+                                        }
                                     >
                                         Tháng
                                     </button>
@@ -755,9 +809,11 @@ export default function AdminDashboard() {
                                     <button
                                         type="button"
                                         className={cx('filterTab', {
-                                            active: filterType === 'year',
+                                            active: draftFilterType === 'year',
                                         })}
-                                        onClick={() => setFilterType('year')}
+                                        onClick={() =>
+                                            setDraftFilterType('year')
+                                        }
                                     >
                                         Năm
                                     </button>
@@ -765,23 +821,25 @@ export default function AdminDashboard() {
                                     <button
                                         type="button"
                                         className={cx('filterTab', {
-                                            active: filterType === 'custom',
+                                            active: draftFilterType === 'custom',
                                         })}
-                                        onClick={() => setFilterType('custom')}
+                                        onClick={() =>
+                                            setDraftFilterType('custom')
+                                        }
                                     >
                                         Khoảng thời gian
                                     </button>
                                 </div>
 
-                                {filterType === 'custom' && (
+                                {draftFilterType === 'custom' && (
                                     <div className={cx('filterBody')}>
                                         <div className={cx('filterRange')}>
                                             <input
                                                 type="date"
                                                 className={cx('filterInput')}
-                                                value={fromDate}
+                                                value={draftFromDate}
                                                 onChange={(event) =>
-                                                    setFromDate(
+                                                    setDraftFromDate(
                                                         event.target.value,
                                                     )
                                                 }
@@ -789,9 +847,9 @@ export default function AdminDashboard() {
                                             <input
                                                 type="date"
                                                 className={cx('filterInput')}
-                                                value={toDate}
+                                                value={draftToDate}
                                                 onChange={(event) =>
-                                                    setToDate(
+                                                    setDraftToDate(
                                                         event.target.value,
                                                     )
                                                 }
@@ -824,8 +882,8 @@ export default function AdminDashboard() {
                     <button
                         type="button"
                         className={cx('ghostActionBtn')}
-                        onClick={() => handleExportReport()}
-                        disabled={exporting}
+                        onClick={handleExportReport}
+                        disabled={exporting || showInitialLoading}
                     >
                         <FiDownload />
                         <span>
@@ -837,7 +895,7 @@ export default function AdminDashboard() {
                         type="button"
                         className={cx('primaryActionBtn')}
                         onClick={handleRefresh}
-                        disabled={refreshing || loading}
+                        disabled={refreshing || showInitialLoading}
                     >
                         <FiRefreshCw
                             className={cx('refreshIcon', {
@@ -857,11 +915,11 @@ export default function AdminDashboard() {
                     <h3>Không tải được dashboard</h3>
                     <p>{errorMessage}</p>
                 </div>
-            ) : loading ? (
+            ) : showInitialLoading ? (
                 <div className={cx('stateBox')}>
                     <h3>Đang tải dữ liệu dashboard...</h3>
                 </div>
-            ) : (
+            ) : showContent ? (
                 <>
                     <div className={cx('statsGrid')}>
                         {stats.map((item) => (
@@ -948,6 +1006,13 @@ export default function AdminDashboard() {
 
                     <RecentOrdersTable orders={recentOrders} />
                 </>
+            ) : (
+                <div className={cx('stateBox')}>
+                    <h3>Chưa có dữ liệu dashboard</h3>
+                    <p>
+                        Hãy thử chọn khoảng thời gian khác hoặc làm mới dữ liệu.
+                    </p>
+                </div>
             )}
         </div>
     );
