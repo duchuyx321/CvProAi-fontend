@@ -78,6 +78,12 @@ const normalizeText = (value = '') => {
     return value.trim().toLowerCase();
 };
 
+const getConfirmPlaceholder = (name) => {
+    if (!name) return 'Nhập tên CV...';
+
+    return `Nhập "${name}"`;
+};
+
 const mapTrashItem = (cv) => ({
     id: cv.id,
     name: cv.title,
@@ -143,13 +149,34 @@ function TrashCvs() {
                 setLoading(true);
             }
 
-            const res = await getTrashCvs({
-                page,
-                limit: PAGE_SIZE,
-                search: keywordValue.trim(),
-                sort_by: sortParams.sort_by,
-                sort_order: sortParams.sort_order,
-            });
+            // const res = await getTrashCvs({
+            //     page,
+            //     limit: PAGE_SIZE,
+            //     search: keywordValue.trim(),
+            //     sort_by: sortParams.sort_by,
+            //     sort_order: sortParams.sort_order,
+            // });
+const res = {
+    "success": true,
+    "messsage": "Lấy danh sách CV thành công",
+    "data": [
+        {
+            "id": "8d416d05-abab-4fed-a868-249e994bec4d",
+            "user_id": "c0ca274b-2722-4755-99bb-9e249b3d3dce",
+            "template_id": "29713ded-64c6-4af0-b11a-1323f3a51eb3",
+            "title": "CV Backend Developer Intern - Lê Đức Huy",
+            "language": "vi",
+            "preview_url": "http://res.cloudinary.com/djzsbcrk9/image/upload/v1775665562/cvproai/lbglt6pqbmazd9thj3jf.webp",
+            "status": "DRAFT",
+            "visibility": "PRIVATE",
+            "slug": "cv-backend-developer-intern-le-duc-huy",
+            "createdAt": "2026-04-08T15:40:37.727Z",
+            "updatedAt": "2026-04-08T17:05:23.219Z"
+        }
+    ],
+    "date": "11:12:27 21/4/2026",
+    "path": "/api/v1/cvs/me?limit=8&page=1"
+}
             if (!res?.success) {
                 const message =
                     res?.message ||
@@ -620,7 +647,9 @@ function TrashCvs() {
                                     type="button"
                                     className={cx('pageBtn', 'navBtn')}
                                     onClick={handleNextPage}
-                                    disabled={currentPage === totalPages || loading}
+                                    disabled={
+                                        currentPage === totalPages || loading
+                                    }
                                 >
                                     <FiChevronRight />
                                 </button>
@@ -631,72 +660,82 @@ function TrashCvs() {
             </div>
 
             <Modal
-    isOpen={!!restoreItem}
-    onClose={closeRestoreModal}
-    title="Xác nhận khôi phục CV"
-    footer={restoreFooter}
-    size="sm"
->
+                isOpen={!!restoreItem}
+                onClose={closeRestoreModal}
+                title="Xác nhận khôi phục CV"
+                footer={restoreFooter}
+                size="sm"
+            >
                 <div className={cx('modalBody')}>
-                    <div className={cx('restoreIcon')}>
-                        <FiRotateCcw />
+                    <div className={cx('confirmHeader')}>
+                        <div className={cx('restoreIcon')}>
+                            <FiRotateCcw />
+                        </div>
+
+                        <strong className={cx('confirmTitle')}>
+                            {restoreItem?.name}
+                        </strong>
                     </div>
 
                     <div className={cx('confirmBox')}>
-    <strong className={cx('confirmName')}>
-        {restoreItem?.name}
-    </strong>
+                        <p className={cx('confirmText')}>
+                            Để xác nhận, hãy nhập đúng tên{' '}
+                            <strong>{restoreItem?.name}</strong>
+                        </p>
 
-    <p className={cx('confirmText')}>
-        Để khôi phục CV này, vui lòng nhập đúng tên CV.
-    </p>
-
-    <input
-        type="text"
-        className={cx('confirmInput')}
-        value={confirmName}
-        onChange={(event) =>
-            setConfirmName(event.target.value)
-        }
-        placeholder="Nhập tên CV..."
-        autoFocus
-    />
-</div>
+                        <input
+                            type="text"
+                            className={cx('confirmInput')}
+                            value={confirmName}
+                            onChange={(event) =>
+                                setConfirmName(event.target.value)
+                            }
+                            placeholder={getConfirmPlaceholder(
+                                restoreItem?.name,
+                            )}
+                            autoFocus
+                        />
+                    </div>
                 </div>
             </Modal>
 
             <Modal
-    isOpen={!!deleteForeverItem}
-    onClose={closeDeleteForeverModal}
-    title="Xóa vĩnh viễn CV"
-    footer={modalFooter}
-    size="sm"
->
+                isOpen={!!deleteForeverItem}
+                onClose={closeDeleteForeverModal}
+                title="Xóa vĩnh viễn CV"
+                footer={modalFooter}
+                size="sm"
+            >
                 <div className={cx('modalBody')}>
-                    <div className={cx('warningIcon')}>
-                        <FiTrash2 />
+                    <div className={cx('confirmHeader')}>
+                        <div className={cx('warningIcon')}>
+                            <FiTrash2 />
+                        </div>
+
+                        <strong className={cx('confirmTitle')}>
+                            {deleteForeverItem?.name}
+                        </strong>
                     </div>
 
                     <div className={cx('confirmBox')}>
-    <strong className={cx('confirmName')}>
-        {deleteForeverItem?.name}
-    </strong>
+                        <p className={cx('confirmText')}>
+                            Để xác nhận, hãy nhập đúng tên{' '}
+                            <strong>{deleteForeverItem?.name}</strong>
+                        </p>
 
-    <p className={cx('confirmText')}>
-        Để xóa vĩnh viễn CV này, vui lòng nhập đúng tên CV.
-    </p>
-
-    <input
-        type="text"
-        className={cx('confirmInput')}
-        value={confirmName}
-        onChange={(event) =>
-            setConfirmName(event.target.value)
-        }
-        placeholder="Nhập tên CV..."
-        autoFocus
-    />
-</div>
+                        <input
+                            type="text"
+                            className={cx('confirmInput')}
+                            value={confirmName}
+                            onChange={(event) =>
+                                setConfirmName(event.target.value)
+                            }
+                            placeholder={getConfirmPlaceholder(
+                                deleteForeverItem?.name,
+                            )}
+                            autoFocus
+                        />
+                    </div>
                 </div>
             </Modal>
         </>
