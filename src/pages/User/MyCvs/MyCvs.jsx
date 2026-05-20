@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fi';
 import { LuFileText } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Button from '~/components/Button';
 import Modal from '~/components/Modal';
@@ -26,6 +26,16 @@ const cx = classNames.bind(styles);
 
 const PAGE_SIZE = 4;
 const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'Sửa gần đây', 'A -> Z', 'Z -> A'];
+
+const getValidPage = (value) => {
+    const page = Number(value);
+
+    if (!Number.isInteger(page) || page < 1) {
+        return 1;
+    }
+
+    return page;
+};
 
 const getSortParam = (value) => {
     if (value === 'Cũ nhất') {
@@ -91,11 +101,14 @@ const mapCvItem = (cv) => ({
 
 function MyCvs() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const pageFromUrl = getValidPage(searchParams.get('page'));
 
     const [keyword, setKeyword] = useState('');
     const debouncedKeyword = useDebounce(keyword, 500);
 
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(pageFromUrl);
     const [sortValue, setSortValue] = useState('Mới nhất');
     const [isOpenSort, setIsOpenSort] = useState(false);
     const [deleteItem, setDeleteItem] = useState(null);
@@ -110,6 +123,23 @@ function MyCvs() {
 
     const sortRef = useRef(null);
 
+    const updatePage = (page, options = {}) => {
+        const nextPage = getValidPage(page);
+
+        setCurrentPage(nextPage);
+
+        setSearchParams(
+            (prevParams) => {
+                const nextParams = new URLSearchParams(prevParams);
+                nextParams.set('page', nextPage.toString());
+                return nextParams;
+            },
+            {
+                replace: Boolean(options.replace),
+            },
+        );
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (sortRef.current && !sortRef.current.contains(event.target)) {
@@ -123,6 +153,19 @@ function MyCvs() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    useEffect(() => {
+        if (!searchParams.get('page')) {
+            updatePage(1, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (pageFromUrl !== currentPage) {
+            setCurrentPage(pageFromUrl);
+        }
+    }, [pageFromUrl, currentPage]);
 
     const fetchMyCvs = async ({
         page = currentPage,
@@ -149,11 +192,12 @@ function MyCvs() {
                 sort_by: sortParams.sort_by,
                 sort_order: sortParams.sort_order,
             });
-            
-            
+
             if (!res?.success) {
                 const message =
-                    res?.message || res?.messsage || 'Không tải được danh sách CV';
+                    res?.message ||
+                    res?.messsage ||
+                    'Không tải được danh sách CV';
 
                 setCvList([]);
                 setTotalItems(0);
@@ -195,7 +239,8 @@ function MyCvs() {
     };
 
     useEffect(() => {
-        setCurrentPage(1);
+        updatePage(1, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedKeyword]);
 
     useEffect(() => {
@@ -205,10 +250,18 @@ function MyCvs() {
             sort: sortValue,
             silent: debouncedKeyword.trim().length > 0,
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, sortValue, debouncedKeyword]);
 
     const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
     const currentList = cvList;
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            updatePage(totalPages, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, totalPages]);
 
     const isEmpty = !loading && !errorMessage && currentList.length === 0;
     const isSearchingEmpty = isEmpty && debouncedKeyword.trim().length > 0;
@@ -234,7 +287,7 @@ function MyCvs() {
     };
 
     const handleConfirmDelete = async () => {
-        if (!deleteItem) return;
+        if (!deleteItem || isConfirm) return;
 
         setIsConfirm(true);
 
@@ -255,7 +308,7 @@ function MyCvs() {
                     : currentPage;
 
             if (nextPage !== currentPage) {
-                setCurrentPage(nextPage);
+                updatePage(nextPage, { replace: true });
             } else {
                 await fetchMyCvs({
                     page: nextPage,
@@ -266,7 +319,7 @@ function MyCvs() {
             }
         } catch {
             toast.error('Có lỗi xảy ra khi xóa CV');
-        }finally {
+        } finally {
             setIsConfirm(false);
         }
     };
@@ -277,12 +330,12 @@ function MyCvs() {
 
     const handlePrevPage = () => {
         if (currentPage === 1) return;
-        setCurrentPage((prev) => prev - 1);
+        updatePage(currentPage - 1);
     };
 
     const handleNextPage = () => {
         if (currentPage === totalPages) return;
-        setCurrentPage((prev) => prev + 1);
+        updatePage(currentPage + 1);
     };
 
     const renderPageNumbers = () => {
@@ -316,7 +369,7 @@ function MyCvs() {
                     className={cx('pageBtn', {
                         active: currentPage === page,
                     })}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => updatePage(page)}
                     disabled={loading}
                 >
                     {page}
@@ -330,7 +383,12 @@ function MyCvs() {
             <Button
                 type="button"
                 className={cx('modalCancelBtn')}
-                onClick={() => setDeleteItem(null)}
+                onClick={() => {
+                    if (!isConfirm) {
+                        setDeleteItem(null);
+                    }
+                }}
+                disabled={isConfirm}
             >
                 Hủy
             </Button>
@@ -338,11 +396,11 @@ function MyCvs() {
             <Button
                 primary
                 type="button"
-                disabled={isConfirm} 
+                disabled={isConfirm}
                 className={cx('modalDeleteBtn')}
                 onClick={handleConfirmDelete}
             >
-                Xóa CV
+                {isConfirm ? 'Đang xóa...' : 'Xóa CV'}
             </Button>
         </div>
     );
@@ -410,7 +468,7 @@ function MyCvs() {
                                         })}
                                         onClick={() => {
                                             setSortValue(item);
-                                            setCurrentPage(1);
+                                            updatePage(1, { replace: true });
                                             setIsOpenSort(false);
                                         }}
                                     >
@@ -552,7 +610,11 @@ function MyCvs() {
 
             <Modal
                 isOpen={!!deleteItem}
-                onClose={() => setDeleteItem(null)}
+                onClose={() => {
+                    if (!isConfirm) {
+                        setDeleteItem(null);
+                    }
+                }}
                 title="Xác nhận xóa CV"
                 description={
                     deleteItem

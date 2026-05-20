@@ -18,11 +18,16 @@ function CardItemCV({
     disableLink = false,
 }) {
     const isTrashMode =
-        typeof onRestore === 'function' || typeof onDeleteForever === 'function';
+        typeof onRestore === 'function' ||
+        typeof onDeleteForever === 'function';
+
     const editKey = data?.slug || data?.id || '';
-    const editPath = !disableLink && editKey
-        ? config.router.editCv.replace(':slug', editKey)
-        : '';
+
+    const editPath =
+        !disableLink && editKey
+            ? config.router.editCv.replace(':slug', editKey)
+            : '';
+
     const timeLabel = isTrashMode
         ? `Đã xóa ${data?.deletedAt || ''}`
         : data?.updatedAt;
@@ -30,18 +35,21 @@ function CardItemCV({
     const handleDelete = (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         onDelete?.(data);
     };
 
     const handleRestore = (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         onRestore?.(data);
     };
 
     const handleDeleteForever = (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         onDeleteForever?.(data);
     };
 
@@ -52,7 +60,7 @@ function CardItemCV({
                 alt={data?.name || 'CV preview'}
                 className={cx('preview')}
                 rounded="none"
-                fit="cover"
+                fit="contain"
             />
         </div>
     );

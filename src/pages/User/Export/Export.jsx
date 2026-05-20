@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import {
     FiChevronDown,
@@ -141,6 +142,7 @@ function normalizeApiData(result) {
         rawData?.count ||
         rawData?.pagination?.total ||
         rawData?.meta?.total ||
+        rawData?.meta?.total_items ||
         items.length;
 
     return {
@@ -149,11 +151,24 @@ function normalizeApiData(result) {
     };
 }
 
+function getValidPage(value) {
+    const page = Number(value);
+
+    if (!Number.isInteger(page) || page < 1) {
+        return 1;
+    }
+
+    return page;
+}
+
 function Export() {
     const sortRef = useRef(null);
 
+    const [searchParams, setSearchParams] = useSearchParams();
+    const pageFromUrl = getValidPage(searchParams.get('page'));
+
     const [exportList, setExportList] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(pageFromUrl);
     const [totalItems, setTotalItems] = useState(0);
     const [searchValue, setSearchValue] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -179,14 +194,46 @@ function Export() {
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
     const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
+    const updatePage = useCallback(
+        (page, options = {}) => {
+            const nextPage = getValidPage(page);
+
+            setCurrentPage(nextPage);
+
+            setSearchParams(
+                (prevParams) => {
+                    const nextParams = new URLSearchParams(prevParams);
+                    nextParams.set('page', nextPage.toString());
+                    return nextParams;
+                },
+                {
+                    replace: Boolean(options.replace),
+                },
+            );
+        },
+        [setSearchParams],
+    );
+
+    useEffect(() => {
+        if (!searchParams.get('page')) {
+            updatePage(1, { replace: true });
+        }
+    }, [searchParams, updatePage]);
+
+    useEffect(() => {
+        if (pageFromUrl !== currentPage) {
+            setCurrentPage(pageFromUrl);
+        }
+    }, [pageFromUrl, currentPage]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchValue.trim());
-            setCurrentPage(1);
+            updatePage(1, { replace: true });
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [searchValue]);
+    }, [searchValue, updatePage]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -253,9 +300,9 @@ function Export() {
 
     useEffect(() => {
         if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
+            updatePage(totalPages, { replace: true });
         }
-    }, [currentPage, totalPages]);
+    }, [currentPage, totalPages, updatePage]);
 
     const handleDownload = useCallback(async (item) => {
         if (!item?.id) {
@@ -294,19 +341,22 @@ function Export() {
         }
     }, []);
 
-    const handleSelectSort = useCallback((value) => {
-        setSortType(value);
-        setCurrentPage(1);
-        setShowSortMenu(false);
-    }, []);
+    const handleSelectSort = useCallback(
+        (value) => {
+            setSortType(value);
+            updatePage(1, { replace: true });
+            setShowSortMenu(false);
+        },
+        [updatePage],
+    );
 
     const handlePrevPage = useCallback(() => {
-        setCurrentPage((prev) => Math.max(1, prev - 1));
-    }, []);
+        updatePage(currentPage - 1);
+    }, [currentPage, updatePage]);
 
     const handleNextPage = useCallback(() => {
-        setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-    }, [totalPages]);
+        updatePage(Math.min(totalPages, currentPage + 1));
+    }, [currentPage, totalPages, updatePage]);
 
     const renderPageNumbers = () => {
         const pages = [];
@@ -339,7 +389,7 @@ function Export() {
                     className={cx('pageBtn', {
                         active: currentPage === page,
                     })}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => updatePage(page)}
                     disabled={loading}
                 >
                     {page}
