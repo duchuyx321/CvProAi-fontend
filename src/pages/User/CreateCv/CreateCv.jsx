@@ -141,8 +141,6 @@ function CreateCv() {
                     );
                 }
 
-                toast.success('Tạo CV thành công');
-
                 navigate(
                     config.router.editCv.replace(':slug', response?.data?.slug),
                     {
@@ -150,8 +148,9 @@ function CreateCv() {
                     },
                 );
             } catch (error) {
-                console.log(error);
-                toast.error(error?.message || 'Lỗi lưu CV');
+                throw new Error(
+                    error?.message || 'Tạo CV thất bại, vui lòng thử lại',
+                );
             } finally {
                 setSubmitting(false);
             }
@@ -175,7 +174,23 @@ function CreateCv() {
             return;
         }
 
-        await submitCreateCv(currentName);
+        const createCvPromise = submitCreateCv(currentName);
+        await toast.promise(createCvPromise, {
+            pending: 'Đang tạo cv...',
+            success: {
+                render() {
+                    return 'Tạo Cv Thành Công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
     }, [cvData?.name, isDirty, submitCreateCv, submitting]);
 
     const handleCloseNameModal = useCallback(() => {

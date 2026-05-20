@@ -40,8 +40,8 @@ const MAIN_MENU = [
 
 const ACCOUNT_MENU = [
     {
-        title: 'Nâng cấp Premium',
-        to: config.router.upgradePremium,
+        title: 'Nâng cấp tài khoản',
+        to: config.router.upgradeAccount,
         Icon: FiAward,
         isGold: true,
     },
