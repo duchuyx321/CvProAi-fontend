@@ -12,13 +12,13 @@
 .modal {
     width: 100%;
     max-height: calc(100vh - 48px);
-    display: flex;
-    flex-direction: column;
     background-color: #fff;
     border-radius: 16px;
-    overflow: hidden;
+    // overflow: hidden;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
     animation: modalFadeIn 0.2s ease;
+    position: relative;
+    padding: 8px;
 }
 
 .size-sm {
@@ -43,11 +43,8 @@
 }
 
 .header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
     gap: 16px;
-    padding: 18px 20px;
+    padding: 20px 20px 8px;
     border-bottom: 1px solid #e5e7eb;
 }
 
@@ -74,20 +71,22 @@
 }
 
 .closeButton {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     min-width: 36px;
     width: 36px;
     height: 36px;
     border: none;
-    border-radius: 8px;
-    background-color: #f3f4f6;
+    border-radius: 50%;
+    background-color: #f5cfae;
     color: #111827;
     font-size: 2rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
-
+    position: absolute;
+    right: -10px;
+    top: -10px;
     &:hover {
         background-color: #e5e7eb;
     }
@@ -111,7 +110,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: 12px;
-    padding: 16px 20px;
+    padding: 4px;
     // border-top: 1px solid #e5e7eb;
     background-color: #fff;
 }

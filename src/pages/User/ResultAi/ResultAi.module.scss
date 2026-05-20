@@ -4,6 +4,16 @@
     padding: 14px 20px 56px;
     background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
+.actions {
+    & > .cancelBtn {
+        background: #f9a3a3;
+    }
+}
+.modalAction {
+    &:nth-child(2) {
+        padding: 0;
+    }
+}
 
 .pageShell {
     width: 100%;
@@ -751,10 +761,13 @@
     &:hover {
         transform: translateY(-5px); /* Hiệu ứng nảy lên khi di chuột */
         box-shadow: 0 15px 30px rgba(79, 70, 229, 0.5) !important;
-        background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
+        background: linear-gradient(
+            135deg,
+            #4338ca 0%,
+            #3730a3 100%
+        ) !important;
     }
 }
-
 
 @media (max-width: 720px) {
     .wrapper {
@@ -771,11 +784,11 @@
         align-items: flex-start;
     }
 
-     .floatingAction {
+    .floatingAction {
         bottom: 24px;
         right: 20px;
     }
-    
+
     .floatingBtn {
         height: 50px !important;
         padding: 0 20px !important;

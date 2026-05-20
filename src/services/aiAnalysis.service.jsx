@@ -46,3 +46,19 @@ export const getAiAnalysisResultByRunId = async (aiRunId) => {
         return { ...data, status };
     }
 };
+
+export const rewriteProposals = async (aiRunId) => {
+    if (!aiRunId) {
+        throw new Error('Thiếu dữ liệu aiRun');
+    }
+    try {
+        const reusult = await Response.POST(
+            `ai-analysis/rewrite-proposals/${aiRunId}`,
+        );
+        return reusult;
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};

@@ -7,7 +7,10 @@ import { toast } from 'react-toastify';
 import Button from '~/components/Button';
 import { config } from '~/config';
 import { useAuth } from '~/context/AuthContext';
-import { getAiAnalysisResultByRunId } from '~/services/aiAnalysis.service';
+import {
+    getAiAnalysisResultByRunId,
+    rewriteProposals,
+} from '~/services/aiAnalysis.service';
 
 import { normalizeAiResult, normalizeTier } from './utils';
 import {
@@ -20,6 +23,7 @@ import {
     UpsellCard,
 } from './ResultComponents';
 import styles from './ResultAi.module.scss';
+import Modal from '~/components/Modal';
 
 const cx = classNames.bind(styles);
 const FREE_VISIBLE_COUNT = 2;
@@ -47,6 +51,7 @@ function ResultAiPremium() {
         () => Boolean(aiRunId) && !statePayload,
     );
     const [errorMessage, setErrorMessage] = useState('');
+    const [isOpenModel, setIsOpenModel] = useState(false);
 
     const loadResult = useCallback(
         async (runId, { silent = false, activeRef } = {}) => {
@@ -150,43 +155,10 @@ function ResultAiPremium() {
         const isStatePremium = normalizeTier(tierFromState) === 'premium';
         const isResultPremium = normalizeTier(aiResult?.tier) === 'premium';
 
-        return isUserPremium || isStatePremium || isResultPremium ? 'premium' : 'free';
+        return isUserPremium || isStatePremium || isResultPremium
+            ? 'premium'
+            : 'free';
     }, [location?.state, user, aiResult?.tier]);
-
-    const cvId = useMemo(() => {
-        const state = location?.state ?? {};
-        return (
-            state?.cvId ??
-            state?.selectedCV?.id ??
-            state?.cv?.id ??
-            state?.cv?.cvId ??
-            null
-        );
-    }, [location?.state]);
-
-    const editCvHref = useMemo(() => {
-        const editRoute =
-            config?.router?.editCv || config?.router?.cvEdit || '/edit-cv';
-
-        if (cvId != null && String(cvId).trim() !== '') {
-            if (editRoute.includes(':slug')) {
-                return editRoute.replace(':slug', String(cvId));
-            }
-            return `${editRoute}/${cvId}`;
-        }
-
-        return editRoute.replace('/:slug', '');
-    }, [cvId]);
-
-    const editCvState = useMemo(
-        () => ({
-            from: 'ai-analysis-result',
-            aiRunId: aiRunId ?? aiResult?.aiRunId ?? null,
-            aiResult,
-            cvId: cvId ?? null,
-        }),
-        [aiRunId, aiResult, cvId],
-    );
 
     const isPremium = resolvedTier === 'premium';
     const strengths = useMemo(
@@ -295,7 +267,62 @@ function ResultAiPremium() {
         hiddenWeaknessCount +
         hiddenSuggestionCount +
         hiddenStructuredCount;
+    const handleConfimConvertCv = async () => {
+        const writeAiPromise = fetchApiWriteAiResult(aiRunId);
+        await toast.promise(writeAiPromise, {
+            pending: 'Đang phân tích gợi ý CV...',
+            success: {
+                render() {
+                    return 'Gợi ý CV thành công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    setIsOpenModel(false);
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
+    };
+    const handleOptimization = async () => {
+        const isConverted = aiResult?.isConverted ?? false;
+        if (!isConverted) {
+            setIsOpenModel(true);
+            return;
+        }
+        const writeAiPromise = fetchApiWriteAiResult(aiRunId.id);
+        await toast.promise(writeAiPromise, {
+            pending: 'Đang phân tích gợi ý CV...',
+            success: {
+                render() {
+                    return 'Gợi ý CV thành công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    setIsOpenModel(false);
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
+    };
+    const fetchApiWriteAiResult = async (aiRunId) => {
+        const result = await rewriteProposals(aiRunId);
+        if (!result?.success) {
+            throw new Error(
+                result?.message ||
+                    'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.',
+            );
+        }
 
+        console.log(result);
+    };
     return (
         <div className={cx('wrapper')}>
             <div className={cx('pageShell')}>
@@ -357,14 +384,20 @@ function ResultAiPremium() {
                         />
 
                         <StructuredFeedbackSection
-                            visibleStructuredFeedback={visibleStructuredFeedback}
-                            structuredFeedbackEntries={structuredFeedbackEntries}
+                            visibleStructuredFeedback={
+                                visibleStructuredFeedback
+                            }
+                            structuredFeedbackEntries={
+                                structuredFeedbackEntries
+                            }
                             hiddenStructuredCount={hiddenStructuredCount}
                             isPremium={isPremium}
                         />
 
                         {!isPremium ? (
-                            <UpsellCard hiddenInsightCount={hiddenInsightCount} />
+                            <UpsellCard
+                                hiddenInsightCount={hiddenInsightCount}
+                            />
                         ) : null}
                     </div>
                 ) : (
@@ -384,14 +417,41 @@ function ResultAiPremium() {
                     </div>
                 )}
             </div>
-
+            <Modal
+                isOpen={isOpenModel}
+                onClose={() => setIsOpenModel(false)}
+                title="Chuyển CV đã tải lên thành CV trong hệ thống?"
+                description="Hệ thống sẽ tạo một bản CV có thể chỉnh sửa từ file bạn đã tải lên. Sau khi chuyển đổi, bạn có thể chỉnh sửa nội dung, áp dụng mẫu CV và xuất PDF. CV gốc vẫn được giữ nguyên."
+                size="sm"
+                className={cx('modalAction')}
+                footer={
+                    <div className={cx('actions')}>
+                        <Button
+                            primary
+                            type="button"
+                            onClick={() => setIsOpenModel(false)}
+                            className={cx('confimBtn', 'cancelBtn')}
+                        >
+                            Không, để sau
+                        </Button>
+                        <Button
+                            primary
+                            type="button"
+                            onClick={() => handleConfimConvertCv()}
+                            className={cx('confimBtn')}
+                        >
+                            Có, chuyển đổi
+                        </Button>
+                    </div>
+                }
+            />
             {aiResult ? (
                 <div className={cx('floatingAction')}>
                     <Button
-                        to={editCvHref}
-                        state={editCvState}
+                        type="button"
                         className={cx('floatingBtn')}
                         primary
+                        onClick={() => handleOptimization()}
                         leftIcon={<FiZap />}
                     >
                         Tối ưu CV ngay
