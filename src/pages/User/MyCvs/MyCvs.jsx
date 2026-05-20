@@ -105,6 +105,7 @@ function MyCvs() {
     const [loading, setLoading] = useState(false);
     const [firstLoading, setFirstLoading] = useState(true);
     const [searching, setSearching] = useState(false);
+    const [isConfirm, setIsConfirm] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const sortRef = useRef(null);
@@ -148,7 +149,8 @@ function MyCvs() {
                 sort_by: sortParams.sort_by,
                 sort_order: sortParams.sort_order,
             });
-        
+            
+            
             if (!res?.success) {
                 const message =
                     res?.message || res?.messsage || 'Không tải được danh sách CV';
@@ -234,6 +236,8 @@ function MyCvs() {
     const handleConfirmDelete = async () => {
         if (!deleteItem) return;
 
+        setIsConfirm(true);
+
         try {
             const res = await softDeleteMyCv(deleteItem.id);
 
@@ -262,6 +266,8 @@ function MyCvs() {
             }
         } catch {
             toast.error('Có lỗi xảy ra khi xóa CV');
+        }finally {
+            setIsConfirm(false);
         }
     };
 
@@ -332,6 +338,7 @@ function MyCvs() {
             <Button
                 primary
                 type="button"
+                disabled={isConfirm} 
                 className={cx('modalDeleteBtn')}
                 onClick={handleConfirmDelete}
             >

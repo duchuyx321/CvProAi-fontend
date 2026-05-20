@@ -81,7 +81,7 @@ const normalizeText = (value = '') => {
 const getConfirmPlaceholder = (name) => {
     if (!name) return 'Nhập tên CV...';
 
-    return `Nhập "${name}"`;
+    return `Nhập tên CV...`;
 };
 
 const mapTrashItem = (cv) => ({
@@ -114,6 +114,8 @@ function TrashCvs() {
     const [restoreItem, setRestoreItem] = useState(null);
     const [deleteForeverItem, setDeleteForeverItem] = useState(null);
     const [confirmName, setConfirmName] = useState('');
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [isDeletingForever, setIsDeletingForever] = useState(false);
 
     const sortRef = useRef(null);
 
@@ -156,6 +158,7 @@ function TrashCvs() {
                 sort_by: sortParams.sort_by,
                 sort_order: sortParams.sort_order,
             });
+
             if (!res?.success) {
                 const message =
                     res?.message ||
@@ -233,14 +236,18 @@ function TrashCvs() {
         normalizeText(confirmName) === normalizeText(deleteForeverItem.name);
 
     const closeRestoreModal = () => {
-        setRestoreItem(null);
-        setConfirmName('');
+    if (isRestoring) return;
+
+    setRestoreItem(null);
+    setConfirmName('');
     };
 
     const closeDeleteForeverModal = () => {
-        setDeleteForeverItem(null);
-        setConfirmName('');
-    };
+    if (isDeletingForever) return;
+
+    setDeleteForeverItem(null);
+    setConfirmName('');
+};
 
     const handleSearch = (event) => {
         setKeyword(event.target.value);
@@ -252,45 +259,50 @@ function TrashCvs() {
     };
 
     const handleConfirmRestore = async () => {
-        if (!restoreItem) return;
+    if (!restoreItem || isRestoring) return;
 
-        if (!isRestoreConfirmValid) {
-            toast.error('Vui lòng nhập đúng tên CV để khôi phục');
+    if (!isRestoreConfirmValid) {
+        toast.error('Vui lòng nhập đúng tên CV để khôi phục');
+        return;
+    }
+
+    setIsRestoring(true);
+
+    try {
+        const res = await restoreMyCv(restoreItem.id);
+
+        if (!res?.success) {
+            toast.error(
+                res?.message || res?.messsage || 'Khôi phục CV thất bại',
+            );
             return;
         }
 
-        try {
-            const res = await restoreMyCv(restoreItem.id);
+        toast.success(`Đã khôi phục "${restoreItem.name}"`);
+        setRestoreItem(null);
+        setConfirmName('');
 
-            if (!res?.success) {
-                toast.error(
-                    res?.message || res?.messsage || 'Khôi phục CV thất bại',
-                );
-                return;
-            }
+        const nextPage =
+            currentList.length === 1 && currentPage > 1
+                ? currentPage - 1
+                : currentPage;
 
-            toast.success(`Đã khôi phục "${restoreItem.name}"`);
-            closeRestoreModal();
-
-            const nextPage =
-                currentList.length === 1 && currentPage > 1
-                    ? currentPage - 1
-                    : currentPage;
-
-            if (nextPage !== currentPage) {
-                setCurrentPage(nextPage);
-            } else {
-                await fetchTrashCvs({
-                    page: nextPage,
-                    keywordValue: debouncedKeyword,
-                    sort: sortValue,
-                    silent: true,
-                });
-            }
-        } catch {
-            toast.error('Có lỗi xảy ra khi khôi phục CV');
+        if (nextPage !== currentPage) {
+            setCurrentPage(nextPage);
+        } else {
+            await fetchTrashCvs({
+                page: nextPage,
+                keywordValue: debouncedKeyword,
+                sort: sortValue,
+                silent: true,
+            });
         }
-    };
+    } catch {
+        toast.error('Có lỗi xảy ra khi khôi phục CV');
+    } finally {
+        setIsRestoring(false);
+    }
+};
 
     const handleAskDeleteForever = (cv) => {
         setConfirmName('');
@@ -298,45 +310,50 @@ function TrashCvs() {
     };
 
     const handleConfirmDeleteForever = async () => {
-        if (!deleteForeverItem) return;
+    if (!deleteForeverItem || isDeletingForever) return;
 
-        if (!isDeleteForeverConfirmValid) {
-            toast.error('Vui lòng nhập đúng tên CV để xóa vĩnh viễn');
+    if (!isDeleteForeverConfirmValid) {
+        toast.error('Vui lòng nhập đúng tên CV để xóa vĩnh viễn');
+        return;
+    }
+
+    setIsDeletingForever(true);
+
+    try {
+        const res = await forceDeleteMyCv(deleteForeverItem.id);
+
+        if (!res?.success) {
+            toast.error(
+                res?.message || res?.messsage || 'Xóa vĩnh viễn thất bại',
+            );
             return;
         }
 
-        try {
-            const res = await forceDeleteMyCv(deleteForeverItem.id);
+        toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
+        setDeleteForeverItem(null);
+        setConfirmName('');
 
-            if (!res?.success) {
-                toast.error(
-                    res?.message || res?.messsage || 'Xóa vĩnh viễn thất bại',
-                );
-                return;
-            }
+        const nextPage =
+            currentList.length === 1 && currentPage > 1
+                ? currentPage - 1
+                : currentPage;
 
-            toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
-            closeDeleteForeverModal();
-
-            const nextPage =
-                currentList.length === 1 && currentPage > 1
-                    ? currentPage - 1
-                    : currentPage;
-
-            if (nextPage !== currentPage) {
-                setCurrentPage(nextPage);
-            } else {
-                await fetchTrashCvs({
-                    page: nextPage,
-                    keywordValue: debouncedKeyword,
-                    sort: sortValue,
-                    silent: true,
-                });
-            }
-        } catch {
-            toast.error('Có lỗi xảy ra khi xóa vĩnh viễn CV');
+        if (nextPage !== currentPage) {
+            setCurrentPage(nextPage);
+        } else {
+            await fetchTrashCvs({
+                page: nextPage,
+                keywordValue: debouncedKeyword,
+                sort: sortValue,
+                silent: true,
+            });
         }
-    };
+    } catch {
+        toast.error('Có lỗi xảy ra khi xóa vĩnh viễn CV');
+    } finally {
+        setIsDeletingForever(false);
+    }
+};
 
     const handlePrevPage = () => {
         if (currentPage === 1) return;
@@ -399,14 +416,14 @@ function TrashCvs() {
             </Button>
 
             <Button
-                primary
-                type="button"
-                className={cx('modalRestoreBtn')}
-                onClick={handleConfirmRestore}
-                disabled={!isRestoreConfirmValid}
-            >
-                Khôi phục
-            </Button>
+    primary
+    type="button"
+    className={cx('modalRestoreBtn')}
+    onClick={handleConfirmRestore}
+    disabled={!isRestoreConfirmValid || isRestoring}
+>
+    {isRestoring ? 'Đang khôi phục...' : 'Khôi phục'}
+</Button>   
         </div>
     );
 
@@ -421,14 +438,14 @@ function TrashCvs() {
             </Button>
 
             <Button
-                primary
-                type="button"
-                className={cx('modalDeleteBtn')}
-                onClick={handleConfirmDeleteForever}
-                disabled={!isDeleteForeverConfirmValid}
-            >
-                Xóa vĩnh viễn
-            </Button>
+    primary
+    type="button"
+    className={cx('modalDeleteBtn')}
+    onClick={handleConfirmDeleteForever}
+    disabled={!isDeleteForeverConfirmValid || isDeletingForever}
+>
+    {isDeletingForever ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+</Button>
         </div>
     );
 
@@ -659,9 +676,8 @@ function TrashCvs() {
                     <div className={cx('confirmBox')}>
                         <p className={cx('confirmText')}>
                             Để xác nhận, hãy nhập đúng tên{' '}
-                            <strong>{restoreItem?.name}</strong>
+                            <strong>"{restoreItem?.name}"</strong>
                         </p>
-
                         <input
                             type="text"
                             className={cx('confirmInput')}
@@ -672,6 +688,7 @@ function TrashCvs() {
                             placeholder={getConfirmPlaceholder(
                                 restoreItem?.name,
                             )}
+                            disabled={isRestoring}
                             autoFocus
                         />
                     </div>
@@ -699,7 +716,7 @@ function TrashCvs() {
                     <div className={cx('confirmBox')}>
                         <p className={cx('confirmText')}>
                             Để xác nhận, hãy nhập đúng tên{' '}
-                            <strong>{deleteForeverItem?.name}</strong>
+                            <strong>"{deleteForeverItem?.name}"</strong>
                         </p>
 
                         <input
@@ -712,6 +729,7 @@ function TrashCvs() {
                             placeholder={getConfirmPlaceholder(
                                 deleteForeverItem?.name,
                             )}
+                            disabled={isDeletingForever}
                             autoFocus
                         />
                     </div>
