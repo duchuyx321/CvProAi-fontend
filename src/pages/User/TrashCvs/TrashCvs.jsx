@@ -28,7 +28,7 @@ import styles from './TrashCvs.module.scss';
 
 const cx = classNames.bind(styles);
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 8;
 const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'A -> Z', 'Z -> A'];
 
 const getValidPage = (value) => {
