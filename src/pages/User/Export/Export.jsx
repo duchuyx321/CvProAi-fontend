@@ -19,31 +19,31 @@ import styles from './Export.module.scss';
 
 const cx = classNames.bind(styles);
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 8;
 
 const SORT_OPTIONS = [
     {
         value: 'newest',
         label: 'Mới nhất',
-        sort_by: 'created_at',
+        sort_by: 'createdAt',
         sort_order: 'DESC',
     },
     {
         value: 'oldest',
         label: 'Cũ nhất',
-        sort_by: 'created_at',
+        sort_by: 'createdAt',
         sort_order: 'ASC',
     },
     {
         value: 'az',
         label: 'Từ A-Z',
-        sort_by: 'file_name',
+        sort_by: 'fileName',
         sort_order: 'ASC',
     },
     {
         value: 'za',
         label: 'Từ Z-A',
-        sort_by: 'file_name',
+        sort_by: 'fileName',
         sort_order: 'DESC',
     },
 ];
