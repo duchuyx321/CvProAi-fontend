@@ -15,6 +15,7 @@ import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
 import Export from '~/pages/User/Export';
 import MyCvs from '~/pages/User/MyCvs';
+import TrashCvs from '~/pages/User/TrashCvs';
 import AiAnalysis from '~/pages/User/AiAnalysis';
 import ResultAi from '~/pages/User/ResultAi';
 import ManageUsers from '~/pages/Admin/ManageUsers';
@@ -39,6 +40,7 @@ import AdminOrders from '~/pages/Admin/AdminOrders';
 import UserDetailInfo from '~/pages/Admin/ManageUsers/components/UserDetailInfo';
 import ManageTemplateDetail from '~/pages/Admin/ManageTemplateDetail';
 import CvAnalysisHistory from '~/pages/User/CvAnalysisHistory';
+import UpgradeAccount from '~/pages/User/UpgradeAccount';
 
 // public router
 const PublicRouter = [
@@ -135,6 +137,10 @@ const UserRouter = [
     {
         path: config.router.export,
         component: Export,
+    },
+    {
+        path: config.router.trashCvs,
+        component: TrashCvs,
         layout: DefaultLayout,
     },
     {
@@ -148,8 +154,8 @@ const UserRouter = [
         layout: DetailLayout,
     },
     {
-        path: config.router.upgradePremium,
-        component: Pricing,
+        path: config.router.upgradeAccount,
+        component: UpgradeAccount,
         layout: DefaultLayout,
     },
     {

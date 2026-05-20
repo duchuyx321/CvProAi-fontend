@@ -21,11 +21,11 @@ const MENU_OTHER = [
         content: 'Google',
         icon: <FcGoogle />,
     },
-    {
-        key: 'facebook',
-        content: 'Facebook',
-        icon: <FaFacebook className={cx('fb-icon')} />,
-    },
+    // {
+    //     key: 'facebook',
+    //     content: 'Facebook',
+    //     icon: <FaFacebook className={cx('fb-icon')} />,
+    // },
 ];
 
 function MenuOther({ text = 'Hoặc tiếp tục với' }) {

@@ -297,7 +297,7 @@ function UpgradeOptionsPage() {
                             <span>Add-on AI</span>
                             <strong>
                                 {selectedPlan
-                                    ? `${formatCurrency(selectedPlan.addon?.price)} (${getAddOnRuns(selectedPlan.addon?.runs)} lượt)`
+                                    ? `${formatCurrency(selectedPlan.addon?.price)}`
                                     : '0 đ'}
                             </strong>
                         </div>
