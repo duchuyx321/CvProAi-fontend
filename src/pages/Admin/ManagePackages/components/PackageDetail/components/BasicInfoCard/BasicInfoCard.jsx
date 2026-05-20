@@ -1,7 +1,6 @@
 import classNames from 'classnames/bind';
-import { useState } from 'react';
 import { MdInfoOutline, MdKeyboardArrowDown } from 'react-icons/md';
-import { formatNumberInput } from '../../../../managePackages.utils';
+import PriceInput from '../../../PriceInput';
 import styles from './BasicInfoCard.module.scss';
 
 const cx = classNames.bind(styles);
@@ -13,7 +12,6 @@ function BasicInfoCard({
     isReadOnly = false,
 }) {
     const isActive = formData.status === 'ACTIVE';
-    const [isPriceFocused, setIsPriceFocused] = useState(false);
 
     const renderError = (field) => {
         if (isReadOnly || !errors[field]) {
@@ -33,18 +31,6 @@ function BasicInfoCard({
         }
 
         onChangeField('status', isActive ? 'PAUSED' : 'ACTIVE');
-    };
-
-    const handlePriceFocus = (event) => {
-        setIsPriceFocused(true);
-
-        if (formData.price === '0') {
-            window.requestAnimationFrame(() => event.target.select());
-        }
-    };
-
-    const handlePriceBlur = () => {
-        setIsPriceFocused(false);
     };
 
     return (
@@ -76,18 +62,10 @@ function BasicInfoCard({
                     <label className={cx('field')}>
                         <span className={cx('label')}>Giá tiền (VND)</span>
 
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            value={
-                                isPriceFocused
-                                    ? formData.price
-                                    : formatNumberInput(formData.price)
-                            }
+                        <PriceInput
+                            value={formData.price}
                             placeholder="0"
-                            onChange={handleChange('price')}
-                            onFocus={handlePriceFocus}
-                            onBlur={handlePriceBlur}
+                            onValueChange={(value) => onChangeField('price', value)}
                             disabled={isReadOnly}
                         />
 

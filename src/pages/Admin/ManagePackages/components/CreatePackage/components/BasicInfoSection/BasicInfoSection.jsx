@@ -1,7 +1,6 @@
 import classNames from 'classnames/bind';
-import { useState } from 'react';
 import { MdInfoOutline, MdKeyboardArrowDown } from 'react-icons/md';
-import { formatNumberInput } from '../../../../managePackages.utils';
+import PriceInput from '../../../PriceInput';
 import styles from './BasicInfoSection.module.scss';
 
 const cx = classNames.bind(styles);
@@ -13,7 +12,6 @@ function BasicInfoSection({
     onChangeField,
 }) {
     const isActive = formData.status === 'ACTIVE';
-    const [isPriceFocused, setIsPriceFocused] = useState(false);
 
     const renderError = (field) => {
         if (!errors[field]) {
@@ -29,18 +27,6 @@ function BasicInfoSection({
 
     const handleToggleStatus = () => {
         onChangeField('status', isActive ? 'PAUSED' : 'ACTIVE');
-    };
-
-    const handlePriceFocus = (event) => {
-        setIsPriceFocused(true);
-
-        if (formData.price === '0') {
-            window.requestAnimationFrame(() => event.target.select());
-        }
-    };
-
-    const handlePriceBlur = () => {
-        setIsPriceFocused(false);
     };
 
     return (
@@ -91,23 +77,15 @@ function BasicInfoSection({
                     <label className={cx('field')}>
                         <span className={cx('label')}>Giá tiền</span>
 
-                        <input
+                        <PriceInput
                             data-field="price"
                             className={cx('control', {
                                 hasError: Boolean(errors.price),
                             })}
-                            type="text"
-                            inputMode="numeric"
-                            value={
-                                isPriceFocused
-                                    ? formData.price
-                                    : formatNumberInput(formData.price)
-                            }
+                            value={formData.price}
                             disabled={disabled}
                             placeholder="0"
-                            onChange={handleChange('price')}
-                            onFocus={handlePriceFocus}
-                            onBlur={handlePriceBlur}
+                            onValueChange={(value) => onChangeField('price', value)}
                         />
 
                         {renderError('price')}
