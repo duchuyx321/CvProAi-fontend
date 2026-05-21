@@ -28,7 +28,7 @@ import styles from './TrashCvs.module.scss';
 
 const cx = classNames.bind(styles);
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 4;
 const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'A -> Z', 'Z -> A'];
 
 const getValidPage = (value) => {
@@ -73,7 +73,10 @@ const formatDateTime = (value) => {
     if (!value) return '';
 
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
 
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
@@ -90,6 +93,36 @@ const normalizeText = (value = '') => {
 
 const getConfirmPlaceholder = () => {
     return 'Nhập tên CV...';
+};
+
+const getCvItems = (res) => {
+    if (Array.isArray(res?.data?.data)) {
+        return res.data.data;
+    }
+
+    if (Array.isArray(res?.data)) {
+        return res.data;
+    }
+
+    return [];
+};
+
+const getTotalItems = (res, fallback = 0) => {
+    const total =
+        res?.data?.meta?.total_items ||
+        res?.data?.meta?.totalItems ||
+        res?.data?.meta?.total ||
+        res?.meta?.total_items ||
+        res?.meta?.totalItems ||
+        res?.meta?.total ||
+        res?.pagination?.total ||
+        res?.pagination?.totalItems ||
+        res?.pagination?.total_items ||
+        res?.total ||
+        res?.totalItems ||
+        res?.total_items;
+
+    return Number(total) || fallback;
 };
 
 const mapTrashItem = (cv) => ({
@@ -129,6 +162,7 @@ function TrashCvs() {
     const [isDeletingForever, setIsDeletingForever] = useState(false);
 
     const sortRef = useRef(null);
+    const didMountSearchRef = useRef(false);
 
     const updatePage = (page, options = {}) => {
         const nextPage = getValidPage(page);
@@ -166,7 +200,7 @@ function TrashCvs() {
             updatePage(1, { replace: true });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams]);
+    }, []);
 
     useEffect(() => {
         if (pageFromUrl !== currentPage) {
@@ -217,12 +251,8 @@ function TrashCvs() {
                 return;
             }
 
-            const rawItems = res?.data?.data || res?.data || [];
-            const total =
-                res?.pagination?.total ||
-                res?.meta?.total ||
-                res?.total ||
-                rawItems.length;
+            const rawItems = getCvItems(res);
+            const total = getTotalItems(res, rawItems.length);
 
             setTrashList(rawItems.map(mapTrashItem));
             setTotalItems(total);
@@ -246,6 +276,11 @@ function TrashCvs() {
     };
 
     useEffect(() => {
+        if (!didMountSearchRef.current) {
+            didMountSearchRef.current = true;
+            return;
+        }
+
         updatePage(1, { replace: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedKeyword]);
@@ -563,7 +598,9 @@ function TrashCvs() {
                             onClick={() => setIsOpenSort((prev) => !prev)}
                         >
                             <span className={cx('sortLabel')}>Sắp xếp:</span>
-                            <span className={cx('sortValue')}>{sortValue}</span>
+                            <span className={cx('sortValue')}>
+                                {sortValue}
+                            </span>
                             <FiChevronDown
                                 className={cx('sortArrow', {
                                     open: isOpenSort,
@@ -599,10 +636,13 @@ function TrashCvs() {
                         <div className={cx('stateIcon', 'errorStateIcon')}>
                             <FiAlertCircle />
                         </div>
+
                         <h3 className={cx('stateTitle')}>
                             Không thể tải thùng rác
                         </h3>
+
                         <p className={cx('stateText')}>{errorMessage}</p>
+
                         <Button
                             type="button"
                             className={cx('stateBtn')}
@@ -622,13 +662,16 @@ function TrashCvs() {
                         <div className={cx('stateIcon')}>
                             <FiSearch />
                         </div>
+
                         <h3 className={cx('stateTitle')}>
                             Không tìm thấy CV trong thùng rác
                         </h3>
+
                         <p className={cx('stateText')}>
                             Không có kết quả nào khớp với từ khóa "
                             {debouncedKeyword}".
                         </p>
+
                         <Button
                             type="button"
                             className={cx('stateBtn')}
@@ -642,13 +685,16 @@ function TrashCvs() {
                         <div className={cx('emptyIcon')}>
                             <FiTrash2 />
                         </div>
+
                         <h3 className={cx('emptyTitle')}>
                             Thùng rác đang trống
                         </h3>
+
                         <p className={cx('emptyText')}>
                             Các CV bạn xóa sẽ xuất hiện tại đây để có thể khôi
                             phục khi cần.
                         </p>
+
                         <Button
                             type="button"
                             className={cx('emptyBackBtn')}

@@ -35,19 +35,17 @@ const SORT_OPTIONS = [
         sort_by: 'createdAt',
         sort_order: 'ASC',
     },
-    {
-        value: 'az',
-        label: 'Từ A-Z',
-        sort_by: 'fileName',
-        sort_order: 'ASC',
-    },
-    {
-        value: 'za',
-        label: 'Từ Z-A',
-        sort_by: 'fileName',
-        sort_order: 'DESC',
-    },
 ];
+
+function getValidPage(value) {
+    const page = Number(value);
+
+    if (!Number.isInteger(page) || page < 1) {
+        return 1;
+    }
+
+    return page;
+}
 
 function formatDateTime(value) {
     if (!value) return '';
@@ -116,53 +114,80 @@ function normalizeExportItem(item = {}) {
     };
 }
 
-function normalizeApiData(result) {
+function getExportItems(result) {
     const rawData = result?.data;
 
-    if (Array.isArray(rawData)) {
-        return {
-            items: rawData.map(normalizeExportItem),
-            total: rawData.length,
-        };
+    if (Array.isArray(rawData?.data)) {
+        return rawData.data;
     }
 
-    const items =
-        rawData?.items ||
-        rawData?.data ||
-        rawData?.results ||
-        rawData?.rows ||
-        rawData?.cv_exports ||
-        rawData?.exports ||
-        [];
+    if (Array.isArray(rawData?.items)) {
+        return rawData.items;
+    }
 
-    const total =
-        rawData?.total ||
-        rawData?.totalItems ||
-        rawData?.total_items ||
-        rawData?.count ||
-        rawData?.pagination?.total ||
-        rawData?.meta?.total ||
-        rawData?.meta?.total_items ||
-        items.length;
+    if (Array.isArray(rawData?.results)) {
+        return rawData.results;
+    }
 
-    return {
-        items: Array.isArray(items) ? items.map(normalizeExportItem) : [],
-        total: Number(total) || 0,
-    };
+    if (Array.isArray(rawData?.rows)) {
+        return rawData.rows;
+    }
+
+    if (Array.isArray(rawData?.cv_exports)) {
+        return rawData.cv_exports;
+    }
+
+    if (Array.isArray(rawData?.exports)) {
+        return rawData.exports;
+    }
+
+    if (Array.isArray(rawData)) {
+        return rawData;
+    }
+
+    return [];
 }
 
-function getValidPage(value) {
-    const page = Number(value);
+function getTotalItems(result, fallback = 0) {
+    const rawData = result?.data;
 
-    if (!Number.isInteger(page) || page < 1) {
-        return 1;
-    }
+    const total =
+        rawData?.meta?.total_items ||
+        rawData?.meta?.totalItems ||
+        rawData?.meta?.total ||
+        rawData?.pagination?.total_items ||
+        rawData?.pagination?.totalItems ||
+        rawData?.pagination?.total ||
+        rawData?.total_items ||
+        rawData?.totalItems ||
+        rawData?.total ||
+        rawData?.count ||
+        result?.meta?.total_items ||
+        result?.meta?.totalItems ||
+        result?.meta?.total ||
+        result?.pagination?.total_items ||
+        result?.pagination?.totalItems ||
+        result?.pagination?.total ||
+        result?.total_items ||
+        result?.totalItems ||
+        result?.total;
 
-    return page;
+    return Number(total) || fallback;
+}
+
+function normalizeApiData(result) {
+    const items = getExportItems(result);
+    const total = getTotalItems(result, items.length);
+
+    return {
+        items: items.map(normalizeExportItem),
+        total,
+    };
 }
 
 function Export() {
     const sortRef = useRef(null);
+    const didMountSearchRef = useRef(false);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const pageFromUrl = getValidPage(searchParams.get('page'));
@@ -218,7 +243,8 @@ function Export() {
         if (!searchParams.get('page')) {
             updatePage(1, { replace: true });
         }
-    }, [searchParams, updatePage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (pageFromUrl !== currentPage) {
@@ -229,11 +255,19 @@ function Export() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchValue.trim());
-            updatePage(1, { replace: true });
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [searchValue, updatePage]);
+    }, [searchValue]);
+
+    useEffect(() => {
+        if (!didMountSearchRef.current) {
+            didMountSearchRef.current = true;
+            return;
+        }
+
+        updatePage(1, { replace: true });
+    }, [debouncedSearch, updatePage]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -351,11 +385,13 @@ function Export() {
     );
 
     const handlePrevPage = useCallback(() => {
+        if (currentPage === 1) return;
         updatePage(currentPage - 1);
     }, [currentPage, updatePage]);
 
     const handleNextPage = useCallback(() => {
-        updatePage(Math.min(totalPages, currentPage + 1));
+        if (currentPage === totalPages) return;
+        updatePage(currentPage + 1);
     }, [currentPage, totalPages, updatePage]);
 
     const renderPageNumbers = () => {
