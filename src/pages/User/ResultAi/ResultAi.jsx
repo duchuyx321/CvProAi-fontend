@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import { FiAlertCircle, FiRefreshCw, FiZap } from 'react-icons/fi';
 import { toast } from 'react-toastify';
@@ -32,6 +32,7 @@ function ResultAiPremium() {
     const { aiRunId } = useParams();
     const location = useLocation();
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const statePayload = useMemo(() => {
         const state = location?.state ?? {};
@@ -320,8 +321,11 @@ function ResultAiPremium() {
                     'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.',
             );
         }
-
-        console.log(result);
+        const detailCv = result?.data?.detailCv ?? result?.detailCv;
+        navigate(
+            `${config.router.editCv.replace(':slug', detailCv)}?rewrite=true&ai_run_id=${aiRunId}`,
+        );
+        // return result;
     };
     return (
         <div className={cx('wrapper')}>
