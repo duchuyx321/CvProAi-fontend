@@ -217,7 +217,7 @@ function TrashCvs() {
                 return;
             }
 
-            const rawItems = Array.isArray(res?.data) ? res.data : [];
+            const rawItems = res?.data?.data || res?.data || [];
             const total =
                 res?.pagination?.total ||
                 res?.meta?.total ||
@@ -563,9 +563,7 @@ function TrashCvs() {
                             onClick={() => setIsOpenSort((prev) => !prev)}
                         >
                             <span className={cx('sortLabel')}>Sắp xếp:</span>
-                            <span className={cx('sortValue')}>
-                                {sortValue}
-                            </span>
+                            <span className={cx('sortValue')}>{sortValue}</span>
                             <FiChevronDown
                                 className={cx('sortArrow', {
                                     open: isOpenSort,

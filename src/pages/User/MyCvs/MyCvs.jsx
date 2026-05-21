@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import {
     FiAlertCircle,
@@ -21,6 +21,7 @@ import useDebounce from '~/hooks/useDebounce';
 import { getMyCvs, softDeleteMyCv } from '~/services/my-cv.service';
 import CardItemCV from './components/CardItemCV';
 import styles from './MyCvs.module.scss';
+import Pagination from '~/components/Pagination';
 
 const cx = classNames.bind(styles);
 
@@ -98,7 +99,15 @@ const mapCvItem = (cv) => ({
         'https://via.placeholder.com/400x520/334155/ffffff?text=CV',
     slug: cv.slug,
 });
+function syncPageToUrl(nextPage, replace = false) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(nextPage));
 
+    const nextUrl = `${window.location.pathname}?${params.toString()}`;
+    const method = replace ? 'replaceState' : 'pushState';
+
+    window.history[method](null, '', nextUrl);
+}
 function MyCvs() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -114,13 +123,18 @@ function MyCvs() {
     const [deleteItem, setDeleteItem] = useState(null);
 
     const [cvList, setCvList] = useState([]);
-    const [totalItems, setTotalItems] = useState(0);
     const [loading, setLoading] = useState(false);
     const [firstLoading, setFirstLoading] = useState(true);
     const [searching, setSearching] = useState(false);
     const [isConfirm, setIsConfirm] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [meta, setMeta] = useState({});
+    const totalPages = Math.max(Number(meta?.total_pages) || 1, 1);
+    const totalItems = Number(meta?.total_items) || cvList.length;
+    const limit = Number(meta?.limit) || PAGE_SIZE;
 
+    const startItem = totalItems ? (currentPage - 1) * limit + 1 : 0;
+    const endItem = totalItems ? Math.min(currentPage * limit, totalItems) : 0;
     const sortRef = useRef(null);
 
     const updatePage = (page, options = {}) => {
@@ -153,19 +167,6 @@ function MyCvs() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
-    useEffect(() => {
-        if (!searchParams.get('page')) {
-            updatePage(1, { replace: true });
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams]);
-
-    useEffect(() => {
-        if (pageFromUrl !== currentPage) {
-            setCurrentPage(pageFromUrl);
-        }
-    }, [pageFromUrl, currentPage]);
 
     const fetchMyCvs = async ({
         page = currentPage,
@@ -200,7 +201,7 @@ function MyCvs() {
                     'Không tải được danh sách CV';
 
                 setCvList([]);
-                setTotalItems(0);
+
                 setErrorMessage(message);
 
                 if (!silent) {
@@ -209,20 +210,14 @@ function MyCvs() {
 
                 return;
             }
-
-            const rawItems = Array.isArray(res?.data) ? res.data : [];
-            const total =
-                res?.pagination?.total ||
-                res?.meta?.total ||
-                res?.total ||
-                rawItems.length;
-
+            const rawItems = res?.data?.data || res?.data || [];
+            setMeta(res?.data?.meta);
             setCvList(rawItems.map(mapCvItem));
-            setTotalItems(total);
+
             setErrorMessage('');
         } catch {
             setCvList([]);
-            setTotalItems(0);
+
             setErrorMessage('Có lỗi xảy ra khi tải danh sách CV');
 
             if (!silent) {
@@ -253,22 +248,18 @@ function MyCvs() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, sortValue, debouncedKeyword]);
 
-    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
     const currentList = cvList;
 
     useEffect(() => {
-        if (currentPage > totalPages) {
-            updatePage(totalPages, { replace: true });
+        if (currentPage > meta.total_pages) {
+            updatePage(meta.total_pages, { replace: true });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPage, totalPages]);
+    }, [currentPage]);
 
     const isEmpty = !loading && !errorMessage && currentList.length === 0;
     const isSearchingEmpty = isEmpty && debouncedKeyword.trim().length > 0;
     const isDefaultEmpty = isEmpty && !debouncedKeyword.trim();
-
-    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
-    const endItem = Math.min(currentPage * PAGE_SIZE, totalItems);
 
     const handleSearch = (event) => {
         setKeyword(event.target.value);
@@ -328,56 +319,21 @@ function MyCvs() {
         navigate(config.router.trashCvs);
     };
 
-    const handlePrevPage = () => {
-        if (currentPage === 1) return;
-        updatePage(currentPage - 1);
-    };
-
-    const handleNextPage = () => {
-        if (currentPage === totalPages) return;
-        updatePage(currentPage + 1);
-    };
-
-    const renderPageNumbers = () => {
-        const pages = [];
-
-        if (totalPages <= 5) {
-            for (let i = 1; i <= totalPages; i += 1) {
-                pages.push(i);
-            }
-        } else if (currentPage <= 3) {
-            pages.push(1, 2, 3, '...', totalPages);
-        } else if (currentPage >= totalPages - 2) {
-            pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
-        } else {
-            pages.push(1, '...', currentPage, '...', totalPages);
-        }
-
-        return pages.map((page, index) => {
-            if (page === '...') {
-                return (
-                    <span key={`dots-${index}`} className={cx('dots')}>
-                        ...
-                    </span>
-                );
+    const handlePageChange = useCallback(
+        (newPage) => {
+            if (
+                newPage < 1 ||
+                newPage > totalPages ||
+                newPage === currentPage
+            ) {
+                return;
             }
 
-            return (
-                <button
-                    key={page}
-                    type="button"
-                    className={cx('pageBtn', {
-                        active: currentPage === page,
-                    })}
-                    onClick={() => updatePage(page)}
-                    disabled={loading}
-                >
-                    {page}
-                </button>
-            );
-        });
-    };
-
+            setCurrentPage(newPage);
+            syncPageToUrl(newPage);
+        },
+        [currentPage, totalPages],
+    );
     const deleteFooter = (
         <div className={cx('modalActions')}>
             <Button
@@ -468,7 +424,6 @@ function MyCvs() {
                                         })}
                                         onClick={() => {
                                             setSortValue(item);
-                                            updatePage(1, { replace: true });
                                             setIsOpenSort(false);
                                         }}
                                     >
@@ -547,12 +502,10 @@ function MyCvs() {
                         <div className={cx('stateIcon')}>
                             <LuFileText />
                         </div>
-                        <h3 className={cx('stateTitle')}>
-                            Bạn chưa có CV nào
-                        </h3>
+                        <h3 className={cx('stateTitle')}>Bạn chưa có CV nào</h3>
                         <p className={cx('stateText')}>
-                            Hãy tạo CV đầu tiên để bắt đầu xây dựng hồ sơ
-                            chuyên nghiệp của bạn.
+                            Hãy tạo CV đầu tiên để bắt đầu xây dựng hồ sơ chuyên
+                            nghiệp của bạn.
                         </p>
                         <Button
                             primary
@@ -576,33 +529,18 @@ function MyCvs() {
                             ))}
                         </div>
 
-                        <div className={cx('footer')}>
-                            <p className={cx('note')}>
-                                Hiển thị {startItem} - {endItem} trong số{' '}
-                                <strong>{totalItems}</strong> CV
+                        <div className={cx('tableFooter')}>
+                            <p>
+                                Hiển thị {startItem} - {endItem} của{' '}
+                                {totalItems} mẫu CV
                             </p>
 
-                            <div className={cx('pagination')}>
-                                <button
-                                    type="button"
-                                    className={cx('pageBtn', 'navBtn')}
-                                    onClick={handlePrevPage}
-                                    disabled={currentPage === 1 || loading}
-                                >
-                                    <FiChevronLeft />
-                                </button>
-
-                                {renderPageNumbers()}
-
-                                <button
-                                    type="button"
-                                    className={cx('pageBtn', 'navBtn')}
-                                    onClick={handleNextPage}
-                                    disabled={currentPage === totalPages || loading}
-                                >
-                                    <FiChevronRight />
-                                </button>
-                            </div>
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                disabled={loading}
+                                onPageChange={handlePageChange}
+                            />
                         </div>
                     </>
                 )}
