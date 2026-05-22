@@ -153,6 +153,7 @@ function AiRewritePanel({
     activeSectionFilter = 'all',
     activeSeverityFilter = 'all',
     actionLoadingId = '',
+    applyingAll = false,
     onApplyProposal,
     onRejectProposal,
     onViewProposal,
@@ -198,7 +199,9 @@ function AiRewritePanel({
                         className={cx('iconBtn')}
                         onClick={onRefresh}
                         title="Tải lại gợi ý"
-                        disabled={loading}
+                        disabled={
+                            loading || applyingAll || Boolean(actionLoadingId)
+                        }
                     >
                         <FiRefreshCw />
                     </button>
@@ -278,10 +281,19 @@ function AiRewritePanel({
                     type="button"
                     className={cx('applyAllBtn')}
                     onClick={onApplyAllClick}
-                    disabled={!pendingProposals.length || loading}
+                    disabled={
+                        !pendingProposals.length ||
+                        loading ||
+                        applyingAll ||
+                        Boolean(actionLoadingId)
+                    }
                 >
                     <FiCheck />
-                    <span>Áp dụng tất cả gợi ý</span>
+                    <span>
+                        {applyingAll
+                            ? 'Đang áp dụng'
+                            : 'Áp dụng tất cả gợi ý'}
+                    </span>
                 </button>
             ) : null}
 
@@ -309,7 +321,10 @@ function AiRewritePanel({
                               key={proposal.id}
                               proposal={proposal}
                               isPremium={isPremium}
-                              isBusy={actionLoadingId === proposal.id}
+                              isBusy={
+                                  applyingAll ||
+                                  actionLoadingId === proposal.id
+                              }
                               onApply={onApplyProposal}
                               onReject={onRejectProposal}
                               onView={onViewProposal}

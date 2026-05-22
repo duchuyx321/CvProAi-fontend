@@ -62,3 +62,58 @@ export const rewriteProposals = async (aiRunId) => {
         return { ...data, status };
     }
 };
+
+export const applyRewriteProposals = async ({
+    aiRunId = '',
+    apply_all = false,
+    proposal_ids = [],
+} = {}) => {
+    const safeProposalIds = Array.isArray(proposal_ids) ? proposal_ids : [];
+
+    if (!aiRunId) {
+        throw new Error('Thiếu dữ liệu aiRun');
+    }
+    if (!apply_all && safeProposalIds.length === 0) {
+        throw new Error('Vui lòng chọn ít nhất một đề xuất.');
+    }
+    try {
+        const result = await Response.PATCH(
+            `ai-analysis/rewrite-proposals/apply/${aiRunId}`,
+            {
+                apply_all,
+                proposal_ids: safeProposalIds,
+            },
+        );
+        return result;
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};
+export const rejectedRewriteProposals = async ({
+    aiRunId = '',
+    proposal_ids = [],
+} = {}) => {
+    const safeProposalIds = Array.isArray(proposal_ids) ? proposal_ids : [];
+
+    if (!aiRunId) {
+        throw new Error('Thiếu dữ liệu aiRun');
+    }
+    if (safeProposalIds.length === 0) {
+        throw new Error('Vui lòng chọn ít nhất một đề xuất.');
+    }
+    try {
+        const result = await Response.PATCH(
+            `ai-analysis/rewrite-proposals/rejected/${aiRunId}`,
+            {
+                proposal_ids: safeProposalIds,
+            },
+        );
+        return result;
+    } catch (error) {
+        const status = error?.status || error?.response?.status;
+        const data = error?.response?.data;
+        return { ...data, status };
+    }
+};

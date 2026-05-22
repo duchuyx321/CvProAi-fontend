@@ -17,6 +17,11 @@ const DEFAULT_FOOTER_RESERVE = 34;
 const SAFE_BOTTOM_GAP = 16;
 const MIN_PAGE_SLICE_HEIGHT = 120;
 const MEASURE_ROUNDING = 0.5;
+const CONTENT_BLOCK_SELECTOR = [
+    '[data-cv-section-block="true"]',
+    '[data-cv-content-block="true"]',
+    '[data-cv-page-break-avoid="true"]',
+].join(',');
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
@@ -104,34 +109,167 @@ function roundMeasure(value) {
     return Math.round(value / MEASURE_ROUNDING) * MEASURE_ROUNDING;
 }
 
-function getElementRect(element, rootRect) {
+function getMeasurementScale(measurePage) {
+    if (!measurePage) return 1;
+
+    const layoutHeight =
+        measurePage.offsetHeight ||
+        measurePage.clientHeight ||
+        DEFAULT_PAGE_HEIGHT;
+    const visualHeight = measurePage.getBoundingClientRect().height;
+    const scale = visualHeight / layoutHeight;
+
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
+function getElementRect(element, rootRect, measurementScale = 1) {
     const rect = element.getBoundingClientRect();
+    const scale =
+        Number.isFinite(measurementScale) && measurementScale > 0
+            ? measurementScale
+            : 1;
 
     return {
-        top: rect.top - rootRect.top,
-        bottom: rect.bottom - rootRect.top,
+        top: (rect.top - rootRect.top) / scale,
+        bottom: (rect.bottom - rootRect.top) / scale,
     };
 }
 
-function getAvoidRanges(contentElement) {
+function getRangeHeight(range) {
+    return Math.max(0, range.bottom - range.top);
+}
+
+function getActualContentHeight(contentElement, measurementScale = 1) {
     const rootRect = contentElement.getBoundingClientRect();
-    const nodes = Array.from(
-        contentElement.querySelectorAll('[data-cv-page-break-avoid="true"]'),
+    const blocks = Array.from(
+        contentElement.querySelectorAll(CONTENT_BLOCK_SELECTOR),
     );
 
-    return nodes
-        .map((node) => getElementRect(node, rootRect))
+    if (!blocks.length) {
+        const fallbackHeight = rootRect.height / measurementScale || 0;
+
+        return Math.max(0, contentElement.scrollHeight || fallbackHeight);
+    }
+
+    return blocks.reduce((height, block) => {
+        const range = getElementRect(block, rootRect, measurementScale);
+
+        return Math.max(height, range.bottom);
+    }, 0);
+}
+
+function getSectionLeadRanges(
+    contentElement,
+    rootRect,
+    measurementScale = 1,
+) {
+    const sections = Array.from(
+        contentElement.querySelectorAll('[data-cv-section-block="true"]'),
+    );
+
+    return sections
+        .map((section) => {
+            const title = section.querySelector(
+                ':scope > [data-cv-section-title="true"]',
+            );
+            const firstItem = section.querySelector(
+                '[data-cv-content-block="true"], [data-cv-page-break-avoid="true"]',
+            );
+
+            if (!title || !firstItem) return null;
+
+            const sectionRange = getElementRect(
+                section,
+                rootRect,
+                measurementScale,
+            );
+            const firstItemRange = getElementRect(
+                firstItem,
+                rootRect,
+                measurementScale,
+            );
+
+            return {
+                top: sectionRange.top,
+                bottom: firstItemRange.bottom,
+            };
+        })
+        .filter((range) => range && range.bottom > range.top);
+}
+
+function getAvoidRanges(contentElement, measurementScale = 1) {
+    const rootRect = contentElement.getBoundingClientRect();
+    const explicitRanges = Array.from(
+        contentElement.querySelectorAll(
+            '[data-cv-page-break-avoid="true"], [data-cv-section-keep-with-next="true"]',
+        ),
+    );
+    const sectionLeadRanges = getSectionLeadRanges(
+        contentElement,
+        rootRect,
+        measurementScale,
+    );
+
+    return explicitRanges
+        .map((node) => getElementRect(node, rootRect, measurementScale))
+        .concat(sectionLeadRanges)
         .filter((range) => range.bottom > range.top)
         .sort((a, b) => a.top - b.top);
 }
 
-function findBetterPageEnd({ start, nominalEnd, contentHeight, avoidRanges }) {
+function getZoneRanges(contentElement, measurementScale = 1) {
+    const rootRect = contentElement.getBoundingClientRect();
+    const zones = Array.from(contentElement.querySelectorAll('[data-cv-zone]'));
+
+    return zones.reduce((result, zone) => {
+        const zoneKey = zone.dataset.cvZone;
+        const blocks = Array.from(zone.querySelectorAll(CONTENT_BLOCK_SELECTOR));
+        if (!zoneKey || !blocks.length) return result;
+
+        const range = blocks.reduce(
+            (nextRange, block) => {
+                const blockRange = getElementRect(
+                    block,
+                    rootRect,
+                    measurementScale,
+                );
+
+                return {
+                    top: Math.min(nextRange.top, blockRange.top),
+                    bottom: Math.max(nextRange.bottom, blockRange.bottom),
+                };
+            },
+            { top: Number.POSITIVE_INFINITY, bottom: 0 },
+        );
+
+        if (Number.isFinite(range.top) && range.bottom > range.top) {
+            result[zoneKey] = range;
+        }
+
+        return result;
+    }, {});
+}
+
+function getHiddenZoneKeys(zoneRanges = {}, start, end) {
+    return Object.entries(zoneRanges)
+        .filter(([, range]) => range.bottom <= start || range.top >= end)
+        .map(([zoneKey]) => zoneKey);
+}
+
+function findBetterPageEnd({
+    start,
+    nominalEnd,
+    contentHeight,
+    availableHeight,
+    avoidRanges,
+}) {
     if (nominalEnd >= contentHeight) return contentHeight;
 
     const crossingRanges = avoidRanges.filter(
         (range) =>
             range.top < nominalEnd &&
             range.bottom > nominalEnd &&
+            getRangeHeight(range) <= availableHeight &&
             range.top > start + MIN_PAGE_SLICE_HEIGHT,
     );
 
@@ -153,11 +291,12 @@ function buildPaginationPlan(measurePage, measureContent) {
     }
 
     const computedStyle = window.getComputedStyle(measurePage);
+    const measurementScale = getMeasurementScale(measurePage);
     const paddingTop = toNumber(computedStyle.paddingTop);
     const paddingBottom = toNumber(computedStyle.paddingBottom);
     const pageHeight =
         measurePage.clientHeight ||
-        measurePage.getBoundingClientRect().height ||
+        measurePage.getBoundingClientRect().height / measurementScale ||
         DEFAULT_PAGE_HEIGHT;
 
     const availableHeight = Math.max(
@@ -170,11 +309,12 @@ function buildPaginationPlan(measurePage, measureContent) {
     );
 
     const contentHeight = Math.max(
-        measureContent.scrollHeight,
-        measureContent.getBoundingClientRect().height,
+        getActualContentHeight(measureContent, measurementScale),
+        0,
     );
 
-    const avoidRanges = getAvoidRanges(measureContent);
+    const avoidRanges = getAvoidRanges(measureContent, measurementScale);
+    const zoneRanges = getZoneRanges(measureContent, measurementScale);
     const pages = [];
 
     let start = 0;
@@ -186,6 +326,7 @@ function buildPaginationPlan(measurePage, measureContent) {
             start,
             nominalEnd,
             contentHeight,
+            availableHeight,
             avoidRanges,
         });
 
@@ -196,10 +337,15 @@ function buildPaginationPlan(measurePage, measureContent) {
         const sliceHeight = end - start;
 
         if (sliceHeight > 1) {
+            const isLastSlice = end >= contentHeight - 1;
+
             pages.push({
                 start: roundMeasure(start),
                 end: roundMeasure(end),
-                blankTop: roundMeasure(paddingTop + Math.max(0, sliceHeight)),
+                blankTop: isLastSlice
+                    ? null
+                    : roundMeasure(paddingTop + Math.max(0, sliceHeight)),
+                hiddenZoneKeys: getHiddenZoneKeys(zoneRanges, start, end),
             });
         }
 
@@ -212,6 +358,7 @@ function buildPaginationPlan(measurePage, measureContent) {
             start: 0,
             end: roundMeasure(contentHeight || availableHeight),
             blankTop: null,
+            hiddenZoneKeys: [],
         });
     }
 
@@ -224,7 +371,7 @@ function getPaginationKey(pages = []) {
             (page) =>
                 `${roundMeasure(page.start)}:${roundMeasure(page.end)}:${roundMeasure(
                     page.blankTop || 0,
-                )}`,
+                )}:${(page.hiddenZoneKeys || []).join(',')}`,
         )
         .join('|');
 }
@@ -421,7 +568,7 @@ function CVTemplateRenderer({ previewData, pageRef = null }) {
         : [{ start: 0, end: DEFAULT_PAGE_HEIGHT, blankTop: null }];
 
     return (
-        <div className={cx('previewRoot')}>
+        <div className={cx('previewRoot')} data-cv-preview-root="true">
             <div className={cx('measureShell')} aria-hidden="true">
                 <div
                     ref={measurePageRef}
@@ -438,37 +585,47 @@ function CVTemplateRenderer({ previewData, pageRef = null }) {
                 </div>
             </div>
 
-            <div className={cx('previewShell')} ref={pageRef}>
-                {pages.map((pageSlice, index) => (
-                    <div
-                        key={`${pageSlice.start}-${pageSlice.end}-${index}`}
-                        className={cx('page')}
-                        data-cv-page-index={index}
-                        style={pageStyle}
-                    >
+            <div className={cx('previewVisual')} data-cv-preview-visual="true">
+                <div
+                    className={cx('previewShell')}
+                    ref={pageRef}
+                    data-cv-preview-shell="true"
+                >
+                    {pages.map((pageSlice, index) => (
                         <div
-                            className={cx('pageContent', 'pageContentSlice')}
-                            style={{
-                                transform: `translateY(-${pageSlice.start}px)`,
-                            }}
+                            key={`${pageSlice.start}-${pageSlice.end}-${index}`}
+                            className={cx('page')}
+                            data-cv-page-index={index}
+                            style={pageStyle}
                         >
-                            <LayoutRenderer
-                                config={config}
-                                content={content}
-                                theme={theme}
-                            />
-                        </div>
-
-                        {pageSlice.blankTop ? (
                             <div
-                                className={cx('pageSliceBlank')}
-                                style={{ top: `${pageSlice.blankTop}px` }}
-                            />
-                        ) : null}
+                                className={cx(
+                                    'pageContent',
+                                    'pageContentSlice',
+                                )}
+                                style={{
+                                    transform: `translateY(-${pageSlice.start}px)`,
+                                }}
+                            >
+                                <LayoutRenderer
+                                    config={config}
+                                    content={content}
+                                    theme={theme}
+                                    hiddenZoneKeys={pageSlice.hiddenZoneKeys}
+                                />
+                            </div>
 
-                        <FooterBrand config={config} />
-                    </div>
-                ))}
+                            {pageSlice.blankTop ? (
+                                <div
+                                    className={cx('pageSliceBlank')}
+                                    style={{ top: `${pageSlice.blankTop}px` }}
+                                />
+                            ) : null}
+
+                            <FooterBrand config={config} />
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

@@ -49,6 +49,10 @@
     overflow: visible;
 }
 
+.previewVisual {
+    width: 100%;
+}
+
 .page {
     position: relative;
     width: 210mm;
@@ -83,8 +87,12 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: 100%;
+    min-height: 0;
     transform-origin: top left;
+}
+
+.previewShell .pageContent {
+    min-height: 100%;
 }
 
 .pageContentSlice {
@@ -119,10 +127,17 @@
     min-width: 0;
 }
 
-.pageContent > .layoutSplit,
-.pageContent > .layoutStack,
-.pageContent > .layoutBanner {
+.previewShell .pageContent > .layoutSplit,
+.previewShell .pageContent > .layoutStack,
+.previewShell .pageContent > .layoutBanner {
     min-height: inherit;
+}
+
+.pageMeasure .pageContent,
+.pageMeasure .pageContent > .layoutSplit,
+.pageMeasure .pageContent > .layoutStack,
+.pageMeasure .pageContent > .layoutBanner {
+    min-height: 0;
 }
 
 .layoutBannerBody {
@@ -139,6 +154,11 @@
     width: 100%;
     min-height: 100%;
     overflow-wrap: normal;
+}
+
+.zone[data-cv-zone-hidden='true'] {
+    visibility: hidden;
+    background: transparent !important;
 }
 
 .layoutBanner .zoneLeft,
@@ -680,9 +700,12 @@
 }
 
 .dateBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
     width: fit-content;
-    max-width: max-content;
+    max-width: 100%;
     padding: 5px 10px;
     border-radius: 999px;
     background: var(
@@ -695,6 +718,8 @@
     text-align: center;
     line-height: 1.25;
     white-space: nowrap;
+    justify-self: end;
+    align-self: flex-start;
 }
 
 .dateLeft,
@@ -737,8 +762,8 @@
 }
 
 .timelineHeader {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
     align-items: flex-start;
     gap: 12px;
     width: 100%;
@@ -750,16 +775,15 @@
 .timelineHeader .dateText {
     flex: 0 0 auto;
     width: fit-content;
-    max-width: max-content;
+    max-width: 100%;
     white-space: nowrap;
 }
 
 .timelineTitle {
-    flex: 1 1 auto;
     min-width: 0;
     max-width: none;
     font-weight: 700;
-    word-break: normal;
+    word-break: break-word;
     overflow-wrap: break-word;
 }
 

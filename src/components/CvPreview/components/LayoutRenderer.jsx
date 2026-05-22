@@ -37,14 +37,15 @@ function renderColumn(column, props, className) {
             layoutType={props.layoutType}
             className={className}
             style={column?.style}
+            hidden={props.hiddenZoneKeys?.includes(column.id)}
         />
     );
 }
 
-function LayoutRenderer({ config, content, theme }) {
+function LayoutRenderer({ config, content, theme, hiddenZoneKeys = [] }) {
     const layoutType = config?.layout?.body?.layout || 'STACK';
     const columns = getBodyColumns(config);
-    const props = { config, content, theme, layoutType };
+    const props = { config, content, theme, layoutType, hiddenZoneKeys };
 
     // Get profile container height for banner minHeight
     const profileSection = config?.sections?.profile;
@@ -83,6 +84,7 @@ function LayoutRenderer({ config, content, theme }) {
                     layoutType={layoutType}
                     className="zoneBanner"
                     style={bannerStyle}
+                    hidden={hiddenZoneKeys.includes('banner')}
                 />
                 <div
                     className={cx('layoutSplit', 'layoutBannerBody')}

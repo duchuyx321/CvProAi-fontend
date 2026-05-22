@@ -22,6 +22,7 @@ function SectionTitle({ section, theme }) {
             className={cx('sectionTitle', {
                 sectionTitleBar: titleBar?.visible,
             })}
+            data-cv-section-title="true"
             style={
                 titleBar?.visible
                     ? getTitleBarStyle(titleBar)
@@ -88,6 +89,7 @@ function SectionRenderer({ sectionKey, section, content, theme, layoutType }) {
             className={cx('section')}
             data-section-key={sectionKey}
             data-section-variant={section?.variant || ''}
+            data-cv-section-block="true"
             data-cv-page-break-avoid={
                 canKeepWholeSection ? 'true' : undefined
             }

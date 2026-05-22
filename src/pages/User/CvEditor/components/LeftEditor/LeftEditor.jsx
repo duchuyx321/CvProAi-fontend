@@ -270,10 +270,14 @@ function LeftEditor({
                             disabled={
                                 !aiRewrite.isPremium ||
                                 !aiRewrite.pendingCount ||
-                                aiRewrite.loading
+                                aiRewrite.loading ||
+                                aiRewrite.applyingAll ||
+                                Boolean(aiRewrite.actionLoadingId)
                             }
                         >
-                            Áp dụng tất cả
+                            {aiRewrite.applyingAll
+                                ? 'Đang áp dụng'
+                                : 'Áp dụng tất cả'}
                         </button>
                         <button type="button" onClick={aiRewrite.onTogglePanel}>
                             {aiRewrite.isPanelOpen ? <FiEyeOff /> : <FiEye />}

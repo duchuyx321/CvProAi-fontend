@@ -13,6 +13,7 @@ function ZoneRenderer({
     layoutType,
     className,
     style,
+    hidden = false,
 }) {
     const sectionKeys = config?.zones?.[zoneKey] || [];
     if (!sectionKeys.length) return null;
@@ -21,7 +22,10 @@ function ZoneRenderer({
         <div
             className={cx('zone', className)}
             data-zone-key={zoneKey}
+            data-cv-zone={zoneKey}
+            data-cv-zone-hidden={hidden ? 'true' : undefined}
             data-layout-type={layoutType}
+            aria-hidden={hidden ? 'true' : undefined}
             style={normalizeBoxStyle(style)}
         >
             {sectionKeys.map((sectionKey) => {

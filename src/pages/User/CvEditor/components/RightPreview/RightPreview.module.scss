@@ -1,26 +1,33 @@
-$bg-workspace: #e2e8f0;
+$bg-workspace: #e9eef5;
 $border: #cbd5e1;
 
 .wrapper {
     --preview-a4-width: 794px;
     --preview-a4-height: 1123px;
+    --preview-page-gap: 32px;
+    --preview-scale: 0.8;
+    --preview-scaled-width: 635.2px;
+    --preview-scaled-height: 898.4px;
 
+    position: relative;
+    display: flex;
     min-width: 0;
     min-height: 0;
+    width: 100%;
     height: 100%;
-    background-color: $bg-workspace;
-    position: relative;
-    display: grid;
-    grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
+    background: $bg-workspace;
 }
 
-.scroll-area {
+.previewViewport {
+    flex: 1;
     min-width: 0;
     min-height: 0;
     overflow: auto;
-    padding: 32px clamp(16px, 2vw, 32px) 96px;
+    padding: 32px clamp(28px, 4vw, 56px) 104px;
     overscroll-behavior: contain;
+    scrollbar-color: #94a3b8 transparent;
+    scrollbar-width: thin;
 
     &::-webkit-scrollbar {
         width: 8px;
@@ -37,43 +44,65 @@ $border: #cbd5e1;
     }
 }
 
-.preview-canvas {
-    width: max(100%, var(--preview-frame-width));
-    min-width: max(100%, var(--preview-frame-width));
+.previewCanvas {
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    width: 100%;
+    min-width: max-content;
 }
 
-.preview-frame {
-    width: var(--preview-frame-width);
-    min-height: var(--preview-frame-height);
+.scaledSpace {
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
     flex: 0 0 auto;
+    width: var(--preview-scaled-width);
+    min-width: var(--preview-scaled-width);
+    height: var(--preview-scaled-height);
+    min-height: var(--preview-scaled-height);
     overflow: visible;
 }
 
-.preview-document {
-    position: absolute;
-    top: 0;
-    left: 0;
+.zoomWrapper {
+    flex: 0 0 auto;
+
+    /* Do not change layout size by zoom */
     width: var(--preview-a4-width);
     min-height: var(--preview-a4-height);
-    transform: scale(var(--preview-scale));
-    transform-origin: top left;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    :global([class*='previewRoot']) {
-        width: fit-content;
+    display: flex;
+    flex-direction: column;
+    gap: var(--preview-page-gap);
+    align-items: center;
+}
+
+.wrapper {
+    :global([data-cv-preview-root='true']) {
+        width: var(--preview-a4-width);
+        max-width: none;
     }
 
-    :global([class*='previewShell']) {
-        width: fit-content;
+    :global([data-cv-preview-visual='true']) {
+        width: var(--preview-a4-width);
+        transform: scale(var(--preview-scale));
+        transform-origin: top center;
+        transition: transform 0.18s ease;
+    }
+
+    :global([data-cv-preview-shell='true']) {
+        width: var(--preview-a4-width);
         min-height: auto;
         background: transparent;
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        align-items: center;
+        gap: var(--preview-page-gap);
+    }
+
+    :global([data-cv-page-index]) {
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.16);
     }
 }
 
@@ -81,27 +110,26 @@ $border: #cbd5e1;
     position: absolute;
     right: clamp(16px, 3vw, 40px);
     bottom: max(18px, env(safe-area-inset-bottom));
-    background: #ffffff;
-    border-radius: 999px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
-    display: flex;
+    z-index: 6;
+    display: inline-flex;
     align-items: center;
     padding: 6px 8px;
     border: 1px solid $border;
-    z-index: 6;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
 
     .zoomBtn {
-        background: transparent;
-        border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        font-size: 20px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
         color: #475569;
+        cursor: pointer;
         transition:
             background 0.2s ease,
             color 0.2s ease,
@@ -118,17 +146,17 @@ $border: #cbd5e1;
     }
 
     .zoomText {
+        min-width: 54px;
+        color: #1e293b;
         font-size: 14px;
         font-weight: 700;
-        color: #1e293b;
-        min-width: 50px;
         text-align: center;
         user-select: none;
     }
 }
 
 @media (max-width: 767.98px) {
-    .scroll-area {
-        padding: 20px 14px 86px;
+    .previewViewport {
+        padding: 20px 18px 86px;
     }
 }

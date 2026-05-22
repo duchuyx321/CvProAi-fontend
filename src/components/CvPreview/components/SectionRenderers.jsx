@@ -78,6 +78,36 @@ function stripDateFields(field) {
     return field;
 }
 
+function removeFieldKey(field, targetKey) {
+    if (!targetKey) return field;
+
+    const key = getFieldKey(field);
+
+    if (key === targetKey) return null;
+
+    if (field?.items?.length) {
+        const nextItems = field.items
+            .map((item) => removeFieldKey(item, targetKey))
+            .filter(Boolean);
+
+        if (!nextItems.length) return null;
+        if (nextItems.length === 1) return nextItems[0];
+
+        return {
+            ...field,
+            items: nextItems,
+        };
+    }
+
+    return field;
+}
+
+function removeFieldKeyFromList(fields = [], targetKey) {
+    return fields
+        .map((field) => removeFieldKey(field, targetKey))
+        .filter(Boolean);
+}
+
 function getRenderableFieldsWithoutDates(section = {}, item = {}) {
     const fields = getFields(section, item)
         .map(stripDateFields)
@@ -136,12 +166,16 @@ function CardWrapper({
               'data-cv-item-index': itemIndex,
           }
         : {};
+    const blockProps = {
+        'data-cv-content-block': 'true',
+    };
 
     if (!card?.enabled) {
         return className ? (
             <div
                 className={cx(className)}
                 style={normalizeBoxStyle(section?.style?.item)}
+                {...blockProps}
                 {...breakProps}
             >
                 {children}
@@ -155,6 +189,7 @@ function CardWrapper({
         <div
             className={cx('sectionCard', className)}
             style={style}
+            {...blockProps}
             {...breakProps}
         >
             {children}
@@ -433,10 +468,10 @@ function ArrayItem({ section, item, content, position }) {
         const primary = getPrimaryFieldValue();
         if (primary && primary.value) {
             // Filter out the primary field from fieldsForRender to avoid duplication
-            fieldsForRender = fieldsForRender.filter((field) => {
-                const fieldKey = typeof field === 'string' ? field : field?.key;
-                return fieldKey !== primary.key;
-            });
+            fieldsForRender = removeFieldKeyFromList(
+                fieldsForRender,
+                primary.key,
+            );
 
             return (
                 <div className={cx('timelineItemBlock')}>

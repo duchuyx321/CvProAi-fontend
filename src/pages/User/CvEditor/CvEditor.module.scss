@@ -8,7 +8,7 @@
 }
 
 .inner {
-    --editor-column: clamp(380px, 41vw, 540px);
+    --editor-column: clamp(500px, 38vw, 540px);
     --ai-panel-width: clamp(340px, 41vw, 390px);
 
     display: grid;
@@ -93,7 +93,7 @@
 
 @media (max-width: 1439.98px) {
     .inner {
-        --editor-column: clamp(360px, 41vw, 480px);
+        --editor-column: clamp(480px, 38vw, 520px);
 
         &.aiRewriteMode.aiPanelOpen {
             grid-template-columns: minmax(0, var(--editor-column)) minmax(
@@ -110,7 +110,7 @@
 
 @media (max-width: 991.98px) {
     .inner {
-        --editor-column: clamp(340px, 42vw, 430px);
+        --editor-column: clamp(390px, 42vw, 460px);
     }
 }
 

@@ -10,6 +10,10 @@ import {
     getCvDetailBySlug,
     updateCvBySlug,
 } from '~/services/cv-teamplate.service';
+import {
+    applyRewriteProposals,
+    rejectedRewriteProposals,
+} from '~/services/aiAnalysis.service';
 import { normalizeCvDetailForEditor } from '~/utils/cv-editor.bootstrap';
 import { validateTemplateConfig } from '~/utils/cv-section.schema';
 import { buildEditSubmitPreview } from '~/utils/cv-submit-preview.utils';
@@ -26,6 +30,9 @@ import {
 
 import useCvEditorState from '../CvEditor/hooks/useCvEditorState';
 
+const getProposalId = (proposal = {}) =>
+    String(proposal?.id ?? proposal?.proposal_id ?? proposal?.proposalId ?? '');
+
 function EditCv() {
     const { slug } = useParams();
     const [searchParams] = useSearchParams();
@@ -40,6 +47,10 @@ function EditCv() {
     const [activeSectionFilter, setActiveSectionFilter] = useState('all');
     const [activeSeverityFilter, setActiveSeverityFilter] = useState('all');
     const [isApplyAllModalOpen, setIsApplyAllModalOpen] = useState(false);
+    const [aiRewriteLoading, setAiRewriteLoading] = useState(false);
+    const [aiRewriteError, setAiRewriteError] = useState('');
+    const [actionLoadingId, setActionLoadingId] = useState('');
+    const [applyingAll, setApplyingAll] = useState(false);
 
     const {
         cvData,
@@ -97,10 +108,14 @@ function EditCv() {
 
                 syncPersistedData(nextCvData);
                 setAiRewriteResult(aiRewritePayload);
+                setAiRewriteError('');
             } catch (error) {
                 if (!isCancelled) {
+                    const message = error?.message || 'Lỗi load CV';
+
                     setAiRewriteResult(null);
-                    toast.error(error?.message || 'Lỗi load CV');
+                    setAiRewriteError(message);
+                    toast.error(message);
                 }
             } finally {
                 if (!isCancelled) {
@@ -122,6 +137,45 @@ function EditCv() {
         };
     }, [ai_run_id, navigate, rewrite, slug, syncPersistedData]);
 
+    const refreshCvDetailAfterRewrite = useCallback(async () => {
+        if (!slug) {
+            throw new Error('Thiếu slug CV');
+        }
+
+        setAiRewriteLoading(true);
+
+        try {
+            const result = await getCvDetailBySlug({
+                slug,
+                rewrite,
+                ai_run_id,
+            });
+
+            if (!result?.success) {
+                throw new Error(getApiMessage(result, 'Không thể tải lại CV'));
+            }
+
+            const payload = unwrapApiResponse(result);
+            const cv = payload?.cv || payload;
+            const aiRewritePayload =
+                rewrite && ai_run_id ? payload?.ai_rewrite || null : null;
+            const nextCvData = normalizeCvDetailForEditor(cv);
+            const validation = validateTemplateConfig(nextCvData?.config);
+
+            if (!validation?.isValid) {
+                throw new Error(
+                    validation?.message || 'Cấu hình CV không hợp lệ',
+                );
+            }
+
+            syncPersistedData(nextCvData);
+            setAiRewriteResult(aiRewritePayload);
+            setAiRewriteError('');
+        } finally {
+            setAiRewriteLoading(false);
+        }
+    }, [ai_run_id, rewrite, slug, syncPersistedData]);
+
     const rewriteProposals = useMemo(
         () => extractRewriteProposals(aiRewriteResult),
         [aiRewriteResult],
@@ -141,7 +195,8 @@ function EditCv() {
     const isAiRewriteActive = Boolean(
         rewrite && ai_run_id && aiRewriteResult?.is_active,
     );
-    const isPremium = resolveResultTier({ ai_rewrite: aiRewriteResult }) === 'premium';
+    const isPremium =
+        resolveResultTier({ ai_rewrite: aiRewriteResult }) === 'premium';
 
     const handleViewProposal = useCallback((proposal) => {
         setActiveSectionFilter(
@@ -156,9 +211,200 @@ function EditCv() {
         setIsAiPanelOpen(true);
     }, []);
 
-    const showApplyTodo = useCallback(() => {
-        toast.info('Đã xác định đúng proposal. Phần apply sẽ nối API sau.');
+    const validateRewriteAction = useCallback(() => {
+        if (!ai_run_id) {
+            toast.error('Thiếu dữ liệu aiRun');
+            return false;
+        }
+
+        if (!isPremium) {
+            toast.info('Vui lòng nâng cấp Premium để áp dụng gợi ý AI.');
+            return false;
+        }
+
+        if (submitting) {
+            toast.info('CV đang được xử lý, vui lòng chờ trong giây lát.');
+            return false;
+        }
+
+        if (isDirty) {
+            toast.warning(
+                'Vui lòng lưu CV trước khi xử lý gợi ý AI để tránh ghi đè dữ liệu đang sửa.',
+            );
+            return false;
+        }
+
+        return true;
+    }, [ai_run_id, isDirty, isPremium, submitting]);
+
+    const handleRewriteActionError = useCallback((error, fallbackMessage) => {
+        const message = error?.message || fallbackMessage;
+
+        setAiRewriteError(message);
+        toast.error(message);
     }, []);
+
+    const onApplyProposal = useCallback(
+        async (proposal) => {
+            const proposalId = getProposalId(proposal);
+
+            if (!proposalId) {
+                toast.error('Không tìm thấy proposal cần áp dụng.');
+                return;
+            }
+
+            if (actionLoadingId || applyingAll || !validateRewriteAction()) {
+                return;
+            }
+
+            setActionLoadingId(proposalId);
+            setAiRewriteError('');
+
+            try {
+                const result = await applyRewriteProposals({
+                    aiRunId: ai_run_id,
+                    apply_all: false,
+                    proposal_ids: [proposalId],
+                });
+
+                if (result?.success === false || Number(result?.status) >= 400) {
+                    throw new Error(
+                        getApiMessage(result, 'Áp dụng gợi ý AI thất bại.'),
+                    );
+                }
+
+                await refreshCvDetailAfterRewrite();
+                toast.success(getApiMessage(result, 'Đã áp dụng gợi ý AI.'));
+            } catch (error) {
+                handleRewriteActionError(
+                    error,
+                    'Áp dụng gợi ý AI thất bại.',
+                );
+            } finally {
+                setActionLoadingId('');
+            }
+        },
+        [
+            actionLoadingId,
+            ai_run_id,
+            applyingAll,
+            handleRewriteActionError,
+            refreshCvDetailAfterRewrite,
+            validateRewriteAction,
+        ],
+    );
+
+    const onRejectProposal = useCallback(
+        async (proposal) => {
+            const proposalId = getProposalId(proposal);
+
+            if (!proposalId) {
+                toast.error('Không tìm thấy proposal cần bỏ qua.');
+                return;
+            }
+
+            if (actionLoadingId || applyingAll || !validateRewriteAction()) {
+                return;
+            }
+
+            setActionLoadingId(proposalId);
+            setAiRewriteError('');
+
+            try {
+                const result = await rejectedRewriteProposals({
+                    aiRunId: ai_run_id,
+                    proposal_ids: [proposalId],
+                });
+
+                if (result?.success === false || Number(result?.status) >= 400) {
+                    throw new Error(
+                        getApiMessage(result, 'Bỏ qua gợi ý AI thất bại.'),
+                    );
+                }
+
+                await refreshCvDetailAfterRewrite();
+                toast.success(getApiMessage(result, 'Đã bỏ qua gợi ý AI.'));
+            } catch (error) {
+                handleRewriteActionError(
+                    error,
+                    'Bỏ qua gợi ý AI thất bại.',
+                );
+            } finally {
+                setActionLoadingId('');
+            }
+        },
+        [
+            actionLoadingId,
+            ai_run_id,
+            applyingAll,
+            handleRewriteActionError,
+            refreshCvDetailAfterRewrite,
+            validateRewriteAction,
+        ],
+    );
+
+    const onConfirmApplyAll = useCallback(async () => {
+        if (applyingAll || actionLoadingId || !validateRewriteAction()) {
+            return;
+        }
+
+        const pendingProposalIds = pendingProposals
+            .map((proposal) => getProposalId(proposal))
+            .filter(Boolean);
+
+        if (pendingProposalIds.length === 0) {
+            toast.info('Không còn gợi ý pending để áp dụng.');
+            setIsApplyAllModalOpen(false);
+            return;
+        }
+
+        setApplyingAll(true);
+        setAiRewriteError('');
+
+        try {
+            const result = await applyRewriteProposals({
+                aiRunId: ai_run_id,
+                apply_all: true,
+                proposal_ids: pendingProposalIds,
+            });
+
+            if (result?.success === false || Number(result?.status) >= 400) {
+                throw new Error(
+                    getApiMessage(result, 'Áp dụng tất cả gợi ý AI thất bại.'),
+                );
+            }
+
+            await refreshCvDetailAfterRewrite();
+            setIsApplyAllModalOpen(false);
+            toast.success(
+                getApiMessage(result, 'Đã áp dụng tất cả gợi ý AI.'),
+            );
+        } catch (error) {
+            handleRewriteActionError(
+                error,
+                'Áp dụng tất cả gợi ý AI thất bại.',
+            );
+        } finally {
+            setApplyingAll(false);
+        }
+    }, [
+        actionLoadingId,
+        ai_run_id,
+        applyingAll,
+        handleRewriteActionError,
+        pendingProposals,
+        refreshCvDetailAfterRewrite,
+        validateRewriteAction,
+    ]);
+
+    const handleRefreshAiRewrite = useCallback(async () => {
+        try {
+            await refreshCvDetailAfterRewrite();
+            toast.success('Đã tải lại gợi ý AI.');
+        } catch (error) {
+            handleRewriteActionError(error, 'Tải lại gợi ý AI thất bại.');
+        }
+    }, [handleRewriteActionError, refreshCvDetailAfterRewrite]);
 
     const aiRewrite = useMemo(() => {
         if (!isAiRewriteActive) return null;
@@ -167,41 +413,44 @@ function EditCv() {
             isActive: true,
             isPremium,
             isPanelOpen: isAiPanelOpen,
-            loading: false,
-            errorMessage: '',
+            loading: aiRewriteLoading,
+            errorMessage: aiRewriteError,
             proposals: rewriteProposals,
             pendingCount: pendingProposals.length,
             sectionCounts,
             activeSectionFilter,
             activeSeverityFilter,
-            actionLoadingId: '',
-            applyingAll: false,
+            actionLoadingId,
+            applyingAll,
             applyAllSummary,
             isApplyAllModalOpen,
             activeSectionKey: activeSectionFilter,
-            onApplyProposal: showApplyTodo,
-            onRejectProposal: showApplyTodo,
+            onApplyProposal,
+            onRejectProposal,
             onViewProposal: handleViewProposal,
             onApplyAllClick: () => setIsApplyAllModalOpen(true),
-            onConfirmApplyAll: () => {
-                setIsApplyAllModalOpen(false);
-                showApplyTodo();
-            },
+            onConfirmApplyAll,
             onCloseApplyAllModal: () => setIsApplyAllModalOpen(false),
             onChangeSectionFilter: setActiveSectionFilter,
             onChangeSeverityFilter: setActiveSeverityFilter,
-            onRefresh: () => window.location.reload(),
+            onRefresh: handleRefreshAiRewrite,
             onTogglePanel: () => setIsAiPanelOpen((prev) => !prev),
             onSelectSection: handleSelectAiSection,
             onUpgrade: () =>
                 navigate(
-                    config.router.upgradePremium || config.router.upgradeAccount,
+                    config.router.upgradePremium ||
+                        config.router.upgradeAccount,
                 ),
         };
     }, [
         activeSectionFilter,
         activeSeverityFilter,
+        actionLoadingId,
+        aiRewriteError,
+        aiRewriteLoading,
+        applyingAll,
         applyAllSummary,
+        handleRefreshAiRewrite,
         handleSelectAiSection,
         handleViewProposal,
         isAiPanelOpen,
@@ -209,10 +458,12 @@ function EditCv() {
         isApplyAllModalOpen,
         isPremium,
         navigate,
+        onApplyProposal,
+        onConfirmApplyAll,
+        onRejectProposal,
         pendingProposals.length,
         rewriteProposals,
         sectionCounts,
-        showApplyTodo,
     ]);
 
     const submitUpdateCv = useCallback(
