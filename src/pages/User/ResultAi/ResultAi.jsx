@@ -90,10 +90,14 @@ function ResultAiPremium() {
                     if (!silent) toast.error(message);
                     return;
                 }
-
-                setAiResult(
-                    normalizeAiResult(result.data.dataValues || result.data),
-                );
+                const data = {
+                    ...(result.data.dataValues || result.data || result),
+                    isConverted:
+                        result?.data?.isConverted ||
+                        result?.isConverted ||
+                        false,
+                };
+                setAiResult(normalizeAiResult(data));
             } catch (error) {
                 if (!isActive()) return;
 
@@ -294,7 +298,7 @@ function ResultAiPremium() {
             setIsOpenModel(true);
             return;
         }
-        const writeAiPromise = fetchApiWriteAiResult(aiRunId.id);
+        const writeAiPromise = fetchApiWriteAiResult(aiRunId);
         await toast.promise(writeAiPromise, {
             pending: 'Đang phân tích gợi ý CV...',
             success: {

@@ -26,6 +26,7 @@ export const router = {
     aiAnalysisResult_route: '/ai-analysis/result/',
     aiAnalysisResult: '/ai-analysis/result/:aiRunId',
     upgradeAccount: '/upgrade-account',
+    upgradePremium: '/upgrade-account',
     profile: '/profile',
     security: '/security',
     package: '/package',

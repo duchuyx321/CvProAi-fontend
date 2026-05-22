@@ -15,6 +15,7 @@ import Modal from '~/components/Modal';
 import { config } from '~/config';
 import { getDashboardOverview } from '~/services/dashboard.service';
 import styles from './Dashboard.module.scss';
+import Button from '~/components/Button';
 
 const cx = classNames.bind(styles);
 
@@ -85,7 +86,16 @@ function Dashboard() {
                     <td>
                         <div className={cx('cv-name-cell')}>
                             <FiFileText className={cx('file-icon')} />
-                            <span className={cx('cv-name')}>{cv.title}</span>
+                            <Button
+                                text
+                                to={config.router.editCv.replace(
+                                    ':slug',
+                                    cv?.slug,
+                                )}
+                                className={cx('cv-name')}
+                            >
+                                {cv.title}
+                            </Button>
                         </div>
                     </td>
                     <td className={cx('text-muted')}>{cv?.updatedAt}</td>
@@ -207,7 +217,7 @@ function Dashboard() {
                                         !(dashboardData?.cvs ?? []).length > 0
                                     }
                                     onClick={() =>
-                                        navigate(config.router.adminOrders)
+                                        navigate(config.router.myCvs)
                                     }
                                 >
                                     Xem tất cả

@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames/bind';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiLayout, FiMenu } from 'react-icons/fi';
+import {
+    FiArrowLeft,
+    FiEye,
+    FiEyeOff,
+    FiLayout,
+    FiMenu,
+    FiZap,
+} from 'react-icons/fi';
 
 import EditorTabs from './components/EditorTabs';
 import ContentTab from './components/ContentTab';
@@ -16,6 +23,7 @@ import {
     createDefaultArrayItem,
     mapResumeDataBySection,
 } from '~/utils/cv-section.schema';
+import { normalizeRewriteSectionKey } from '~/utils/ai-rewrite.utils';
 
 const cx = classNames.bind(styles);
 
@@ -56,6 +64,7 @@ function buildInitialOpenSections(sectionList = []) {
 
 function LeftEditor({
     isOpen = true,
+    canCollapse = false,
     onTogglePanel,
     resumeData = {},
     onChangeField,
@@ -72,6 +81,7 @@ function LeftEditor({
     submitting = false,
     cvName = '',
     onChangeCvName,
+    aiRewrite = null,
 }) {
     const navigate = useNavigate();
 
@@ -118,6 +128,26 @@ function LeftEditor({
             return nextState;
         });
     }, [sectionList]);
+
+    useEffect(() => {
+        if (!aiRewrite?.activeSectionKey) return;
+
+        const targetSection = sectionList.find(
+            (section) =>
+                normalizeRewriteSectionKey(section?.key) ===
+                    normalizeRewriteSectionKey(aiRewrite.activeSectionKey) ||
+                normalizeRewriteSectionKey(section?.type) ===
+                    normalizeRewriteSectionKey(aiRewrite.activeSectionKey),
+        );
+
+        if (!targetSection?.key) return;
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setOpenSections((prev) => ({
+            ...prev,
+            [targetSection.key]: true,
+        }));
+    }, [aiRewrite?.activeSectionKey, sectionList]);
 
     const handleToggleSection = (sectionKey) => {
         setOpenSections((prev) => ({
@@ -212,15 +242,50 @@ function LeftEditor({
                     <FiLayout /> Chọn mẫu
                 </button>
 
-                <button
-                    type="button"
-                    className={cx('btn-icon', 'btn-toggle')}
-                    onClick={onTogglePanel}
-                    title="Ẩn bảng điều khiển"
-                >
-                    <FiMenu />
-                </button>
+                {canCollapse && onTogglePanel ? (
+                    <button
+                        type="button"
+                        className={cx('btn-icon', 'btn-toggle')}
+                        onClick={onTogglePanel}
+                        title="Ẩn bảng điều khiển"
+                    >
+                        <FiMenu />
+                    </button>
+                ) : null}
             </div>
+
+            {aiRewrite?.isActive ? (
+                <div className={cx('aiBanner')}>
+                    <div className={cx('aiBannerText')}>
+                        <FiZap />
+                        <span>
+                            Chế độ tối ưu CV bằng AI đang bật -{' '}
+                            {aiRewrite.pendingCount || 0} gợi ý đang chờ
+                        </span>
+                    </div>
+                    <div className={cx('aiBannerActions')}>
+                        <button
+                            type="button"
+                            onClick={aiRewrite.onApplyAllClick}
+                            disabled={
+                                !aiRewrite.isPremium ||
+                                !aiRewrite.pendingCount ||
+                                aiRewrite.loading
+                            }
+                        >
+                            Áp dụng tất cả
+                        </button>
+                        <button type="button" onClick={aiRewrite.onTogglePanel}>
+                            {aiRewrite.isPanelOpen ? <FiEyeOff /> : <FiEye />}
+                            <span>
+                                {aiRewrite.isPanelOpen
+                                    ? 'Ẩn gợi ý'
+                                    : 'Xem gợi ý'}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            ) : null}
 
             <EditorTabs
                 tabs={EDITOR_TABS}
@@ -240,6 +305,7 @@ function LeftEditor({
                         onChangeField={onChangeField}
                         onChangeArrayField={onChangeArrayField}
                         onChangeObjectInArray={onChangeObjectInArray}
+                        aiRewrite={aiRewrite}
                     />
                 )}
 

@@ -1,6 +1,7 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
 import RichTextEditor from '~/components/RichTextEditor';
+import { getRewriteProposalsForTarget } from '~/utils/ai-rewrite.utils';
 import {
     getFieldLabel,
     isLongTextField,
@@ -17,8 +18,12 @@ function ArrayEmptyState({ message }) {
     );
 }
 
-function ItemCard({ children }) {
-    return <div className={cx('arrayItem')}>{children}</div>;
+function ItemCard({ children, targeted = false }) {
+    return (
+        <div className={cx('arrayItem', { aiTargetedItem: targeted })}>
+            {children}
+        </div>
+    );
 }
 
 function ItemActions({ onRemove, removeLabel }) {
@@ -49,6 +54,26 @@ function FieldGroup({ label, children, fullWidth = false }) {
             {label ? <label className={cx('label')}>{label}</label> : null}
             {children}
         </div>
+    );
+}
+
+function AiHint({ proposals = [], onClick }) {
+    if (!proposals.length) return null;
+
+    return (
+        <button type="button" className={cx('aiFieldHint')} onClick={onClick}>
+            <span>AI</span>
+            <span>{proposals.length}</span>
+        </button>
+    );
+}
+
+function LabelWithHint({ label, proposals = [], onClick }) {
+    return (
+        <span className={cx('labelWithHint')}>
+            <span>{label}</span>
+            <AiHint proposals={proposals} onClick={onClick} />
+        </span>
     );
 }
 
@@ -89,6 +114,7 @@ function ExperienceFields({
     onAddSectionItem,
     sectionKey,
     section = {},
+    aiRewrite,
 }) {
     const items = Array.isArray(data) ? data : [];
     const extraFieldKeys = getExtraFieldKeys(section, items);
@@ -110,10 +136,64 @@ function ExperienceFields({
                 <ArrayEmptyState message="Chưa có kinh nghiệm làm việc nào." />
             )}
 
-            {items.map((item, index) => (
-                <ItemCard key={`${sectionKey}-${index}`}>
-                    <div className={cx('fieldsGrid')}>
-                        <FieldGroup label="Vị trí">
+            {items.map((item, index) => {
+                const itemProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'experience',
+                        index,
+                    },
+                );
+                const roleProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'experience',
+                        index,
+                        fieldKey: 'role',
+                    },
+                );
+                const companyProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'experience',
+                        index,
+                        fieldKey: 'company',
+                    },
+                );
+                const descriptionProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'experience',
+                        index,
+                        fieldKey: 'description',
+                    },
+                );
+                const handleHintClick = (proposals) => (event) => {
+                    event.stopPropagation();
+                    aiRewrite?.onViewProposal?.(proposals[0]);
+                };
+
+                return (
+                    <ItemCard
+                        key={`${sectionKey}-${index}`}
+                        targeted={itemProposals.length > 0}
+                    >
+                        <div className={cx('fieldsGrid')}>
+                            <FieldGroup
+                                label={
+                                    <LabelWithHint
+                                        label="Vị trí"
+                                        proposals={roleProposals}
+                                        onClick={handleHintClick(
+                                            roleProposals,
+                                        )}
+                                    />
+                                }
+                            >
                             <BaseInput
                                 value={item?.role}
                                 onChange={(e) =>
@@ -127,7 +207,15 @@ function ExperienceFields({
                             />
                         </FieldGroup>
 
-                        <FieldGroup label="Công ty">
+                        <FieldGroup
+                            label={
+                                <LabelWithHint
+                                    label="Công ty"
+                                    proposals={companyProposals}
+                                    onClick={handleHintClick(companyProposals)}
+                                />
+                            }
+                        >
                             <BaseInput
                                 value={item?.company}
                                 onChange={(e) =>
@@ -188,7 +276,18 @@ function ExperienceFields({
                             </label>
                         </FieldGroup>
 
-                        <FieldGroup label="Mô tả công việc" fullWidth>
+                        <FieldGroup
+                            label={
+                                <LabelWithHint
+                                    label="Mô tả công việc"
+                                    proposals={descriptionProposals}
+                                    onClick={handleHintClick(
+                                        descriptionProposals,
+                                    )}
+                                />
+                            }
+                            fullWidth
+                        >
                             <RichTextEditor
                                 value={item?.description || '<p></p>'}
                                 onChange={(html) =>
@@ -238,14 +337,15 @@ function ExperienceFields({
                                 )}
                             </FieldGroup>
                         ))}
-                    </div>
+                        </div>
 
-                    <ItemActions
-                        removeLabel="Xóa kinh nghiệm"
-                        onRemove={() => handleRemove(index)}
-                    />
-                </ItemCard>
-            ))}
+                        <ItemActions
+                            removeLabel="Xóa kinh nghiệm"
+                            onRemove={() => handleRemove(index)}
+                        />
+                    </ItemCard>
+                );
+            })}
 
             <AddItemButton onClick={handleAdd}>
                 + Thêm kinh nghiệm

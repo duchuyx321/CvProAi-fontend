@@ -14,6 +14,7 @@ function ContentTab({
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
+    aiRewrite,
 }) {
     const hasSections = Array.isArray(sections) && sections.length > 0;
 
@@ -39,6 +40,7 @@ function ContentTab({
                 onChangeField={onChangeField}
                 onChangeArrayField={onChangeArrayField}
                 onChangeObjectInArray={onChangeObjectInArray}
+                aiRewrite={aiRewrite}
             />
         </div>
     );

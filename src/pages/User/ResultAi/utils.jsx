@@ -111,7 +111,6 @@ const normalizeInsightsMeta = (meta) => {
     };
 };
 
-
 const normalizeWeakness = (item, index) => {
     if (typeof item === 'string') {
         return {
@@ -184,6 +183,25 @@ const normalizeStrength = (item, index) => {
 
 export const normalizeAiResult = (raw) => {
     const source = raw?.data ?? raw ?? {};
+    const aiRun = source.ai_run ?? source.aiRun ?? source.run ?? {};
+    const structuredFeedback =
+        source.structured_feedback ?? source.structuredFeedback ?? null;
+    const cvId =
+        source.cv_id ??
+        source.cvId ??
+        source.detailCv ??
+        aiRun.cv_id ??
+        aiRun.cvId ??
+        null;
+    const cvSourceType = String(
+        source.cv_source_type ??
+            source.cvSourceType ??
+            aiRun.cv_source_type ??
+            aiRun.cvSourceType ??
+            '',
+    )
+        .trim()
+        .toLowerCase();
     const strengthsMeta = normalizeInsightsMeta(
         source.strengths_meta ?? source.strengthsMeta,
     );
@@ -193,7 +211,6 @@ export const normalizeAiResult = (raw) => {
     const suggestionsMeta = normalizeInsightsMeta(
         source.suggestions_meta ?? source.suggestionsMeta,
     );
-
     const rawTier =
         source.plan_tier ??
         source.planTier ??
@@ -214,6 +231,12 @@ export const normalizeAiResult = (raw) => {
                   suggestionsMeta?.isPremiumLocked === true
                 ? 'free'
                 : normalizeTier(rawTier);
+    const isConverted =
+        typeof source.is_converted === 'boolean'
+            ? source.is_converted
+            : typeof source.isConverted === 'boolean'
+              ? source.isConverted
+              : false;
 
     return {
         id: source.id ?? source.resultId ?? source.result_id ?? null,
@@ -233,8 +256,17 @@ export const normalizeAiResult = (raw) => {
         suggestions: normalizeArray(source.suggestions).map(
             normalizeSuggestion,
         ),
-        structuredFeedback:
-            source.structured_feedback ?? source.structuredFeedback ?? null,
+        structuredFeedback,
+        rewriteProposals: normalizeArray(
+            source.rewrite_proposals ??
+                source.rewriteProposals ??
+                structuredFeedback?.rewrite_proposals ??
+                structuredFeedback?.rewriteProposals,
+        ),
+        cvId,
+        detailCv: cvId,
+        cvSourceType,
+        isConverted,
         createdAt: source.created_at ?? source.createdAt ?? null,
         upgradeHint: source.upgrade_hint ?? source.upgradeHint ?? '',
         strengthsMeta,

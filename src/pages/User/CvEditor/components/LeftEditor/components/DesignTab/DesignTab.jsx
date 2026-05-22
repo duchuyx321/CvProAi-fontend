@@ -1,5 +1,13 @@
+import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
-import { FiDroplet, FiImage, FiMaximize, FiType } from 'react-icons/fi';
+import {
+    FiCheck,
+    FiChevronDown,
+    FiDroplet,
+    FiImage,
+    FiMaximize,
+    FiType,
+} from 'react-icons/fi';
 import styles from './DesignTab.module.scss';
 
 const cx = classNames.bind(styles);
@@ -23,6 +31,20 @@ const COLOR_CONTROLS = [
     { key: 'border', label: 'Màu viền', fallback: '#dbe2ea' },
     { key: 'icon', label: 'Màu icon', fallback: '#2563eb' },
 ];
+
+const COLOR_SWATCHES = [
+    '#111827',
+    '#2563eb',
+    '#4f46e5',
+    '#0f766e',
+    '#b45309',
+    '#be123c',
+    '#eaf2fb',
+    '#f8fafc',
+    '#ffffff',
+];
+
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 const FONT_SIZE_CONTROLS = [
     { key: 'name', label: 'Tên ứng viên', min: 24, max: 54, fallback: 38 },
@@ -81,6 +103,17 @@ function getNumber(value, fallback) {
     return Number.isNaN(numericValue) ? fallback : numericValue;
 }
 
+function normalizeHexColor(value, fallback = '#000000') {
+    const rawValue = String(value || '').trim();
+    const withHash = rawValue.startsWith('#') ? rawValue : `#${rawValue}`;
+
+    if (HEX_COLOR_PATTERN.test(withHash)) {
+        return withHash.toLowerCase();
+    }
+
+    return fallback.toLowerCase();
+}
+
 function getAvatarSectionKey(sections = {}) {
     const entries = Object.entries(sections);
     const sectionWithAvatar = entries.find(
@@ -119,7 +152,94 @@ function SliderControl({ label, value, min, max, suffix = 'px', onChange }) {
     );
 }
 
+function ColorPickerControl({
+    control,
+    value,
+    isOpen = false,
+    onToggle,
+    onClose,
+    onChange,
+}) {
+    const wrapperRef = useRef(null);
+    const safeValue = normalizeHexColor(value, control.fallback);
+
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        const handleClickOutside = (event) => {
+            if (wrapperRef.current?.contains(event.target)) return;
+            onClose?.();
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isOpen, onClose]);
+
+    const handleChange = (nextColor) => {
+        onChange?.(normalizeHexColor(nextColor, safeValue));
+    };
+
+    return (
+        <div ref={wrapperRef} className={cx('colorPicker', { open: isOpen })}>
+            <button
+                type="button"
+                className={cx('color-row')}
+                onClick={onToggle}
+                aria-expanded={isOpen}
+            >
+                <span className={cx('colorLabel')}>{control.label}</span>
+                <span className={cx('colorPreviewGroup')}>
+                    <span className={cx('colorValue')}>
+                        {safeValue.toUpperCase()}
+                    </span>
+                    <span
+                        className={cx('colorSwatch')}
+                        style={{ backgroundColor: safeValue }}
+                    />
+                    <FiChevronDown />
+                </span>
+            </button>
+
+            {isOpen ? (
+                <div className={cx('colorPopover')} role="dialog">
+                    <div className={cx('swatchGrid')}>
+                        {COLOR_SWATCHES.map((color) => (
+                            <button
+                                key={color}
+                                type="button"
+                                className={cx('swatchButton', {
+                                    active: color === safeValue,
+                                })}
+                                onClick={() => handleChange(color)}
+                                title={color.toUpperCase()}
+                            >
+                                <span style={{ backgroundColor: color }} />
+                                {color === safeValue ? <FiCheck /> : null}
+                            </button>
+                        ))}
+                    </div>
+
+                    <label className={cx('nativeColorControl')}>
+                        <span>Chọn màu khác</span>
+                        <input
+                            type="color"
+                            value={safeValue}
+                            onChange={(event) => handleChange(event.target.value)}
+                        />
+                    </label>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 function DesignTab({ templateConfig = {}, onChangeConfig }) {
+    const [activeColorKey, setActiveColorKey] = useState('');
     const theme = templateConfig?.theme || {};
     const colors = theme?.colors || {};
     const spacing = theme?.spacing || {};
@@ -220,20 +340,23 @@ function DesignTab({ templateConfig = {}, onChangeConfig }) {
                 </div>
                 <div className={cx('color-list')}>
                     {COLOR_CONTROLS.map((control) => (
-                        <label className={cx('color-row')} key={control.key}>
-                            <span>{control.label}</span>
-                            <input
-                                type="color"
-                                value={
-                                    colors?.[control.key] || control.fallback
-                                }
-                                onChange={(event) =>
-                                    updateNestedTheme('colors', {
-                                        [control.key]: event.target.value,
-                                    })
-                                }
-                            />
-                        </label>
+                        <ColorPickerControl
+                            key={control.key}
+                            control={control}
+                            value={colors?.[control.key] || control.fallback}
+                            isOpen={activeColorKey === control.key}
+                            onToggle={() =>
+                                setActiveColorKey((prev) =>
+                                    prev === control.key ? '' : control.key,
+                                )
+                            }
+                            onClose={() => setActiveColorKey('')}
+                            onChange={(nextColor) =>
+                                updateNestedTheme('colors', {
+                                    [control.key]: nextColor,
+                                })
+                            }
+                        />
                     ))}
                 </div>
             </div>

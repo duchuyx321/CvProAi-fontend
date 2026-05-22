@@ -1,5 +1,6 @@
 import classNames from 'classnames/bind';
 import styles from '../SectionItem.module.scss';
+import { getRewriteProposalsForTarget } from '~/utils/ai-rewrite.utils';
 import { uniqueFieldKeys } from './fieldConfig.utils';
 
 const cx = classNames.bind(styles);
@@ -12,8 +13,8 @@ function ArrayEmptyState({ message }) {
     );
 }
 
-function ItemCard({ children }) {
-    return <div className={cx('arrayItem')}>{children}</div>;
+function ItemCard({ children, targeted = false }) {
+    return <div className={cx('arrayItem', { aiTargetedItem: targeted })}>{children}</div>;
 }
 
 function ItemActions({ onRemove, removeLabel }) {
@@ -44,6 +45,26 @@ function FieldGroup({ label, children, fullWidth = false }) {
             {label ? <label className={cx('label')}>{label}</label> : null}
             {children}
         </div>
+    );
+}
+
+function AiHint({ proposals = [], onClick }) {
+    if (!proposals.length) return null;
+
+    return (
+        <button type="button" className={cx('aiFieldHint')} onClick={onClick}>
+            <span>AI</span>
+            <span>{proposals.length}</span>
+        </button>
+    );
+}
+
+function LabelWithHint({ label, proposals = [], onClick }) {
+    return (
+        <span className={cx('labelWithHint')}>
+            <span>{label}</span>
+            <AiHint proposals={proposals} onClick={onClick} />
+        </span>
     );
 }
 
@@ -103,6 +124,7 @@ function SkillsFields({
     onAddSectionItem,
     section = {},
     sectionKey,
+    aiRewrite,
 }) {
     const items = Array.isArray(data) ? data : [];
     const fieldKeys = uniqueFieldKeys(section?.fields);
@@ -130,6 +152,37 @@ function SkillsFields({
             )}
 
             {items.map((item, index) => {
+                const itemProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'skills',
+                        index,
+                    },
+                );
+                const nameProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'skills',
+                        index,
+                        fieldKey: 'name',
+                    },
+                );
+                const descriptionProposals = getRewriteProposalsForTarget(
+                    aiRewrite?.proposals,
+                    {
+                        sectionKey,
+                        sectionType: 'skills',
+                        index,
+                        fieldKey: 'description',
+                        includeItemLevel: false,
+                    },
+                );
+                const handleHintClick = (proposals) => (event) => {
+                    event.stopPropagation();
+                    aiRewrite?.onViewProposal?.(proposals[0]);
+                };
                 const showLevel =
                     display === 'PROGRESS_BAR' ||
                     hasConfiguredField('level') ||
@@ -142,8 +195,19 @@ function SkillsFields({
                 const level = clampLevel(item?.level ?? 0, maxLevel);
 
                 return (
-                    <ItemCard key={`${sectionKey}-${index}`}>
-                        <FieldGroup label="Tên kỹ năng">
+                    <ItemCard
+                        key={`${sectionKey}-${index}`}
+                        targeted={itemProposals.length > 0}
+                    >
+                        <FieldGroup
+                            label={
+                                <LabelWithHint
+                                    label="Tên kỹ năng"
+                                    proposals={nameProposals}
+                                    onClick={handleHintClick(nameProposals)}
+                                />
+                            }
+                        >
                             <BaseInput
                                 value={item?.name}
                                 onChange={(e) =>
@@ -205,7 +269,18 @@ function SkillsFields({
                         )}
 
                         {showDescription && (
-                            <FieldGroup label="Mô tả" fullWidth>
+                            <FieldGroup
+                                label={
+                                    <LabelWithHint
+                                        label="Mô tả"
+                                        proposals={descriptionProposals}
+                                        onClick={handleHintClick(
+                                            descriptionProposals,
+                                        )}
+                                    />
+                                }
+                                fullWidth
+                            >
                                 <BaseTextarea
                                     value={item?.description}
                                     onChange={(e) =>

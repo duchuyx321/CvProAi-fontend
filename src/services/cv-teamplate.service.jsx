@@ -114,13 +114,23 @@ export const getCvTemplateDetail = async (code) => {
     }
 };
 
-export const getCvDetailBySlug = async (slug) => {
+export const getCvDetailBySlug = async ({
+    slug,
+    rewrite = false,
+    ai_run_id,
+} = {}) => {
     if (!slug) {
         throw new Error('Thiếu slug CV');
     }
 
+    let api = `cvs/me/${slug}`;
+
+    if (rewrite === true && ai_run_id) {
+        api += `?rewrite=${rewrite}&ai_run_id=${ai_run_id}`;
+    }
+
     try {
-        const result = await Response.GET(`cvs/me/${slug}`);
+        const result = await Response.GET(api);
         return result;
     } catch (error) {
         console.log(error);

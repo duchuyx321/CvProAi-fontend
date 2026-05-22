@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import classNames from 'classnames/bind';
+import { FaRegLightbulb } from 'react-icons/fa';
+
+import { normalizeRewriteSectionKey } from '~/utils/ai-rewrite.utils';
+
 import styles from './SectionItem.module.scss';
 import SectionActions from '../SectionActions';
 
@@ -40,11 +44,17 @@ function SectionItem({
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
+    aiRewrite,
 }) {
     const [isHovered, setIsHovered] = useState(false);
 
     const sectionType = section?.type || section?.key;
     const showDelete = Boolean(section?.removable && (isHovered || isOpen));
+    const aiSectionKey = normalizeRewriteSectionKey(sectionType);
+    const aiProposalCount =
+        aiRewrite?.sectionCounts?.[aiSectionKey] ||
+        aiRewrite?.sectionCounts?.[normalizeRewriteSectionKey(section?.key)] ||
+        0;
 
     const handleToggle = () => {
         onToggleSection?.(section.key);
@@ -56,6 +66,11 @@ function SectionItem({
 
     const handleAdd = () => {
         onAddSectionItem?.(section.key);
+    };
+
+    const handleAiBadgeClick = (event) => {
+        event.stopPropagation();
+        aiRewrite?.onSelectSection?.(aiSectionKey);
     };
 
     const handleHeaderKeyDown = (event) => {
@@ -77,6 +92,7 @@ function SectionItem({
                     onChangeField={onChangeField}
                     onChangeArrayField={onChangeArrayField}
                     onChangeObjectInArray={onChangeObjectInArray}
+                    aiRewrite={aiRewrite}
                 />
             );
         }
@@ -91,6 +107,7 @@ function SectionItem({
                 onChangeArrayField={onChangeArrayField}
                 onChangeObjectInArray={onChangeObjectInArray}
                 onAddSectionItem={onAddSectionItem}
+                aiRewrite={aiRewrite}
             />
         );
     };
@@ -112,6 +129,17 @@ function SectionItem({
                     <div className={cx('meta')}>
                         <span className={cx('number')}>{section.number}.</span>
                         <span className={cx('title')}>{section.title}</span>
+                        {aiRewrite?.isActive && aiProposalCount > 0 ? (
+                            <button
+                                type="button"
+                                className={cx('aiBadge')}
+                                onClick={handleAiBadgeClick}
+                                title="Xem gợi ý AI của mục này"
+                            >
+                                <FaRegLightbulb />
+                                <span>{aiProposalCount}</span>
+                            </button>
+                        ) : null}
                     </div>
                 </div>
 

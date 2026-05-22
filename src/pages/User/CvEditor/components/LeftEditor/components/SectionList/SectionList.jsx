@@ -14,6 +14,7 @@ function SectionList({
     onChangeField,
     onChangeArrayField,
     onChangeObjectInArray,
+    aiRewrite,
 }) {
     if (!Array.isArray(sections) || sections.length === 0) {
         return null;
@@ -39,6 +40,7 @@ function SectionList({
                         onChangeField={onChangeField}
                         onChangeArrayField={onChangeArrayField}
                         onChangeObjectInArray={onChangeObjectInArray}
+                        aiRewrite={aiRewrite}
                     />
                 );
             })}

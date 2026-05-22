@@ -81,12 +81,16 @@ function SectionRenderer({ sectionKey, section, content, theme, layoutType }) {
     const hasTitle =
         !!section?.title &&
         !['PROFILE', 'PROFILE_HEADER', 'PERSONAL_INFO'].includes(type);
+    const canKeepWholeSection = !Array.isArray(data) || data.length <= 1;
 
     return (
         <section
             className={cx('section')}
             data-section-key={sectionKey}
             data-section-variant={section?.variant || ''}
+            data-cv-page-break-avoid={
+                canKeepWholeSection ? 'true' : undefined
+            }
             style={normalizeBoxStyle(section?.style?.container || section?.style)}
         >
             {hasTitle ? <SectionTitle section={section} theme={theme} /> : null}

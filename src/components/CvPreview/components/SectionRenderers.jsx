@@ -118,18 +118,31 @@ function getSkillDisplay(section = {}) {
     return 'BULLET';
 }
 
-function CardWrapper({ section, children, className }) {
+function CardWrapper({
+    section,
+    children,
+    className,
+    breakAvoid = false,
+    itemIndex,
+}) {
     const card = section?.options?.card;
     const style = {
         ...getCardStyle(card),
         ...normalizeBoxStyle(section?.style?.item),
     };
+    const breakProps = breakAvoid
+        ? {
+              'data-cv-page-break-avoid': 'true',
+              'data-cv-item-index': itemIndex,
+          }
+        : {};
 
     if (!card?.enabled) {
         return className ? (
             <div
                 className={cx(className)}
                 style={normalizeBoxStyle(section?.style?.item)}
+                {...breakProps}
             >
                 {children}
             </div>
@@ -139,7 +152,11 @@ function CardWrapper({ section, children, className }) {
     }
 
     return (
-        <div className={cx('sectionCard', className)} style={style}>
+        <div
+            className={cx('sectionCard', className)}
+            style={style}
+            {...breakProps}
+        >
             {children}
         </div>
     );
@@ -368,7 +385,18 @@ function renderDate(dateText, position) {
 
 function ArrayItem({ section, item, content, position }) {
     const dateText = getDateText(item, section?.options?.date);
-    const fieldsForRender = getRenderableFieldsWithoutDates(section, item);
+    let fieldsForRender = getRenderableFieldsWithoutDates(section, item);
+
+    // Helper to extract primary field value (company, school, title, etc.)
+    const getPrimaryFieldValue = () => {
+        for (const key of PRIMARY_ITEM_FIELDS) {
+            const value = resolveFieldValue(key, item, content);
+            if (!isEmpty(value)) return { key, value: String(value) };
+        }
+        return null;
+    };
+
+    const isRightDate = position === 'right' || position === 'badge';
 
     if (position === 'left') {
         return (
@@ -400,6 +428,36 @@ function ArrayItem({ section, item, content, position }) {
         );
     }
 
+    // For right-side date (including badge), use header + body layout
+    if (isRightDate) {
+        const primary = getPrimaryFieldValue();
+        if (primary && primary.value) {
+            // Filter out the primary field from fieldsForRender to avoid duplication
+            fieldsForRender = fieldsForRender.filter((field) => {
+                const fieldKey = typeof field === 'string' ? field : field?.key;
+                return fieldKey !== primary.key;
+            });
+
+            return (
+                <div className={cx('timelineItemBlock')}>
+                    <div className={cx('timelineHeader')}>
+                        <div className={cx('timelineTitle')}>
+                            {primary.value}
+                        </div>
+                        {renderDate(dateText, position)}
+                    </div>
+                    <div className={cx('cardBody')}>
+                        {renderFieldList(fieldsForRender, item, content, {
+                            section,
+                            skipDate: true,
+                        })}
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    // Fallback to original layout for other cases
     return (
         <div
             className={cx('timelineItem', {
@@ -437,7 +495,13 @@ export function TimelineContent({ section, data = [], content }) {
             }}
         >
             {data.map((item, index) => (
-                <CardWrapper key={index} section={section} className="cardItem">
+                <CardWrapper
+                    key={index}
+                    section={section}
+                    className="cardItem"
+                    breakAvoid
+                    itemIndex={index}
+                >
                     <ArrayItem
                         section={section}
                         item={item}
@@ -453,10 +517,25 @@ export function TimelineContent({ section, data = [], content }) {
 export function SkillsRenderer({ section, data = [] }) {
     if (!Array.isArray(data) || !data.length) return null;
 
-    const display = getSkillDisplay(section);
+    let display = getSkillDisplay(section);
     const skillOptions = section?.options?.skill || {};
     const grid = section?.options?.grid || {};
     const maxLevel = Number(skillOptions?.maxLevel || 100) || 100;
+
+    // Detect if any skill has additional data (description, level, years, proficiency)
+    const hasRichData = data.some(
+        (item) =>
+            item?.description ||
+            item?.level !== undefined ||
+            item?.years !== undefined ||
+            item?.proficiency,
+    );
+
+    // If no rich data and current display is not already a compact style, fall back to TAG
+    const compactDisplays = ['TAG', 'BULLET', 'TWO_COLUMN_BULLET'];
+    if (!hasRichData && !compactDisplays.includes(display)) {
+        display = 'TAG';
+    }
 
     if (display === 'PROGRESS_BAR') {
         return (
@@ -469,7 +548,12 @@ export function SkillsRenderer({ section, data = [] }) {
                     );
 
                     return (
-                        <div key={index} className={cx('skillProgressItem')}>
+                        <div
+                            key={index}
+                            className={cx('skillProgressItem')}
+                            data-cv-page-break-avoid="true"
+                            data-cv-item-index={index}
+                        >
                             <div className={cx('skillName')}>
                                 {getSkillName(item)}
                                 {skillOptions?.showLevel
@@ -503,6 +587,8 @@ export function SkillsRenderer({ section, data = [] }) {
                         key={index}
                         section={section}
                         className="skillCard"
+                        breakAvoid
+                        itemIndex={index}
                     >
                         <div className={cx('skillName')}>
                             {getSkillName(item)}
@@ -522,7 +608,12 @@ export function SkillsRenderer({ section, data = [] }) {
         return (
             <div className={cx('skillsTags')}>
                 {data.map((item, index) => (
-                    <span key={index} className={cx('skillTag')}>
+                    <span
+                        key={index}
+                        className={cx('skillTag')}
+                        data-cv-page-break-avoid="true"
+                        data-cv-item-index={index}
+                    >
                         {getSkillName(item)}
                     </span>
                 ))}
@@ -545,7 +636,13 @@ export function SkillsRenderer({ section, data = [] }) {
             }}
         >
             {data.map((item, index) => (
-                <li key={index}>{getSkillName(item)}</li>
+                <li
+                    key={index}
+                    data-cv-page-break-avoid="true"
+                    data-cv-item-index={index}
+                >
+                    {getSkillName(item)}
+                </li>
             ))}
         </ul>
     );

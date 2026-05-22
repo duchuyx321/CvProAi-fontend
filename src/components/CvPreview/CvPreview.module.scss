@@ -1,10 +1,19 @@
+.previewRoot {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
 .previewShell {
-    min-height: 100vh;
     background: #e9eef4;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 32px;
+    width: 100%;
     box-sizing: border-box;
+
     a {
         color: inherit;
         text-decoration: auto;
@@ -28,19 +37,68 @@
     }
 }
 
-.page {
+.measureShell {
+    position: fixed;
+    top: 0;
+    left: -99999px;
+    z-index: -1;
     width: 210mm;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    overflow: visible;
+}
+
+.page {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
     min-height: 297mm;
     background: #fff;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     color: #1f2937;
     overflow: hidden;
     box-sizing: border-box;
-    position: relative;
+    flex: 0 0 auto;
+    break-after: page;
+    page-break-after: always;
 }
+
+.page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+}
+
 .page,
 .page * {
     box-sizing: border-box;
+}
+
+.pageMeasure {
+    box-shadow: none;
+    overflow: visible;
+}
+
+.pageContent {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-height: 100%;
+    transform-origin: top left;
+}
+
+.pageContentSlice {
+    will-change: transform;
+}
+
+.pageSliceBlank {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--cv-background, #ffffff);
+    z-index: 2;
+    pointer-events: none;
 }
 
 .layoutStack,
@@ -54,10 +112,17 @@
     display: grid;
     gap: var(--cv-section-gap);
     align-items: stretch;
-    overflow: hidden;
+    overflow: visible;
     box-sizing: border-box;
     width: 100%;
+    min-height: inherit;
     min-width: 0;
+}
+
+.pageContent > .layoutSplit,
+.pageContent > .layoutStack,
+.pageContent > .layoutBanner {
+    min-height: inherit;
 }
 
 .layoutBannerBody {
@@ -72,6 +137,7 @@
     gap: var(--cv-section-gap);
     min-width: 0;
     width: 100%;
+    min-height: 100%;
     overflow-wrap: normal;
 }
 
@@ -90,6 +156,8 @@
     flex-direction: column;
     gap: var(--cv-item-gap);
     min-width: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .sectionContent {
@@ -163,6 +231,7 @@
     line-height: inherit;
     word-break: break-word;
     min-width: 0;
+    width: 100%;
 }
 
 .fieldIcon {
@@ -183,7 +252,7 @@
 
 .profileBanner {
     background: var(--cv-primary);
-    color: #fff;
+    color: var(--cv-on-primary, #fff);
     padding: 32px 36px;
 }
 
@@ -268,12 +337,12 @@
 }
 
 .fullNameUpper {
-    font-size: 2.83em; /* 34px quy đổi */
+    font-size: 2.83em;
     text-transform: uppercase;
 }
 
 .fullNameLight {
-    color: #fff;
+    color: var(--cv-on-primary, #fff);
 }
 
 .headline {
@@ -284,7 +353,7 @@
 }
 
 .headlineLight {
-    color: rgba(255, 255, 255, 0.92);
+    color: var(--cv-on-primary, #fff);
 }
 
 .headlineUnderline {
@@ -300,8 +369,11 @@
     align-items: center;
     padding: 7px 14px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--cv-accent) 72%, #fff 28%);
-    color: var(--cv-primary);
+    background: var(
+        --cv-chip-bg,
+        color-mix(in srgb, var(--cv-accent) 72%, #fff 28%)
+    );
+    color: var(--cv-chip-text, var(--cv-primary));
     font-size: var(--cv-font-small, 13px);
     font-weight: 700;
     max-width: 100%;
@@ -312,8 +384,10 @@
 .cardList,
 .objectBlock {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 10px;
+    width: 100%;
     min-width: 0;
 }
 
@@ -328,7 +402,7 @@
 }
 
 .profileBanner .contactInline {
-    color: rgba(255, 255, 255, 0.86);
+    color: var(--cv-on-primary, #fff);
 }
 
 .contactInlineItem {
@@ -467,34 +541,48 @@
 .skillsTags {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 8px 10px;
+    width: 100%;
+    min-width: 0;
 }
 
 .skillTag {
     display: inline-flex;
     align-items: center;
-    padding: 6px 10px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
     border-radius: 999px;
-    background: var(--cv-accent);
-    color: var(--cv-primary);
+    background: var(--cv-chip-bg, var(--cv-accent));
+    color: var(--cv-chip-text, var(--cv-primary));
     font-size: var(--cv-font-small, 13px);
     font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
 }
 
 .skillCard {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
-    border-radius: 8px;
-    background: var(--cv-section-bg);
-    border: 1px solid rgba(15, 23, 42, 0.06);
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--cv-chip-bg, #dceeff);
+    color: var(--cv-chip-text, #0f172a);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
 }
 
 .skillProgressItem {
     display: flex;
     flex-direction: column;
     gap: 7px;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .skillName {
@@ -530,6 +618,10 @@
     border-radius: 8px;
     background: var(--cv-section-bg);
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .sectionCard {
@@ -538,6 +630,10 @@
     background: var(--cv-section-bg);
     border: 1px solid rgba(15, 23, 42, 0.06);
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .sectionCardAlways {
@@ -563,6 +659,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 18px;
     align-items: start;
+    min-width: 0;
 }
 
 .cardSplit {
@@ -570,6 +667,7 @@
     grid-template-columns: 140px minmax(0, 1fr);
     gap: 20px;
     align-items: start;
+    min-width: 0;
 }
 
 .cardBody {
@@ -577,14 +675,21 @@
     flex-direction: column;
     gap: var(--cv-item-gap);
     min-width: 0;
+    width: 100%;
+    max-width: none;
 }
 
 .dateBadge {
-    flex-shrink: 0;
+    flex: 0 0 auto;
+    width: fit-content;
+    max-width: max-content;
     padding: 5px 10px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--cv-accent) 74%, #fff 26%);
-    color: var(--cv-primary);
+    background: var(
+        --cv-date-bg,
+        color-mix(in srgb, var(--cv-accent) 74%, #fff 26%)
+    );
+    color: var(--cv-date-text, var(--cv-primary));
     font-size: var(--cv-font-small, 13px);
     font-weight: 700;
     text-align: center;
@@ -623,6 +728,41 @@
     position: relative;
 }
 
+.timelineItemBlock {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.timelineHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: var(--cv-item-gap);
+}
+
+.timelineHeader .dateBadge,
+.timelineHeader .dateText {
+    flex: 0 0 auto;
+    width: fit-content;
+    max-width: max-content;
+    white-space: nowrap;
+}
+
+.timelineTitle {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    font-weight: 700;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
 .richText {
     color: inherit;
     font-size: inherit;
@@ -632,14 +772,17 @@
     p {
         margin: 0 0 10px;
     }
+
     p:last-child {
         margin-bottom: 0;
     }
+
     ul,
     ol {
         margin: 0;
         padding-left: 20px;
     }
+
     li {
         margin-bottom: 6px;
     }
@@ -653,35 +796,27 @@
     word-break: break-word;
 }
 
-@media print {
-    .previewShell {
-        padding: 0;
-        background: #fff;
-    }
-    .page {
-        width: auto;
-        min-height: auto;
-        box-shadow: none;
-    }
-}
-
 .eduHeader,
 .expHeader {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 18px;
     align-items: start;
+    min-width: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .eduMain,
 .expMain {
     min-width: 0;
+    width: 100%;
 }
 
 .eduDegree,
 .expRole {
     color: var(--cv-primary);
-    font-size: 1.5em; /* 18px quy đổi */
+    font-size: 1.5em;
     line-height: 1.5;
     font-weight: 700;
     word-break: break-word;
@@ -699,6 +834,8 @@
 .eduDesc,
 .expDesc {
     margin-top: var(--cv-item-gap);
+    width: 100%;
+    min-width: 0;
 }
 
 .expList {
@@ -716,20 +853,26 @@
 .skillsTextOnly {
     display: flex;
     flex-wrap: wrap;
-    flex-direction: unset;
-    gap: 10px;
+    justify-content: flex-start;
+    gap: 8px 10px;
+    width: 100%;
+    min-width: 0;
 }
 
 .skillTextChip {
     display: inline-flex;
     align-items: center;
-    padding: 8px 14px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
     border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    color: var(--cv-primary);
-    font-size: 1.16em;
-    font-weight: 600;
+    border: 0;
+    background: var(--cv-chip-bg, #dceeff);
+    color: var(--cv-chip-text, #0f172a);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
 }
 
 .skillDotItem {
@@ -755,14 +898,94 @@
 .skillDotActive {
     background: var(--cv-primary);
 }
-[data-cvproai-watermark='footer'] {
+
+.section,
+.sectionCard,
+.cardItem,
+.timelineItemBlock,
+.skillProgressItem,
+.eduHeader,
+.expHeader {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+[data-cvproai-watermark='footer'],
+.logo {
     position: absolute;
-    right: 20px;
-    bottom: 13px;
-    font-size: 13px;
-    color: #555;
+    right: 24px;
+    bottom: 16px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    max-width: 120px;
+    min-height: 16px;
+    font-size: 10px;
+    line-height: 1;
+    color: var(--cv-muted, #6b7280);
+    pointer-events: none;
 
     &[data-visible='false'] {
         display: none;
+    }
+}
+
+.footerLogoImage {
+    display: block;
+    max-width: 72px;
+    max-height: 20px;
+    object-fit: contain;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body {
+        width: 210mm;
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+    }
+
+    .previewRoot {
+        width: auto;
+        max-width: none;
+    }
+
+    .previewShell {
+        padding: 0;
+        margin: 0;
+        background: #ffffff;
+        gap: 0;
+        align-items: stretch;
+    }
+
+    .measureShell {
+        display: none;
+    }
+
+    .page {
+        width: 210mm;
+        height: 297mm;
+        min-height: 297mm;
+        margin: 0;
+        box-shadow: none;
+        overflow: hidden;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .pageSliceBlank {
+        background: #ffffff;
     }
 }

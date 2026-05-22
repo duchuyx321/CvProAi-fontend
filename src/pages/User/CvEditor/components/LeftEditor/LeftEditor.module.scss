@@ -6,9 +6,10 @@ $bg-hover: #f1f5f9;
 .wrapper {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    width: 600px;
-    min-width: 500px;
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     background: #ffffff;
     border-right: 1px solid $border;
     z-index: 10;
@@ -36,6 +37,8 @@ $bg-hover: #f1f5f9;
     border-bottom: 1px solid $border;
     background: #ffffff;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    min-width: 0;
 
     .btn-icon {
         background: none;
@@ -59,7 +62,8 @@ $bg-hover: #f1f5f9;
         align-items: center;
         gap: 8px;
         flex: 0 0 auto;
-        margin-left: 12px;
+        margin-left: 4px;
+        min-width: 0;
         .logo-img {
             width: 24px;
             height: 24px;
@@ -84,7 +88,8 @@ $bg-hover: #f1f5f9;
         font-weight: 600;
         color: $text-main;
         cursor: pointer;
-        margin-right: 8px;
+        margin-right: 0;
+        white-space: nowrap;
         transition: 0.2s;
         &:hover {
             background: $bg-hover;
@@ -92,10 +97,10 @@ $bg-hover: #f1f5f9;
     }
 }
 .cvTitleBox {
-    flex: 1;
-    min-width: 180px;
-    max-width: 320px;
-    margin: 0 12px 0 16px;
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: none;
+    margin: 0 4px;
     display: flex;
     align-items: center;
 }
@@ -137,12 +142,75 @@ $bg-hover: #f1f5f9;
         cursor: not-allowed;
     }
 }
+
+.aiBanner {
+    border-bottom: 1px solid #c7d2fe;
+    background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.aiBannerText {
+    min-width: 0;
+    color: #312e81;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+        flex-shrink: 0;
+        color: #4f46e5;
+    }
+}
+
+.aiBannerActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+        min-height: 30px;
+        border-radius: 999px;
+        border: 1px solid #c7d2fe;
+        background: #ffffff;
+        color: #4338ca;
+        padding: 0 10px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+
+        &:first-child {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: #ffffff;
+        }
+
+        &:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+    }
+}
 /* --- VÙNG CUỘN (BODY) --- */
 .body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    overscroll-behavior: contain;
+    padding-bottom: 16px;
 
     &::-webkit-scrollbar {
         width: 6px;
@@ -162,4 +230,6 @@ $bg-hover: #f1f5f9;
 /* --- VÙNG FOOTER --- */
 .panel-footer {
     flex-shrink: 0; /* Giữ cố định ở đáy */
+    background: #ffffff;
+    box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.04);
 }

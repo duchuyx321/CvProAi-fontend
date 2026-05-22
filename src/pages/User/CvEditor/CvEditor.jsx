@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import classNames from 'classnames/bind';
 import { ToastContainer } from 'react-toastify';
-import { FiMenu } from 'react-icons/fi';
 
 import Modal from '~/components/Modal';
 import Button from '~/components/Button';
@@ -9,6 +7,7 @@ import Input from '~/components/Input';
 
 import LeftEditor from './components/LeftEditor';
 import RightPreview from './components/RightPreview';
+import AiRewritePanel from './components/AiRewritePanel';
 import styles from './CvEditor.module.scss';
 
 const cx = classNames.bind(styles);
@@ -32,8 +31,11 @@ function CvEditor({
     pageRef = null,
     resumeData = {},
     submitting = false,
+    aiRewrite = null,
 }) {
-    const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+    const isAiRewriteMode = Boolean(aiRewrite?.isActive);
+    const isAiPanelOpen = Boolean(isAiRewriteMode && aiRewrite?.isPanelOpen);
+    const pendingCount = aiRewrite?.pendingCount || 0;
 
     if (loading) {
         return (
@@ -52,23 +54,21 @@ function CvEditor({
             <section className={cx('wrapper')}>
                 <div
                     className={cx('inner', {
-                        panelClosed: !isLeftPanelOpen,
+                        aiRewriteMode: isAiRewriteMode,
+                        aiPanelOpen: isAiPanelOpen,
                     })}
                 >
-                    {!isLeftPanelOpen && (
+                    {isAiPanelOpen ? (
                         <button
                             type="button"
-                            className={cx('open-panel-btn')}
-                            onClick={() => setIsLeftPanelOpen(true)}
-                            title="Mở bảng điều khiển"
-                        >
-                            <FiMenu />
-                        </button>
-                    )}
+                            className={cx('aiPanelBackdrop')}
+                            onClick={aiRewrite?.onTogglePanel}
+                            aria-label="Đóng bảng gợi ý AI"
+                        />
+                    ) : null}
 
                     <LeftEditor
-                        isOpen={isLeftPanelOpen}
-                        onTogglePanel={() => setIsLeftPanelOpen(false)}
+                        isOpen
                         resumeData={resumeData}
                         onChangeField={onChangeField}
                         onChangeArrayField={onChangeArrayField}
@@ -86,9 +86,12 @@ function CvEditor({
                         onChangeCvName={onChangeCvName}
                         isDirty={isDirty}
                         canSave={isDirty && !submitting}
+                        aiRewrite={aiRewrite}
                     />
 
                     <RightPreview templateDetail={cvData} pageRef={pageRef} />
+
+                    {isAiPanelOpen ? <AiRewritePanel {...aiRewrite} /> : null}
                 </div>
             </section>
 
@@ -123,6 +126,56 @@ function CvEditor({
                             maxLength={120}
                             autoFocus
                         />
+                    </div>
+                </Modal>
+            )}
+
+            {isAiRewriteMode && (
+                <Modal
+                    isOpen={Boolean(aiRewrite?.isApplyAllModalOpen)}
+                    onClose={aiRewrite?.onCloseApplyAllModal}
+                    title={`Bạn muốn áp dụng toàn bộ ${pendingCount} gợi ý AI?`}
+                    description="Hệ thống sẽ chỉ áp dụng các proposal đang ở trạng thái pending. Proposal đã áp dụng hoặc đã bỏ qua sẽ không chạy lại."
+                    size="sm"
+                    closeOnOverlayClick={!aiRewrite?.applyingAll}
+                    closeOnEsc={!aiRewrite?.applyingAll}
+                    footer={
+                        <div className={cx('applyAllFooter')}>
+                            <Button
+                                type="button"
+                                outlineText
+                                className={cx('modalSecondaryBtn')}
+                                onClick={aiRewrite?.onCloseApplyAllModal}
+                                disabled={aiRewrite?.applyingAll}
+                            >
+                                Hủy
+                            </Button>
+                            <Button
+                                primary
+                                type="button"
+                                className={cx('modalPrimaryBtn')}
+                                onClick={aiRewrite?.onConfirmApplyAll}
+                                disabled={
+                                    aiRewrite?.applyingAll || pendingCount === 0
+                                }
+                            >
+                                {aiRewrite?.applyingAll
+                                    ? 'Đang áp dụng'
+                                    : 'Áp dụng tất cả'}
+                            </Button>
+                        </div>
+                    }
+                >
+                    <div className={cx('applyAllSummary')}>
+                        {(aiRewrite?.applyAllSummary || []).map((item) => (
+                            <div
+                                key={item.sectionKey}
+                                className={cx('applyAllRow')}
+                            >
+                                <span>{item.label}</span>
+                                <strong>{item.count}</strong>
+                            </div>
+                        ))}
                     </div>
                 </Modal>
             )}

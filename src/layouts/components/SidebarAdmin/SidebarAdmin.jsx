@@ -43,24 +43,18 @@ const ADMIN_MENU = [
 
 function SidebarAdmin() {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, clearAuthState } = useAuth();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-
     const handleLogout = async () => {
         if (isLoggingOut) return;
 
         try {
-            setIsLoggingOut(true);
-
-            // Dùng hàm logout từ AuthContext (đã bao gồm gọi API và xóa token)
+            clearAuthState();
             await logout();
-
             navigate('/login');
-        } catch (error) {
-            console.error('Lỗi khi đăng xuất:', error);
-            alert('Có lỗi xảy ra khi đăng xuất!');
         } finally {
             setIsLoggingOut(false);
+            navigate(config.router.login);
         }
     };
 

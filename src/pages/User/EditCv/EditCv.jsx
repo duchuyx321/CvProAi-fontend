@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import CvEditor from '~/pages/User/CvEditor';
@@ -15,14 +15,31 @@ import { validateTemplateConfig } from '~/utils/cv-section.schema';
 import { buildEditSubmitPreview } from '~/utils/cv-submit-preview.utils';
 import { getApiMessage, unwrapApiResponse } from '~/utils/api-response.utils';
 import { captureCvPreviewFile } from '~/utils/cv-capture.utils';
+import {
+    buildApplyAllSummary,
+    countPendingProposalsBySection,
+    extractRewriteProposals,
+    getPendingRewriteProposals,
+    normalizeRewriteSectionKey,
+    resolveResultTier,
+} from '~/utils/ai-rewrite.utils';
 
 import useCvEditorState from '../CvEditor/hooks/useCvEditorState';
 
 function EditCv() {
     const { slug } = useParams();
+    const [searchParams] = useSearchParams();
+
+    const rewrite = searchParams.get('rewrite') === 'true';
+    const ai_run_id = searchParams.get('ai_run_id');
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
+    const [aiRewriteResult, setAiRewriteResult] = useState(null);
+    const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
+    const [activeSectionFilter, setActiveSectionFilter] = useState('all');
+    const [activeSeverityFilter, setActiveSeverityFilter] = useState('all');
+    const [isApplyAllModalOpen, setIsApplyAllModalOpen] = useState(false);
 
     const {
         cvData,
@@ -53,13 +70,20 @@ function EditCv() {
             try {
                 setLoading(true);
 
-                const result = await getCvDetailBySlug(slug);
+                const result = await getCvDetailBySlug({
+                    slug,
+                    rewrite,
+                    ai_run_id,
+                });
 
                 if (!result?.success) {
                     throw new Error(getApiMessage(result, 'Không thể tải CV'));
                 }
 
-                const cv = unwrapApiResponse(result);
+                const payload = unwrapApiResponse(result);
+                const cv = payload?.cv || payload;
+                const aiRewritePayload =
+                    rewrite && ai_run_id ? payload?.ai_rewrite || null : null;
                 const nextCvData = normalizeCvDetailForEditor(cv);
                 const validation = validateTemplateConfig(nextCvData?.config);
 
@@ -72,8 +96,10 @@ function EditCv() {
                 if (isCancelled) return;
 
                 syncPersistedData(nextCvData);
+                setAiRewriteResult(aiRewritePayload);
             } catch (error) {
                 if (!isCancelled) {
+                    setAiRewriteResult(null);
                     toast.error(error?.message || 'Lỗi load CV');
                 }
             } finally {
@@ -94,7 +120,100 @@ function EditCv() {
         return () => {
             isCancelled = true;
         };
-    }, [navigate, slug, syncPersistedData]);
+    }, [ai_run_id, navigate, rewrite, slug, syncPersistedData]);
+
+    const rewriteProposals = useMemo(
+        () => extractRewriteProposals(aiRewriteResult),
+        [aiRewriteResult],
+    );
+    const pendingProposals = useMemo(
+        () => getPendingRewriteProposals(rewriteProposals),
+        [rewriteProposals],
+    );
+    const sectionCounts = useMemo(
+        () => countPendingProposalsBySection(rewriteProposals),
+        [rewriteProposals],
+    );
+    const applyAllSummary = useMemo(
+        () => buildApplyAllSummary(rewriteProposals),
+        [rewriteProposals],
+    );
+    const isAiRewriteActive = Boolean(
+        rewrite && ai_run_id && aiRewriteResult?.is_active,
+    );
+    const isPremium = resolveResultTier({ ai_rewrite: aiRewriteResult }) === 'premium';
+
+    const handleViewProposal = useCallback((proposal) => {
+        setActiveSectionFilter(
+            normalizeRewriteSectionKey(proposal?.targetSection) || 'all',
+        );
+        setActiveSeverityFilter(proposal?.severity || 'all');
+        setIsAiPanelOpen(true);
+    }, []);
+
+    const handleSelectAiSection = useCallback((sectionKey) => {
+        setActiveSectionFilter(normalizeRewriteSectionKey(sectionKey) || 'all');
+        setIsAiPanelOpen(true);
+    }, []);
+
+    const showApplyTodo = useCallback(() => {
+        toast.info('Đã xác định đúng proposal. Phần apply sẽ nối API sau.');
+    }, []);
+
+    const aiRewrite = useMemo(() => {
+        if (!isAiRewriteActive) return null;
+
+        return {
+            isActive: true,
+            isPremium,
+            isPanelOpen: isAiPanelOpen,
+            loading: false,
+            errorMessage: '',
+            proposals: rewriteProposals,
+            pendingCount: pendingProposals.length,
+            sectionCounts,
+            activeSectionFilter,
+            activeSeverityFilter,
+            actionLoadingId: '',
+            applyingAll: false,
+            applyAllSummary,
+            isApplyAllModalOpen,
+            activeSectionKey: activeSectionFilter,
+            onApplyProposal: showApplyTodo,
+            onRejectProposal: showApplyTodo,
+            onViewProposal: handleViewProposal,
+            onApplyAllClick: () => setIsApplyAllModalOpen(true),
+            onConfirmApplyAll: () => {
+                setIsApplyAllModalOpen(false);
+                showApplyTodo();
+            },
+            onCloseApplyAllModal: () => setIsApplyAllModalOpen(false),
+            onChangeSectionFilter: setActiveSectionFilter,
+            onChangeSeverityFilter: setActiveSeverityFilter,
+            onRefresh: () => window.location.reload(),
+            onTogglePanel: () => setIsAiPanelOpen((prev) => !prev),
+            onSelectSection: handleSelectAiSection,
+            onUpgrade: () =>
+                navigate(
+                    config.router.upgradePremium || config.router.upgradeAccount,
+                ),
+        };
+    }, [
+        activeSectionFilter,
+        activeSeverityFilter,
+        applyAllSummary,
+        handleSelectAiSection,
+        handleViewProposal,
+        isAiPanelOpen,
+        isAiRewriteActive,
+        isApplyAllModalOpen,
+        isPremium,
+        navigate,
+        pendingProposals.length,
+        rewriteProposals,
+        sectionCounts,
+        showApplyTodo,
+    ]);
 
     const submitUpdateCv = useCallback(
         async (finalCvName) => {
@@ -267,6 +386,7 @@ function EditCv() {
             onGeneratePreview={handleGeneratePreview}
             onChangeCvName={handleChangeCvName}
             pageRef={pageRef}
+            aiRewrite={aiRewrite}
         />
     );
 }
