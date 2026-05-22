@@ -51,26 +51,52 @@ export const updateAdminUserStatus = async (
     payload = { action: 'lock' },
 ) => {
     try {
-        const endpointAction =
-            payload.action === 'lock' ? 'banned' : 'disbanned';
+        const isLockAction = payload.action === 'lock';
+
+        const endpoint = isLockAction
+            ? `${ADMIN_USERS_ENDPOINT}/banned/${userId}`
+            : `${ADMIN_USERS_ENDPOINT}/disbanned/${userId}`;
+
+        return await Response.PATCH(endpoint, payload);
+    } catch (error) {
+        return buildErrorResponse(error);
+    }
+};
+
+export const updateAdminUserRole = async (userId, role) => {
+    try {
+        return await Response.PATCH(`${ADMIN_USERS_ENDPOINT}/role/${userId}`, {
+            role,
+        });
+    } catch (error) {
+        return buildErrorResponse(error);
+    }
+};
+
+export const updateAdminUserSubscription = async (userId, payload = {}) => {
+    try {
         return await Response.PATCH(
-            `${ADMIN_USERS_ENDPOINT}/${endpointAction}/${userId}`,
+            `${ADMIN_USERS_ENDPOINT}/subscription/${userId}`,
+            removeEmptyParams(payload),
         );
     } catch (error) {
         return buildErrorResponse(error);
     }
 };
 
-export const upgradeAdminUser = async (userId, payload) => {
+export const getAdminPlans = async () => {
     try {
-        return await Response.PATCH(`${ADMIN_USERS_ENDPOINT}/upgrade/${userId}`, payload);
+        return await Response.GET('plans/all');
     } catch (error) {
         return buildErrorResponse(error);
     }
 };
-export const getAdminPlans = async (limit=8 , page = 1) => {
+
+export const getAdminAddonPackages = async (params = {}) => {
     try {
-        return await Response.GET(`admin/plans?limit=${limit}&page=${page}`);
+        return await Response.GET('ai-addon-packages', {
+            params: removeEmptyParams(params),
+        });
     } catch (error) {
         return buildErrorResponse(error);
     }

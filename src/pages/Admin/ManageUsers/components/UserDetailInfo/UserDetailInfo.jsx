@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames/bind';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -7,8 +7,8 @@ import {
     ArrowUpCircle,
     Bot,
     Calendar,
-    CheckCircle2,
-    Download,
+    Check,
+    ChevronDown,
     FileText,
     Info,
     LockKeyhole,
@@ -26,20 +26,21 @@ import Button from '~/components/Button';
 import { config } from '~/config';
 import {
     getAdminUserDetail,
+    updateAdminUserRole,
     updateAdminUserStatus,
 } from '~/services/admin-user.service';
 import UserUpgradeModal from '../UserUpgradeModal';
 
 import styles from './UserDetailInfo.module.scss';
 import {
-    buildFallbackUserDetail,
-    formatCurrency,
     formatDate,
-    formatDateTime,
     formatNumber,
+    getDetailPayload,
     getQuotaText,
+    getRoleLabel,
     getUserDetailErrorMessage,
     normalizeAdminUserDetail,
+    USER_ROLE_OPTIONS,
 } from './userDetail.utils';
 
 const cx = classNames.bind(styles);
@@ -58,67 +59,44 @@ function getQuotaPercent(used, limit) {
     return Math.min(Math.round((used / limit) * 100), 100);
 }
 
-function getStatusUpdatePayload({ detail, payload, shouldLock }) {
-    return {
-        ...detail.raw,
-        ...(payload || {}),
-        is_locked: shouldLock,
-        isLocked: shouldLock,
-        is_banned: shouldLock,
-        isBanned: shouldLock,
-        status: shouldLock ? 'BANNED' : 'ACTIVE',
-        account_status: shouldLock ? 'BANNED' : 'ACTIVE',
-        accountStatus: shouldLock ? 'BANNED' : 'ACTIVE',
-        is_online:
-            payload?.is_online ??
-            payload?.isOnline ??
-            (shouldLock ? false : detail.isOnline),
-        audit_logs: [
-            {
-                action: shouldLock ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
-                actor_name: 'Admin',
-                description: shouldLock
-                    ? 'Khóa tài khoản từ màn hình chi tiết'
-                    : 'Mở khóa tài khoản từ màn hình chi tiết',
-                created_at: new Date().toISOString(),
-            },
-        ].concat(detail.auditLogs || []),
-    };
-}
-
-function UserDetailInfo({
-    user,
-    onBack,
-    onUserStatusChange,
-    fetchUserDetailAction = getAdminUserDetail,
-    updateUserStatusAction = updateAdminUserStatus,
-}) {
+function UserDetailInfo() {
     const navigate = useNavigate();
     const location = useLocation();
     const { userId } = useParams();
-    const selectedUser = user || location.state?.user || null;
-    const fallbackDetail = useMemo(
-        () => buildFallbackUserDetail(selectedUser),
-        [selectedUser],
-    );
+    const listUser = location.state?.user || null;
 
-    const [detail, setDetail] = useState(fallbackDetail);
+    const [detail, setDetail] = useState(null);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
-    const [empty, setEmpty] = useState(false);
     const [submittingStatus, setSubmittingStatus] = useState(false);
     const [statusActionError, setStatusActionError] = useState('');
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+    const [submittingRole, setSubmittingRole] = useState(false);
+    const roleMenuRef = useRef(null);
 
     const handleBack = () => {
-        if (onBack) {
-            onBack();
-            return;
-        }
-
         navigate(config.router.manageUsers);
     };
+
+    useEffect(() => {
+        if (!roleMenuOpen) return undefined;
+
+        const handleClickOutside = (event) => {
+            if (
+                roleMenuRef.current &&
+                !roleMenuRef.current.contains(event.target)
+            ) {
+                setRoleMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [roleMenuOpen]);
 
     useEffect(() => {
         let ignore = false;
@@ -126,16 +104,15 @@ function UserDetailInfo({
         const fetchUserDetail = async () => {
             if (!userId) {
                 setLoading(false);
-                setEmpty(true);
+                setErrorMessage('Không tìm thấy ID người dùng');
                 return;
             }
 
             try {
                 setLoading(true);
                 setErrorMessage('');
-                setEmpty(false);
 
-                const response = await fetchUserDetailAction(userId);
+                const response = await getAdminUserDetail(userId);
 
                 if (response?.success === false) {
                     throw new Error(
@@ -146,25 +123,18 @@ function UserDetailInfo({
                     );
                 }
 
-                const payload = response?.data || response;
+                const payload = getDetailPayload(response);
 
-                if (
-                    !payload ||
-                    (typeof payload === 'object' &&
-                        !Object.keys(payload).length)
-                ) {
-                    if (!ignore) {
-                        setEmpty(true);
-                        setDetail(null);
-                    }
-                    return;
+                if (!payload || !Object.keys(payload).length) {
+                    throw new Error('Không có dữ liệu người dùng');
                 }
 
                 if (!ignore) {
-                    setDetail(normalizeAdminUserDetail(payload, selectedUser));
+                    setDetail(normalizeAdminUserDetail(payload, listUser));
                 }
             } catch (error) {
                 if (!ignore) {
+                    setDetail(null);
                     setErrorMessage(
                         getUserDetailErrorMessage(
                             error,
@@ -184,24 +154,62 @@ function UserDetailInfo({
         return () => {
             ignore = true;
         };
-    }, [fetchUserDetailAction, selectedUser, userId, refreshTrigger]);
+    }, [userId, refreshTrigger, listUser]);
 
     const handleUpgradeSuccess = () => {
         setRefreshTrigger((prev) => prev + 1);
         setIsUpgradeModalOpen(false);
     };
 
+    const handleAssignRole = async (nextRole) => {
+        if (!detail?.id || submittingRole || detail.role === nextRole) return;
+
+        setSubmittingRole(true);
+
+        try {
+            const response = await updateAdminUserRole(detail.id, nextRole);
+
+            if (response?.success === false) {
+                throw new Error(
+                    getUserDetailErrorMessage(
+                        response,
+                        'Không thể cập nhật quyền người dùng',
+                    ),
+                );
+            }
+
+            setDetail((current) =>
+                current
+                    ? {
+                          ...current,
+                          role: nextRole,
+                          roleLabel: getRoleLabel(nextRole),
+                      }
+                    : current,
+            );
+            setRoleMenuOpen(false);
+            toast.success(`Đã phân quyền: ${getRoleLabel(nextRole)}`);
+        } catch (error) {
+            toast.error(
+                getUserDetailErrorMessage(
+                    error,
+                    'Không thể cập nhật quyền người dùng',
+                ),
+            );
+        } finally {
+            setSubmittingRole(false);
+        }
+    };
+
     const handleToggleStatus = async () => {
         if (!detail?.id || submittingStatus) return;
 
         const shouldLock = !detail.isLocked;
-        const targetUserId = detail.raw?.user_id || detail.raw?.id || detail.id;
-
         setSubmittingStatus(true);
         setStatusActionError('');
 
         try {
-            const response = await updateUserStatusAction(targetUserId, {
+            const response = await updateAdminUserStatus(detail.id, {
                 action: shouldLock ? 'lock' : 'unlock',
             });
 
@@ -216,17 +224,19 @@ function UserDetailInfo({
                 );
             }
 
-            const updatedDetail = normalizeAdminUserDetail(
-                getStatusUpdatePayload({
-                    detail,
-                    payload: response?.data || response,
-                    shouldLock,
-                }),
-                detail,
+            setDetail((current) =>
+                current
+                    ? {
+                          ...current,
+                          isLocked: shouldLock,
+                          isOnline: !shouldLock,
+                          statusLabel: shouldLock
+                              ? 'Bị khóa'
+                              : 'Hoạt động',
+                      }
+                    : current,
             );
 
-            setDetail(updatedDetail);
-            onUserStatusChange?.(updatedDetail);
             toast.success(
                 shouldLock
                     ? 'Đã khóa tài khoản người dùng'
@@ -237,7 +247,6 @@ function UserDetailInfo({
                 error,
                 'Không thể cập nhật trạng thái tài khoản',
             );
-
             setStatusActionError(message);
             toast.error(message);
         } finally {
@@ -257,20 +266,13 @@ function UserDetailInfo({
         );
     }
 
-    if ((errorMessage && !detail) || empty || !detail) {
+    if (errorMessage && !detail) {
         return (
             <section className={cx('wrapper')}>
                 <div className={cx('inner')}>
-                    <div className={cx('loading', { error: errorMessage })}>
-                        <h3>
-                            {errorMessage
-                                ? 'Không thể tải chi tiết người dùng'
-                                : 'Không có dữ liệu người dùng'}
-                        </h3>
-                        <p>
-                            {errorMessage ||
-                                'Không tìm thấy hồ sơ phù hợp để hiển thị chi tiết.'}
-                        </p>
+                    <div className={cx('loading', { error: true })}>
+                        <h3>Không thể tải chi tiết người dùng</h3>
+                        <p>{errorMessage}</p>
                         <Button outlineText onClick={handleBack}>
                             Quay lại danh sách
                         </Button>
@@ -288,91 +290,165 @@ function UserDetailInfo({
         detail.quotas.exportUsed,
         detail.quotas.exportLimit,
     );
+    const cvQuotaPercent = getQuotaPercent(
+        detail.quotas.cvUsed,
+        detail.quotas.cvLimit,
+    );
     const initials = buildInitialLetters(detail.fullName) || 'U';
     const statusIcon = detail.isLocked ? UnlockKeyhole : LockKeyhole;
     const StatusIcon = submittingStatus ? RefreshCw : statusIcon;
+    const isAdminRole = detail.role === 'ADMIN';
 
     const stats = [
         {
             key: 'cv',
             icon: FileText,
             tone: 'blue',
-            label: 'Số CV đã tạo',
+            label: 'CV đã tạo',
             value: formatNumber(detail.stats.cvCount),
         },
         {
             key: 'ai',
             icon: Bot,
             tone: 'violet',
-            label: 'Số lần dùng AI',
+            label: 'Lượt dùng AI',
             value: formatNumber(detail.stats.aiUsageCount),
-            hint: `Đã dùng ${aiQuotaPercent}% hạn mức tháng`,
+            hint: `${aiQuotaPercent}% hạn mức`,
+        },
+        {
+            key: 'export',
+            icon: Activity,
+            tone: 'green',
+            label: 'Lượt export',
+            value: formatNumber(detail.stats.exportCount),
+            hint: `${exportQuotaPercent}% hạn mức`,
         },
         {
             key: 'package',
             icon: UserRound,
             tone: 'amber',
-            label: 'Gói hiện tại',
-            value: detail.packageName,
-            hint: `Hết hạn: ${formatDate(detail.packageExpiredAt)}`,
-        },
-        {
-            key: 'provider',
-            icon: Shield,
-            tone: 'green',
-            label: 'Provider',
-            value: detail.provider,
-            hint: detail.emailVerified
-                ? 'Email đã xác thực'
-                : 'Email chưa xác thực',
+            label: 'Gói dịch vụ',
+            value: detail.planName,
+            hint: `Hết hạn ${formatDate(detail.packageExpiredAt)}`,
         },
     ];
 
     const infoRows = [
         { label: 'Email', value: detail.email },
         { label: 'Số điện thoại', value: detail.phone },
+        { label: 'Vai trò', value: detail.roleLabel },
         { label: 'Trạng thái', value: detail.statusLabel },
+        { label: 'Provider', value: detail.provider },
+        { label: 'Gói hiện tại', value: detail.planName },
         { label: 'Ngày đăng ký', value: formatDate(detail.registeredAt) },
     ];
 
-    const contactRows = [
-        { icon: Mail, value: detail.email },
-        { icon: Phone, value: detail.phone },
+    const quotaItems = [
         {
-            icon: Calendar,
-            value: `Tham gia: ${formatDate(detail.registeredAt)}`,
+            key: 'cv',
+            label: 'CV',
+            used: detail.quotas.cvUsed,
+            limit: detail.quotas.cvLimit,
+            percent: cvQuotaPercent,
+            barClass: 'cvBar',
         },
-        { icon: MapPin, value: detail.location },
+        {
+            key: 'ai',
+            label: 'AI',
+            used: detail.quotas.aiUsed,
+            limit: detail.quotas.aiLimit,
+            percent: aiQuotaPercent,
+            barClass: 'aiBar',
+        },
+        {
+            key: 'export',
+            label: 'Export',
+            used: detail.quotas.exportUsed,
+            limit: detail.quotas.exportLimit,
+            percent: exportQuotaPercent,
+            barClass: 'exportBar',
+        },
     ];
 
     return (
         <section className={cx('wrapper')}>
             <div className={cx('inner')}>
                 <header className={cx('header')}>
-                    <div>
-                        <h1>Hồ sơ người dùng: {detail.fullName}</h1>
-                        <p>
-                            ID: #{detail.id} • {detail.statusLabel} • Thành viên
-                            từ {formatDate(detail.registeredAt)}
-                        </p>
+                    <div className={cx('headerIntro')}>
+                        <button
+                            type="button"
+                            className={cx('backLink')}
+                            onClick={handleBack}
+                        >
+                            <ArrowLeft aria-hidden="true" />
+                            Quay lại danh sách
+                        </button>
+                        <h1>{detail.fullName}</h1>
+                        <p>ID #{detail.id}</p>
                     </div>
 
                     <div className={cx('headerActions')}>
-                        <Button
-                            outlineText
-                            leftIcon={<ArrowLeft aria-hidden="true" />}
-                            onClick={handleBack}
-                        >
-                            Quay lại
-                        </Button>
-                        <Button
-                            outlineText
-                            className={cx('upgradeAction')}
-                            leftIcon={<ArrowUpCircle aria-hidden="true" />}
-                            onClick={() => setIsUpgradeModalOpen(true)}
-                        >
-                            Nâng cấp
-                        </Button>
+                        {!isAdminRole ? (
+                            <Button
+                                outlineText
+                                className={cx('upgradeAction')}
+                                leftIcon={<ArrowUpCircle aria-hidden="true" />}
+                                onClick={() => setIsUpgradeModalOpen(true)}
+                            >
+                                Nâng cấp
+                            </Button>
+                        ) : null}
+
+                        <div className={cx('roleMenuWrap')} ref={roleMenuRef}>
+                            <Button
+                                outlineText
+                                className={cx('roleAction')}
+                                leftIcon={<Shield aria-hidden="true" />}
+                                rightIcon={
+                                    <ChevronDown
+                                        aria-hidden="true"
+                                        className={cx('roleChevron', {
+                                            open: roleMenuOpen,
+                                        })}
+                                    />
+                                }
+                                disabled={submittingRole || loading}
+                                onClick={() =>
+                                    setRoleMenuOpen((open) => !open)
+                                }
+                            >
+                                Phân quyền
+                            </Button>
+
+                            {roleMenuOpen ? (
+                                <div className={cx('roleDropdown')}>
+                                    {USER_ROLE_OPTIONS.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            className={cx('roleOption', {
+                                                active:
+                                                    detail.role ===
+                                                    option.value,
+                                            })}
+                                            disabled={
+                                                submittingRole ||
+                                                detail.role === option.value
+                                            }
+                                            onClick={() =>
+                                                handleAssignRole(option.value)
+                                            }
+                                        >
+                                            <span>{option.label}</span>
+                                            {detail.role === option.value ? (
+                                                <Check aria-hidden="true" />
+                                            ) : null}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
+
                         <Button
                             primary={!detail.isLocked}
                             outlineText={detail.isLocked}
@@ -387,7 +463,7 @@ function UserDetailInfo({
                                     })}
                                 />
                             }
-                            disabled={submittingStatus}
+                            disabled={submittingStatus || loading}
                             onClick={handleToggleStatus}
                         >
                             {detail.isLocked
@@ -411,97 +487,110 @@ function UserDetailInfo({
                     </div>
                 ) : null}
 
-                <div className={cx('content')}>
-                    <aside className={cx('sidebar')}>
-                        <section className={cx('card', 'profileCard')}>
-                            <div className={cx('avatar')}>
-                                {detail.avatarUrl ? (
-                                    <img
-                                        src={detail.avatarUrl}
-                                        alt={detail.fullName}
-                                    />
-                                ) : (
-                                    <span>{initials}</span>
-                                )}
+                <div className={cx('content', { isRefreshing: loading })}>
+                    <section className={cx('profileHero')}>
+                        <div className={cx('avatar')}>
+                            {detail.avatarUrl ? (
+                                <img
+                                    src={detail.avatarUrl}
+                                    alt={detail.fullName}
+                                />
+                            ) : (
+                                <span>{initials}</span>
+                            )}
+                        </div>
+
+                        <div className={cx('profileBody')}>
+                            <div className={cx('badgeRow')}>
+                                <span
+                                    className={cx('badge', 'role', detail.role)}
+                                >
+                                    {detail.roleLabel}
+                                </span>
+                                <span
+                                    className={cx('badge', 'status', {
+                                        locked: detail.isLocked,
+                                        active:
+                                            !detail.isLocked && detail.isOnline,
+                                    })}
+                                >
+                                    {detail.statusLabel}
+                                </span>
+                                <span className={cx('badge', 'provider')}>
+                                    {detail.provider}
+                                </span>
+                                <span
+                                    className={cx(
+                                        'badge',
+                                        detail.emailVerified
+                                            ? 'emailVerified'
+                                            : 'emailPending',
+                                    )}
+                                >
+                                    {detail.emailVerified
+                                        ? 'Email đã xác thực'
+                                        : 'Email chưa xác thực'}
+                                </span>
                             </div>
 
-                            <h2>{detail.fullName}</h2>
-                            <p>Gói: {detail.packageName}</p>
-
-                            <div className={cx('contactList')}>
-                                {contactRows.map((item) => {
-                                    const Icon = item.icon;
-
-                                    return (
-                                        <span key={item.value}>
-                                            <Icon />
-                                            {item.value}
-                                        </span>
-                                    );
-                                })}
+                            <div className={cx('contactRow')}>
+                                <span>
+                                    <Mail />
+                                    {detail.email}
+                                </span>
+                                <span>
+                                    <Phone />
+                                    {detail.phone}
+                                </span>
+                                <span>
+                                    <Calendar />
+                                    Tham gia {formatDate(detail.registeredAt)}
+                                </span>
+                                <span>
+                                    <MapPin />
+                                    {detail.location}
+                                </span>
                             </div>
-                        </section>
 
-                        <section className={cx('card')}>
-                            <h2>
-                                <Shield />
-                                Audit log
-                            </h2>
+                            {!isAdminRole ? (
+                                <p className={cx('packageNote')}>
+                                    <span className={cx('planBadge')}>
+                                        {detail.planName}
+                                    </span>
+                                    <span className={cx('packageExpiry')}>
+                                        Hết hạn{' '}
+                                        {formatDate(detail.packageExpiredAt)}
+                                    </span>
+                                </p>
+                            ) : null}
+                        </div>
+                    </section>
 
-                            <div className={cx('auditList')}>
-                                {detail.auditLogs.length ? (
-                                    detail.auditLogs.map((log) => (
-                                        <div
-                                            key={log.id}
-                                            className={cx('auditItem')}
-                                        >
-                                            <strong>{log.action}</strong>
-                                            <span>{log.actor}</span>
-                                            <span>
-                                                {formatDateTime(log.timestamp)}
-                                            </span>
-                                            {log.note ? (
-                                                <p>{log.note}</p>
-                                            ) : null}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className={cx('emptyText')}>
-                                        Chưa có audit log nào cho tài khoản này.
-                                    </p>
-                                )}
-                            </div>
-                        </section>
-                    </aside>
+                    <section className={cx('statsGrid')}>
+                        {stats.map((item) => {
+                            const Icon = item.icon;
 
-                    <main className={cx('mainContent')}>
-                        <section className={cx('statsGrid')}>
-                            {stats.map((item) => {
-                                const Icon = item.icon;
-
-                                return (
-                                    <article
-                                        key={item.key}
-                                        className={cx('statCard')}
+                            return (
+                                <article
+                                    key={item.key}
+                                    className={cx('statCard')}
+                                >
+                                    <span
+                                        className={cx('statIcon', item.tone)}
                                     >
-                                        <span
-                                            className={cx(
-                                                'statIcon',
-                                                item.tone,
-                                            )}
-                                        >
-                                            <Icon />
-                                        </span>
-                                        <p>{item.label}</p>
-                                        <strong>{item.value}</strong>
-                                        {item.hint ? (
-                                            <small>{item.hint}</small>
-                                        ) : null}
-                                    </article>
-                                );
-                            })}
-                        </section>
+                                        <Icon />
+                                    </span>
+                                    <p>{item.label}</p>
+                                    <strong>{item.value}</strong>
+                                    {item.hint ? (
+                                        <small>{item.hint}</small>
+                                    ) : null}
+                                </article>
+                            );
+                        })}
+                    </section>
 
+                    <div className={cx('detailsGrid')}>
                         <section className={cx('card')}>
                             <h2>
                                 <Info />
@@ -524,139 +613,44 @@ function UserDetailInfo({
                         <section className={cx('card')}>
                             <h2>
                                 <Activity />
-                                Quota sử dụng
+                                Hạn mức sử dụng
                             </h2>
 
                             <div className={cx('quotaList')}>
-                                <div className={cx('quotaItem')}>
-                                    <div className={cx('quotaTop')}>
-                                        <span>AI quota</span>
-                                        <strong>
-                                            {getQuotaText(
-                                                detail.quotas.aiUsed,
-                                                detail.quotas.aiLimit,
-                                            )}
-                                        </strong>
+                                {quotaItems.map((item) => (
+                                    <div
+                                        key={item.key}
+                                        className={cx('quotaItem')}
+                                    >
+                                        <div className={cx('quotaTop')}>
+                                            <span>{item.label}</span>
+                                            <strong>
+                                                {getQuotaText(
+                                                    item.used,
+                                                    item.limit,
+                                                )}
+                                            </strong>
+                                        </div>
+                                        <div className={cx('quotaBar')}>
+                                            <span
+                                                className={cx(item.barClass)}
+                                                style={{
+                                                    width: `${item.percent}%`,
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className={cx('quotaBar')}>
-                                        <span
-                                            style={{
-                                                width: `${aiQuotaPercent}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className={cx('quotaItem')}>
-                                    <div className={cx('quotaTop')}>
-                                        <span>Export quota</span>
-                                        <strong>
-                                            {getQuotaText(
-                                                detail.quotas.exportUsed,
-                                                detail.quotas.exportLimit,
-                                            )}
-                                        </strong>
-                                    </div>
-                                    <div className={cx('quotaBar')}>
-                                        <span
-                                            className={cx('greenBar')}
-                                            style={{
-                                                width: `${exportQuotaPercent}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </section>
+                    </div>
 
-                        <div className={cx('bottomGrid')}>
-                            <section className={cx('card')}>
-                                <div className={cx('sectionHeader')}>
-                                    <h2>
-                                        <CheckCircle2 />
-                                        Lịch sử giao dịch
-                                    </h2>
-                                    <span>
-                                        {formatNumber(
-                                            detail.transactions.length,
-                                        )}{' '}
-                                        hoạt động
-                                    </span>
-                                </div>
-
-                                {detail.transactions.length ? (
-                                    <div className={cx('historyList')}>
-                                        {detail.transactions.map(
-                                            (transaction) => (
-                                                <div
-                                                    key={transaction.id}
-                                                    className={cx(
-                                                        'historyItem',
-                                                    )}
-                                                >
-                                                    <div>
-                                                        <strong>
-                                                            {transaction.title}
-                                                        </strong>
-                                                        <span>
-                                                            {formatDate(
-                                                                transaction.date,
-                                                            )}
-                                                            {transaction.reference
-                                                                ? ` • ${transaction.reference}`
-                                                                : ''}
-                                                        </span>
-                                                    </div>
-                                                    <strong>
-                                                        {formatCurrency(
-                                                            transaction.amount,
-                                                            transaction.currency,
-                                                        )}
-                                                    </strong>
-                                                </div>
-                                            ),
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className={cx('emptyText')}>
-                                        Chưa có giao dịch nào được ghi nhận.
-                                    </p>
-                                )}
-                            </section>
-
-                            <section className={cx('card')}>
-                                <h2>
-                                    <Download />
-                                    Thống kê nhanh
-                                </h2>
-
-                                <div className={cx('metricsList')}>
-                                    <div className={cx('metricRow')}>
-                                        <span>Số CV đã tạo</span>
-                                        <strong>
-                                            {formatNumber(detail.stats.cvCount)}
-                                        </strong>
-                                    </div>
-                                    <div className={cx('metricRow')}>
-                                        <span>Số lần dùng AI</span>
-                                        <strong>
-                                            {formatNumber(
-                                                detail.stats.aiUsageCount,
-                                            )}
-                                        </strong>
-                                    </div>
-                                    <div className={cx('metricRow')}>
-                                        <span>Tổng lượt export</span>
-                                        <strong>
-                                            {formatNumber(
-                                                detail.stats.exportCount,
-                                            )}
-                                        </strong>
-                                    </div>
-                                </div>
-                            </section>
+                    {loading ? (
+                        <div className={cx('refreshOverlay')}>
+                            <RefreshCw className={cx('spinning')} />
+                            <span>Đang cập nhật dữ liệu...</span>
                         </div>
-                    </main>
+                    ) : null}
                 </div>
             </div>
 

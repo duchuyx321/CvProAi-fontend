@@ -28,18 +28,17 @@ import {
     formatNumber,
     getErrorMessage,
     getPaginationFromPayload,
-    getResponsePayload,
     getUserDisplayId,
     getUsersFromPayload,
     normalizeAdminUser,
 } from './manageUsers.utils';
+
 
 const cx = classNames.bind(styles);
 
 function getPageFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const pageParam = Number(params.get('page'));
-
     return pageParam > 0 ? pageParam : 1;
 }
 
@@ -118,10 +117,8 @@ function ManageUsers() {
                     );
                 }
 
-                const payload = getResponsePayload(response);
-                const nextUsers =
-                    getUsersFromPayload(payload).map(normalizeAdminUser);
-                const nextMeta = getPaginationFromPayload(payload, PAGE_SIZE);
+                const nextUsers = getUsersFromPayload(response).map(normalizeAdminUser);
+                const nextMeta = getPaginationFromPayload(response, PAGE_SIZE);
 
                 if (ignore) return;
 
@@ -210,9 +207,7 @@ function ManageUsers() {
         (user) => {
             navigate(
                 config.router.manageUsersDetail.replace(':userId', user.id),
-                {
-                    state: { user },
-                },
+                { state: { user } },
             );
         },
         [navigate],
@@ -232,7 +227,6 @@ function ManageUsers() {
         if (!user?.id || submittingUserId === user.id) return;
 
         const shouldLock = !user.isLocked;
-
         setSubmittingUserId(user.id);
 
         try {
@@ -254,7 +248,7 @@ function ManageUsers() {
             const updatedUser = normalizeAdminUser(
                 getUpdatedUserPayload({
                     user,
-                    payload: getResponsePayload(response),
+                    payload: response?.data,
                     shouldLock,
                 }),
             );
@@ -296,13 +290,13 @@ function ManageUsers() {
                 </div>
 
                 <div className={cx('summaryCard')}>
-                    {/* <span>Tổng người dùng</span>
+                    <span>Tổng người dùng</span>
                     <strong>{formatNumber(totalItems)}</strong>
                     <small>
                         {loading
                             ? 'Đang cập nhật...'
                             : `Trang ${page}/${totalPages}`}
-                    </small> */}
+                    </small>
                 </div>
             </header>
 
@@ -337,8 +331,7 @@ function ManageUsers() {
                         </thead>
                         <tbody>
                             {users.map((user) => {
-                                const isSubmitting =
-                                    submittingUserId === user.id;
+                                const isSubmitting = submittingUserId === user.id;
 
                                 return (
                                     <tr key={user.id}>
@@ -348,13 +341,18 @@ function ManageUsers() {
                                         <td>
                                             <div className={cx('userInfo')}>
                                                 <span className={cx('avatar')}>
-                                                    {user.fullName
-                                                        .charAt(0)
-                                                        .toUpperCase()}
+                                                    {user.avatar ? (
+                                                        <img
+                                                            src={user.avatar}
+                                                            alt={user.fullName}
+                                                        />
+                                                    ) : (
+                                                        user.fullName
+                                                            .charAt(0)
+                                                            .toUpperCase()
+                                                    )}
                                                 </span>
-                                                <span
-                                                    className={cx('userName')}
-                                                >
+                                                <span className={cx('userName')}>
                                                     {user.fullName}
                                                 </span>
                                             </div>
@@ -363,9 +361,7 @@ function ManageUsers() {
                                             {user.email}
                                         </td>
                                         <td>
-                                            <span
-                                                className={cx('providerBadge')}
-                                            >
+                                            <span className={cx('providerBadge')}>
                                                 {user.provider}
                                             </span>
                                         </td>
@@ -381,12 +377,8 @@ function ManageUsers() {
                                             <span
                                                 className={cx('statusBadge', {
                                                     locked: user.isLocked,
-                                                    active:
-                                                        !user.isLocked &&
-                                                        user.isOnline,
-                                                    inactive:
-                                                        !user.isLocked &&
-                                                        !user.isOnline,
+                                                    active: !user.isLocked && user.isOnline,
+                                                    inactive: !user.isLocked && !user.isOnline,
                                                 })}
                                             >
                                                 {user.statusLabel}
@@ -401,9 +393,7 @@ function ManageUsers() {
                                                     type="button"
                                                     className={cx('iconButton')}
                                                     aria-label={`Xem ${user.fullName}`}
-                                                    onClick={() =>
-                                                        handleViewUser(user)
-                                                    }
+                                                    onClick={() => handleViewUser(user)}
                                                     title="Xem"
                                                 >
                                                     <Eye />
@@ -412,46 +402,28 @@ function ManageUsers() {
                                                     type="button"
                                                     className={cx('iconButton', 'upgrade')}
                                                     aria-label={`Nâng cấp ${user.fullName}`}
-                                                    onClick={() =>
-                                                        handleUpgradeUser(user)
-                                                    }
+                                                    onClick={() => handleUpgradeUser(user)}
                                                     title="Nâng cấp tài khoản"
                                                 >
                                                     <ArrowUpCircle />
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className={cx(
-                                                        'iconButton',
-                                                        {
-                                                            danger: !user.isLocked,
-                                                            success:
-                                                                user.isLocked,
-                                                        },
-                                                    )}
+                                                    className={cx('iconButton', {
+                                                        danger: !user.isLocked,
+                                                        success: user.isLocked,
+                                                    })}
                                                     aria-label={
                                                         user.isLocked
                                                             ? `Mở khóa ${user.fullName}`
                                                             : `Khóa ${user.fullName}`
                                                     }
                                                     disabled={isSubmitting}
-                                                    onClick={() =>
-                                                        handleToggleUserStatus(
-                                                            user,
-                                                        )
-                                                    }
-                                                    title={
-                                                        user.isLocked
-                                                            ? 'Mở khóa'
-                                                            : 'Khóa'
-                                                    }
+                                                    onClick={() => handleToggleUserStatus(user)}
+                                                    title={user.isLocked ? 'Mở khóa' : 'Khóa'}
                                                 >
                                                     {isSubmitting ? (
-                                                        <LoaderCircle
-                                                            className={cx(
-                                                                'spinning',
-                                                            )}
-                                                        />
+                                                        <LoaderCircle className={cx('spinning')} />
                                                     ) : user.isLocked ? (
                                                         <Unlock />
                                                     ) : (
@@ -469,10 +441,7 @@ function ManageUsers() {
                                     <td className={cx('emptyCell')} colSpan="9">
                                         <div className={cx('errorState')}>
                                             <span>{errorMessage}</span>
-                                            <button
-                                                type="button"
-                                                onClick={handleRetryFetch}
-                                            >
+                                            <button type="button" onClick={handleRetryFetch}>
                                                 <RefreshCw />
                                                 Thử lại
                                             </button>
@@ -501,8 +470,7 @@ function ManageUsers() {
 
                 <div className={cx('tableFooter')}>
                     <p>
-                        {/* Hiển thị {startItem} - {endItem} của {totalItems} người
-                        dùng */}
+                        Hiển thị {startItem} - {endItem} của {totalItems} người dùng
                     </p>
 
                     <Pagination
@@ -518,9 +486,7 @@ function ManageUsers() {
                 isOpen={Boolean(selectedUpgradeUser)}
                 onClose={() => setSelectedUpgradeUser(null)}
                 user={selectedUpgradeUser}
-                onSuccess={() => {
-                    handleRetryFetch();
-                }}
+                onSuccess={() => handleRetryFetch()}
             />
         </div>
     );

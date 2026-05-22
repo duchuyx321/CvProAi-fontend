@@ -1,128 +1,398 @@
 .body {
-    padding: 8px 0;
+    overflow: hidden;
 }
 
 .loadingContainer {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 32px 0;
-    color: var(--text-secondary);
+    min-height: 260px;
+    color: #5b6475;
+    font-size: 1.35rem;
+    font-weight: 700;
 
     .spinning {
-        animation: spin 1s linear infinite;
         width: 24px;
         height: 24px;
-        color: var(--primary);
+        color: #0f6dff;
+        animation: spin 0.8s linear infinite;
     }
 }
 
 .form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
-.formGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    label {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-primary);
-
-        .required {
-            color: var(--danger);
-        }
-    }
-
-    .input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        font-size: 14px;
-        color: var(--text-primary);
-        background-color: var(--surface);
-        transition: all 0.2s ease;
-        font-family: inherit;
-
-        &:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(46, 112, 184, 0.1);
-        }
-
-        &::placeholder {
-            color: var(--text-tertiary);
-        }
-    }
-    
-    textarea.input {
-        resize: vertical;
-        min-height: 80px;
-    }
+.heroCard,
+.sectionCard,
+.metaRow {
+    border: 1px solid #dbe4f0;
+    border-radius: 18px;
+    background: #fff;
 }
 
-.planList {
+.heroCard {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
+    gap: 18px;
+    padding: 18px;
+    background:
+        radial-gradient(circle at top right, rgba(15, 109, 255, 0.1), transparent 28%),
+        linear-gradient(180deg, #fcfdff 0%, #f4f8ff 100%);
 }
 
-.planItem {
+.userChip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.userAvatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: #0f6dff;
+    color: #fff;
+    flex-shrink: 0;
+
+    svg {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+.userText {
+    min-width: 0;
+
+    strong {
+        display: block;
+        color: #122033;
+        font-size: 1.55rem;
+        font-weight: 800;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    span {
+        display: block;
+        margin-top: 4px;
+        color: #5b6475;
+        font-size: 1.2rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.heroMeta {
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid #d7e2f1;
+
+    .metaLabel {
+        display: inline-flex;
+        margin-bottom: 8px;
+        color: #4b5b73;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    strong {
+        display: block;
+        color: #122033;
+        font-size: 1.5rem;
+        font-weight: 800;
+    }
+
+    p {
+        margin: 8px 0 0;
+        color: #64748b;
+        font-size: 1.2rem;
+        line-height: 1.5;
+    }
+}
+
+.sectionCard {
+    padding: 18px;
+}
+
+.addonSection {
+    background: linear-gradient(180deg, #fcfbff 0%, #f8f5ff 100%);
+    border-color: #e3d8ff;
+}
+
+.sectionHeading {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background-color: var(--surface);
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
 
-    &:hover {
-        border-color: var(--primary);
-        background-color: var(--bg-hover);
+    h3 {
+        margin: 0;
+        color: #122033;
+        font-size: 1.8rem;
+        font-weight: 800;
     }
 
-    &.active {
-        border-color: var(--primary);
-        background-color: rgba(46, 112, 184, 0.05);
-        box-shadow: 0 2px 8px rgba(46, 112, 184, 0.1);
-    }
-
-    input[type='radio'] {
-        margin-top: 2px;
-        accent-color: var(--primary);
-        cursor: pointer;
-    }
-
-    .planInfo {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-
-        strong {
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-
-        .price {
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
+    p {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 1.2rem;
+        line-height: 1.5;
     }
 }
 
-.noPlans {
-    font-size: 14px;
-    color: var(--text-secondary);
-    padding: 12px 0;
+.selectedBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #e9f2ff;
+    color: #0f6dff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.planGrid,
+.addonGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.planCard,
+.addonCard {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    padding: 16px;
+    border: 1px solid #d9e4f2;
+    border-radius: 16px;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+
+    &:hover:not(:disabled) {
+        border-color: #8fb9ff;
+        box-shadow: 0 12px 26px rgba(15, 109, 255, 0.12);
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+    }
+
+    &.selected {
+        border-color: #0f6dff;
+        box-shadow: 0 0 0 3px rgba(15, 109, 255, 0.12);
+    }
+}
+
+.planCard.current {
+    border-color: #d8dee8;
+    background: #f8fafc;
+    opacity: 0.8;
+}
+
+.addonCard.selected {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.cardTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+
+    strong {
+        display: block;
+        color: #122033;
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.3;
+    }
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        color: #0f6dff;
+        font-size: 1.2rem;
+        font-weight: 800;
+    }
+}
+
+.statePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.selectedPill {
+    background: #ecfdf3;
+    color: #15803d;
+}
+
+.currentPill {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.cardDescription {
+    margin: 0;
+    color: #5b6475;
+    font-size: 1.2rem;
+    line-height: 1.5;
+}
+
+.featureRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.featureChip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.skipAddonBtn {
+    border: 1px solid #d7def0;
+    border-radius: 10px;
+    background: #fff;
+    color: #5b6475;
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &.active {
+        border-color: #7c3aed;
+        color: #7c3aed;
+        background: #f5f3ff;
+    }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+}
+
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 128px;
+    padding: 18px;
+    border: 1px dashed #d7e2f1;
+    border-radius: 16px;
+    color: #64748b;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.waitingState {
+    background: rgba(124, 58, 237, 0.06);
+    border-color: #ddd6fe;
+    color: #6d28d9;
+}
+
+.metaRow {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 14px;
+    padding: 18px;
+    background: #f8fafc;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+        color: #4b5563;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+}
+
+.input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid #d5dfed;
+    border-radius: 12px;
+    background: #fff;
+    color: #111827;
+    font-size: 1.25rem;
+    font-family: inherit;
+
+    &:focus {
+        outline: none;
+        border-color: #0f6dff;
+        box-shadow: 0 0 0 3px rgba(15, 109, 255, 0.12);
+    }
+
+    &::placeholder {
+        color: #94a3b8;
+    }
+}
+
+.formError {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.summaryText {
+    margin: 0;
+    color: #334155;
+    font-size: 1.2rem;
+    line-height: 1.5;
+
+    strong {
+        color: #122033;
+    }
 }
 
 .footerActions {
@@ -137,53 +407,70 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 12px;
+        font-size: 1.25rem;
+        font-weight: 800;
         cursor: pointer;
-        transition: all 0.2s ease;
 
         &:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
-        }
-    }
-
-    .cancelBtn {
-        background: transparent;
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-
-        &:hover:not(:disabled) {
-            background-color: var(--bg-hover);
-            color: var(--text-primary);
-        }
-    }
-
-    .submitBtn {
-        background-color: var(--primary);
-        color: white;
-        border: none;
-
-        &:hover:not(:disabled) {
-            filter: brightness(1.1);
-            transform: translateY(-1px);
-        }
-
-        .spinning {
-            animation: spin 1s linear infinite;
-            width: 16px;
-            height: 16px;
         }
     }
 }
 
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
+.cancelBtn {
+    border: 1px solid #d7def0;
+    background: #fff;
+    color: #475569;
+}
+
+.submitBtn {
+    border: none;
+    background: #0f6dff;
+    color: #fff;
+
+    .spinning {
+        width: 18px;
+        height: 18px;
+        animation: spin 0.8s linear infinite;
     }
+}
+
+@keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .heroCard {
+        grid-template-columns: 1fr;
+    }
+
+    .planGrid,
+    .addonGrid,
+    .metaRow {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .sectionHeading {
+        flex-direction: column;
+    }
+
+    .cardTop {
+        flex-direction: column;
+    }
+
+    .footerActions {
+        flex-direction: column-reverse;
+
+        button {
+            width: 100%;
+        }
     }
 }

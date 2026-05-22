@@ -11,26 +11,10 @@ export const SortOrder = {
 };
 
 export const USER_SORT_OPTIONS = [
-    {
-        label: 'Cập nhật mới nhất',
-        sort_by: UserSortBy.UPDATED_AT,
-        sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Cập nhật cũ nhất',
-        sort_by: UserSortBy.UPDATED_AT,
-        sort_order: SortOrder.ASC,
-    },
-    {
-        label: 'Đăng ký mới nhất',
-        sort_by: UserSortBy.CREATED_AT,
-        sort_order: SortOrder.DESC,
-    },
-    {
-        label: 'Đăng ký cũ nhất',
-        sort_by: UserSortBy.CREATED_AT,
-        sort_order: SortOrder.ASC,
-    },
+    { label: 'Cập nhật mới nhất', sort_by: UserSortBy.UPDATED_AT, sort_order: SortOrder.DESC },
+    { label: 'Cập nhật cũ nhất', sort_by: UserSortBy.UPDATED_AT, sort_order: SortOrder.ASC },
+    { label: 'Đăng ký mới nhất', sort_by: UserSortBy.CREATED_AT, sort_order: SortOrder.DESC },
+    { label: 'Đăng ký cũ nhất', sort_by: UserSortBy.CREATED_AT, sort_order: SortOrder.ASC },
 ];
 
 export const USER_RANGE_OPTIONS = [
@@ -60,221 +44,113 @@ export const DEFAULT_META = {
 
 const LOCKED_STATUSES = ['BANNED', 'LOCKED', 'BLOCKED', 'INACTIVE'];
 
-const toNumber = (value, fallback = 0) => {
-    const nextValue = Number(value);
-    return Number.isFinite(nextValue) ? nextValue : fallback;
+export const getErrorMessage = (error, fallback = 'Có lỗi xảy ra, vui lòng thử lại sau') => {
+    return error?.response?.data?.message || error?.message || fallback;
 };
 
-const getStatusLabel = ({ isLocked, isOnline }) => {
-    if (isLocked) return 'Bị khóa';
-    if (isOnline) return 'Hoạt động';
-    return 'Chưa hoạt động';
+export const getUsersFromPayload = (response) => {
+    return response?.data?.data || response?.data || [];
 };
 
-export const getErrorMessage = (
-    error,
-    fallback = 'Có lỗi xảy ra, vui lòng thử lại sau',
-) => {
+const getSubscriptionFromUser = (user = {}) => {
     return (
-        error?.response?.data?.message ||
-        error?.message ||
-        error?.data?.message ||
-        fallback
+        user?.subscriptions?.[0] ||
+        user?.subscription ||
+        user?.subscriptionCurrent ||
+        user?.active_subscription ||
+        user?.current_subscription ||
+        null
     );
 };
 
-export const getResponsePayload = (response) => {
-    if (
-        Array.isArray(response?.data) &&
-        (response?.meta || response?.pagination || response?.total_items || response?.totalItems || response?.total !== undefined || response?.count !== undefined)
-    ) {
-        return response;
-    }
+export const getPlanNameFromUser = (user = {}) => {
+    if (!user || typeof user !== 'object') return null;
 
-    return response?.data || response;
+    const subscription = getSubscriptionFromUser(user);
+    const quota = user?.usage_quotas?.[0];
+    const planObject = user?.plan && typeof user.plan === 'object' ? user.plan : null;
+    const currentPlan = user?.current_plan && typeof user.current_plan === 'object' ? user.current_plan : null;
+
+    const possibleNames = [
+        subscription?.plan?.name,
+        subscription?.plan_name,
+        quota?.plan?.name,
+        quota?.plan_name,
+        currentPlan?.name,
+        planObject?.name,
+        typeof user?.plan === 'string' ? user.plan : null,
+        user?.plan_name,
+        user?.planName,
+        user?.package_name,
+        user?.package?.name,
+        user?.packageName,
+        user?.current_plan_name,
+    ];
+
+    return possibleNames.find(Boolean) || 'Free';
 };
 
-export const getUsersFromPayload = (payload) => {
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload?.users)) return payload.users;
-    if (Array.isArray(payload?.rows)) return payload.rows;
-    if (Array.isArray(payload?.results)) return payload.results;
-    if (Array.isArray(payload?.list)) return payload.list;
-    return [];
+export const getPlanExpiredAtFromUser = (user = {}) => {
+    if (!user || typeof user !== 'object') return null;
+
+    const subscription = getSubscriptionFromUser(user);
+    const quota = user?.usage_quotas?.[0];
+
+    const possibleDates = [
+        quota?.quota_end_at,
+        user?.quota_end_at,
+        subscription?.current_period_end,
+        subscription?.end_at,
+        subscription?.expired_at,
+        subscription?.expiredAt,
+        user?.package_expired_at,
+        user?.packageExpiredAt,
+    ];
+
+    return possibleDates.find(Boolean) || null;
 };
 
-export const getLatestUsageQuota = (usageQuotas = []) => {
-    if (!Array.isArray(usageQuotas) || usageQuotas.length === 0) {
-        return null;
-    }
+export const getPaginationFromPayload = (response, fallbackPageSize = PAGE_SIZE) => {
+    const meta = response?.data?.meta?.meta || response?.data?.meta || response?.data || {};
+    const limit = Number(meta.limit || fallbackPageSize);
+    const totalItems = Number(meta.total_items || meta.totalItems || meta.total || 0);
+    const page = Number(meta.page || meta.current_page || 1);
+    const totalPages = Number(meta.total_pages || meta.totalPages || Math.ceil(totalItems / limit) || 1);
 
-    return usageQuotas.slice().sort((left, right) => {
-        const leftDate = new Date(
-            left?.quota_end_at || left?.updatedAt || left?.createdAt || 0,
-        ).getTime();
-        const rightDate = new Date(
-            right?.quota_end_at || right?.updatedAt || right?.createdAt || 0,
-        ).getTime();
-
-        return rightDate - leftDate;
-    })[0];
-};
-
-export const getPaginationFromPayload = (
-    payload,
-    fallbackPageSize = PAGE_SIZE,
-) => {
-    const pagination =
-        payload?.pagination ||
-        payload?.meta?.meta ||
-        payload?.meta?.pagination ||
-        payload?.meta ||
-        payload?.page;
-
-    const totalItems = toNumber(
-        pagination?.total_items ??
-            pagination?.totalItems ??
-            pagination?.total ??
-            pagination?.count ??
-            payload?.total_items ??
-            payload?.totalItems ??
-            payload?.total ??
-            payload?.count ??
-            getUsersFromPayload(payload).length,
-        0,
-    );
-
-    const limit = toNumber(
-        pagination?.limit ?? pagination?.page_size ?? pagination?.pageSize,
-        fallbackPageSize,
-    );
-
-    const page = toNumber(
-        pagination?.page ?? pagination?.currentPage ?? pagination?.current_page,
-        1,
-    );
-
-    const totalPages = Math.max(
-        toNumber(
-            pagination?.total_pages ??
-                pagination?.totalPages ??
-                pagination?.last_page ??
-                pagination?.lastPage ??
-                payload?.total_pages ??
-                payload?.totalPages ??
-                (limit > 0 ? Math.ceil(totalItems / limit) : 1),
-            1,
-        ),
-        1,
-    );
-
-    return {
-        page,
-        limit,
-        total_items: totalItems,
-        total_pages: totalPages,
-    };
+    return { page, limit, total_items: totalItems, total_pages: Math.max(totalPages, 1) };
 };
 
 export const normalizeAdminUser = (user = {}) => {
-    const latestQuota = getLatestUsageQuota(
-        user?.usage_quotas || user?.usageQuotas,
-    );
+    const quota = user?.usage_quotas?.[0] || {};
+    const planName = getPlanNameFromUser(user);
 
-    const id =
-        user?.id ||
-        user?.user_id ||
-        user?._id ||
-        user?.code ||
-        user?.uuid ||
-        '';
-
-    const fullName =
-        user?.full_name ||
-        user?.fullName ||
-        user?.name ||
-        user?.username ||
-        'Người dùng chưa cập nhật tên';
-
-    const email = user?.email || user?.contact_email || 'Chưa cập nhật';
-
-    const phone =
-        user?.phone_number ||
-        user?.phone ||
-        user?.user_profile?.phone ||
-        'Chưa cập nhật';
-
-    const provider = String(
-        user?.provider ||
-            user?.auth_provider ||
-            user?.authProvider ||
-            user?.login_provider ||
-            'LOCAL',
-    ).toUpperCase();
-
-    const emailVerified = Boolean(
-        user?.email_verified || user?.emailVerified || user?.verified,
-    );
-
-    const planName =
-        user?.current_plan?.name ||
-        user?.plan?.name ||
-        user?.package?.name ||
-        user?.currentPackage?.name ||
-        user?.subscription?.plan_name ||
-        'Free';
-
-    const cvCount = toNumber(
-        latestQuota?.cvs_used ??
-            user?.cv_count ??
-            user?.cvCount ??
-            user?.total_cvs ??
-            user?.statistics?.cv_count ??
-            user?.stats?.cvCount,
-        0,
-    );
-
-    const status = String(user?.status || '').toUpperCase();
-    const accountStatus = String(
-        user?.account_status || user?.accountStatus || '',
-    ).toUpperCase();
-
-    const isLocked = Boolean(
-        user?.is_locked ||
-        user?.isLocked ||
-        user?.is_banned ||
-        user?.isBanned ||
-        LOCKED_STATUSES.includes(status) ||
-        LOCKED_STATUSES.includes(accountStatus),
-    );
-
-    const isOnline = Boolean(
-        user?.is_online ||
-        user?.isOnline ||
-        status === 'ONLINE' ||
-        status === 'ACTIVE',
-    );
+    const isLocked = LOCKED_STATUSES.includes(String(user?.status).toUpperCase());
+    const isOnline = String(user?.status).toUpperCase() === 'ACTIVE';
 
     return {
-        id: String(id),
-        fullName,
-        email,
-        phone,
-        provider,
-        emailVerified,
+        id: String(user?.user_id || user?.id || ''),
+        fullName: user?.full_name || 'Chưa cập nhật tên',
+        email: user?.email || 'Chưa cập nhật',
+        avatar: user?.user_profile?.avatar_url || null,
+        phone: user?.user_profile?.phone || 'Chưa cập nhật',
+        provider: String(user?.provider || 'LOCAL').toUpperCase(),
+        emailVerified: Boolean(user.email_verified),
         planName,
-        cvCount,
+        cvCount: quota?.cvs_used ?? user?.cvs_used ?? 0,
         isLocked,
         isOnline,
-        statusLabel: getStatusLabel({ isLocked, isOnline }),
-        registeredAt:
-            user?.created_at ||
-            user?.createdAt ||
-            user?.registered_at ||
-            user?.registeredAt ||
-            null,
-        latestQuota,
+        statusLabel: isLocked ? 'Bị khóa' : isOnline ? 'Hoạt động' : 'Chưa hoạt động',
+        registeredAt: user.createdAt,
+
+        quotas: {
+            aiUsed: quota?.ai_runs_used ?? user?.ai_runs_used ?? 0,
+            aiLimit: quota?.ai_runs_limit ?? user?.ai_runs_limit ?? 0,
+            exportUsed: quota?.exports_used ?? user?.exports_used ?? 0,
+            exportLimit: quota?.exports_limit ?? user?.exports_limit ?? 0,
+            cvCount: quota?.cvs_used ?? user?.cvs_used ?? 0,
+            cvLimit: quota?.cvs_limit ?? user?.cvs_limit ?? 0,
+            quotaEndAt: getPlanExpiredAtFromUser(user),
+        },
         raw: user,
     };
 };
@@ -289,13 +165,7 @@ export const buildAdminUsersQuery = ({
     sort_by = UserSortBy.UPDATED_AT,
     sort_order = SortOrder.DESC,
 }) => {
-    const query = {
-        page,
-        limit,
-        search: search.trim(),
-        sort_by,
-        sort_order,
-    };
+    const query = { page, limit, search: search.trim(), sort_by, sort_order };
 
     if (range && range !== 'all' && range !== 'custom') {
         query.range = range;
@@ -307,11 +177,10 @@ export const buildAdminUsersQuery = ({
     return query;
 };
 
-export const formatDate = (value) => {
-    if (!value) return '--';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+export const formatDate = (isoString) => {
+    if (!isoString) return '--';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return isoString;
 
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
@@ -320,11 +189,10 @@ export const formatDate = (value) => {
     }).format(date);
 };
 
-export const formatDateTime = (value) => {
-    if (!value) return '--';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+export const formatDateTime = (isoString) => {
+    if (!isoString) return '--';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return isoString;
 
     return new Intl.DateTimeFormat('vi-VN', {
         dateStyle: 'short',
@@ -338,10 +206,7 @@ export const formatNumber = (value) => {
 
 export const formatCurrency = (value, currency = 'VND') => {
     const amount = Number(value);
-
-    if (!Number.isFinite(amount)) {
-        return '0đ';
-    }
+    if (!Number.isFinite(amount)) return '0đ';
 
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -352,9 +217,7 @@ export const formatCurrency = (value, currency = 'VND') => {
 
 export const getUserDisplayId = (user = {}) => {
     const id = String(user?.id || '');
-
     if (!id) return '#USER----';
     if (id.length <= 10) return `#${id}`;
-
     return `#${id.slice(0, 8)}`;
 };
