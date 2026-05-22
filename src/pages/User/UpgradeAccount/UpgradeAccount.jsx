@@ -76,7 +76,6 @@ function formatPrice(value, currency = 'VND') {
     }).format(amount);
 }
 
-// NEW: format ngày hết hạn subscriptionCurrent.current_period_end
 function formatDate(value) {
     if (!value) return '';
 
@@ -150,7 +149,6 @@ function UpgradeAccount() {
 
     const authCurrentPlan = user?.planCurrent || null;
 
-    // NEW: lấy subscriptionCurrent từ profile trong AuthContext
     const subscriptionCurrent = user?.subscriptionCurrent || null;
 
     const currentPlan = useMemo(() => {
@@ -178,15 +176,12 @@ function UpgradeAccount() {
     const canBuyAiAddon = Boolean(currentPlan?.can_purchase_ai_addon);
     const isFreeCurrentPlan = currentPlanSlug === 'free';
 
-    // NEW: lấy ngày hết hạn từ subscriptionCurrent.current_period_end
     const subscriptionEndDate = formatDate(
         subscriptionCurrent?.current_period_end,
     );
 
-    // NEW: check trạng thái subscription hiện tại
     const isActiveSubscription = subscriptionCurrent?.status === 'ACTIVE';
 
-    // NEW: text hiển thị ở card gói hiện tại
     const currentPlanStatusText = (() => {
         if (isFreeCurrentPlan) {
             return currentPlan?.is_active
@@ -471,7 +466,6 @@ function UpgradeAccount() {
                                     </span>
                                 </div>
 
-                                {/* UPDATED: hiển thị hạn sử dụng subscriptionCurrent.current_period_end */}
                                 <p className={cx('activeText')}>
                                     {currentPlanStatusText}
                                 </p>
