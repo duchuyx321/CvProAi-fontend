@@ -267,7 +267,10 @@ function EditCv() {
                     proposal_ids: [proposalId],
                 });
 
-                if (result?.success === false || Number(result?.status) >= 400) {
+                if (
+                    result?.success === false ||
+                    Number(result?.status) >= 400
+                ) {
                     throw new Error(
                         getApiMessage(result, 'Áp dụng gợi ý AI thất bại.'),
                     );
@@ -276,10 +279,7 @@ function EditCv() {
                 await refreshCvDetailAfterRewrite();
                 toast.success(getApiMessage(result, 'Đã áp dụng gợi ý AI.'));
             } catch (error) {
-                handleRewriteActionError(
-                    error,
-                    'Áp dụng gợi ý AI thất bại.',
-                );
+                handleRewriteActionError(error, 'Áp dụng gợi ý AI thất bại.');
             } finally {
                 setActionLoadingId('');
             }
@@ -316,7 +316,10 @@ function EditCv() {
                     proposal_ids: [proposalId],
                 });
 
-                if (result?.success === false || Number(result?.status) >= 400) {
+                if (
+                    result?.success === false ||
+                    Number(result?.status) >= 400
+                ) {
                     throw new Error(
                         getApiMessage(result, 'Bỏ qua gợi ý AI thất bại.'),
                     );
@@ -325,10 +328,7 @@ function EditCv() {
                 await refreshCvDetailAfterRewrite();
                 toast.success(getApiMessage(result, 'Đã bỏ qua gợi ý AI.'));
             } catch (error) {
-                handleRewriteActionError(
-                    error,
-                    'Bỏ qua gợi ý AI thất bại.',
-                );
+                handleRewriteActionError(error, 'Bỏ qua gợi ý AI thất bại.');
             } finally {
                 setActionLoadingId('');
             }
@@ -376,9 +376,7 @@ function EditCv() {
 
             await refreshCvDetailAfterRewrite();
             setIsApplyAllModalOpen(false);
-            toast.success(
-                getApiMessage(result, 'Đã áp dụng tất cả gợi ý AI.'),
-            );
+            toast.success(getApiMessage(result, 'Đã áp dụng tất cả gợi ý AI.'));
         } catch (error) {
             handleRewriteActionError(
                 error,
@@ -523,9 +521,8 @@ function EditCv() {
                 }
 
                 syncPersistedData(nextCvData);
-                toast.success('Cập nhật CV thành công.');
             } catch (error) {
-                toast.error(error?.message || 'Lỗi lưu CV');
+                throw new Error(error?.message || 'Lỗi lưu CV');
             } finally {
                 setSubmitting(false);
             }
@@ -556,7 +553,23 @@ function EditCv() {
             return;
         }
 
-        await submitUpdateCv(currentName);
+        const updateCvPromise = submitUpdateCv(currentName);
+        await toast.promise(updateCvPromise, {
+            pending: 'Đang lưu cv...',
+            success: {
+                render() {
+                    return 'Lưu Cv Thành Công.';
+                },
+            },
+            error: {
+                render({ data }) {
+                    return (
+                        data?.message ||
+                        'Hệ thống đang xảy ra lỗi vui lòng thử lại sau giây lát.'
+                    );
+                },
+            },
+        });
     }, [cvData?.name, isDirty, submitUpdateCv, submitting]);
 
     const handeDownloadPdfClick = async () => {
