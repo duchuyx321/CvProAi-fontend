@@ -1,25 +1,45 @@
 import * as Response from '~/utils/HttpsRequest';
 
+const removeEmptyParams = (params = {}) => {
+    return Object.entries(params).reduce((accumulator, [key, value]) => {
+        if (value === undefined || value === null || value === '') {
+            return accumulator;
+        }
+
+        accumulator[key] = value;
+        return accumulator;
+    }, {});
+};
+
+const buildErrorResponse = (error) => {
+    return (
+        error?.response?.data || {
+            success: false,
+            message: error?.message || 'Có lỗi xảy ra, vui lòng thử lại sau',
+        }
+    );
+};
+
 export const getMyCvs = async (params = {}) => {
     try {
-        const query = new URLSearchParams({
-            ...params,
-            is_trash: false,
-        }).toString();
+        const query = new URLSearchParams(
+            removeEmptyParams({
+                ...params,
+                is_trash: false,
+            }),
+        ).toString();
 
         const endpoint = `cvs/me?${query}`;
-        const res = await Response.GET(endpoint);
-        return res;
+        return await Response.GET(endpoint);
     } catch (error) {
-        return error?.response?.data;
+        return buildErrorResponse(error);
     }
 };
 
 export const softDeleteMyCv = async (cvId) => {
     try {
-        const res = await Response.DELETE(`cvs/delete/${cvId}`);
-        return res;
+        return await Response.DELETE(`cvs/delete/${cvId}`);
     } catch (error) {
-        return error?.response?.data;
+        return buildErrorResponse(error);
     }
 };

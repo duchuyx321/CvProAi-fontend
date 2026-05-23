@@ -13,6 +13,7 @@ import AdminLayout from '~/layouts/AdminLayout';
 import Dashboard from '~/pages/User/Dashboard';
 import DefaultLayout from '~/layouts/DefaultLayout';
 import CvTemplates from '~/pages/User/CvTemplates';
+import Export from '~/pages/User/Export';
 import MyCvs from '~/pages/User/MyCvs';
 import TrashCvs from '~/pages/User/TrashCvs';
 import AiAnalysis from '~/pages/User/AiAnalysis';
@@ -132,6 +133,10 @@ const UserRouter = [
         path: config.router.myCvs,
         component: MyCvs,
         layout: DefaultLayout,
+    },
+    {
+        path: config.router.export,
+        component: Export,
     },
     {
         path: config.router.trashCvs,

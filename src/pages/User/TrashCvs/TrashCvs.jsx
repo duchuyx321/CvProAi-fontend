@@ -12,7 +12,7 @@ import {
     FiRotateCcw,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Button from '~/components/Button';
 import Modal from '~/components/Modal';
@@ -30,6 +30,16 @@ const cx = classNames.bind(styles);
 
 const PAGE_SIZE = 4;
 const SORT_OPTIONS = ['Mới nhất', 'Cũ nhất', 'A -> Z', 'Z -> A'];
+
+const getValidPage = (value) => {
+    const page = Number(value);
+
+    if (!Number.isInteger(page) || page < 1) {
+        return 1;
+    }
+
+    return page;
+};
 
 const getSortParam = (value) => {
     if (value === 'Cũ nhất') {
@@ -63,7 +73,10 @@ const formatDateTime = (value) => {
     if (!value) return '';
 
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
 
     return new Intl.DateTimeFormat('vi-VN', {
         day: '2-digit',
@@ -78,10 +91,38 @@ const normalizeText = (value = '') => {
     return value.trim().toLowerCase();
 };
 
-const getConfirmPlaceholder = (name) => {
-    if (!name) return 'Nhập tên CV...';
+const getConfirmPlaceholder = () => {
+    return 'Nhập tên CV...';
+};
 
-    return `Nhập tên CV...`;
+const getCvItems = (res) => {
+    if (Array.isArray(res?.data?.data)) {
+        return res.data.data;
+    }
+
+    if (Array.isArray(res?.data)) {
+        return res.data;
+    }
+
+    return [];
+};
+
+const getTotalItems = (res, fallback = 0) => {
+    const total =
+        res?.data?.meta?.total_items ||
+        res?.data?.meta?.totalItems ||
+        res?.data?.meta?.total ||
+        res?.meta?.total_items ||
+        res?.meta?.totalItems ||
+        res?.meta?.total ||
+        res?.pagination?.total ||
+        res?.pagination?.totalItems ||
+        res?.pagination?.total_items ||
+        res?.total ||
+        res?.totalItems ||
+        res?.total_items;
+
+    return Number(total) || fallback;
 };
 
 const mapTrashItem = (cv) => ({
@@ -96,11 +137,14 @@ const mapTrashItem = (cv) => ({
 
 function TrashCvs() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    const pageFromUrl = getValidPage(searchParams.get('page'));
 
     const [keyword, setKeyword] = useState('');
     const debouncedKeyword = useDebounce(keyword, 500);
 
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(pageFromUrl);
     const [sortValue, setSortValue] = useState('Mới nhất');
     const [isOpenSort, setIsOpenSort] = useState(false);
 
@@ -118,6 +162,24 @@ function TrashCvs() {
     const [isDeletingForever, setIsDeletingForever] = useState(false);
 
     const sortRef = useRef(null);
+    const didMountSearchRef = useRef(false);
+
+    const updatePage = (page, options = {}) => {
+        const nextPage = getValidPage(page);
+
+        setCurrentPage(nextPage);
+
+        setSearchParams(
+            (prevParams) => {
+                const nextParams = new URLSearchParams(prevParams);
+                nextParams.set('page', nextPage.toString());
+                return nextParams;
+            },
+            {
+                replace: Boolean(options.replace),
+            },
+        );
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -132,6 +194,19 @@ function TrashCvs() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    useEffect(() => {
+        if (!searchParams.get('page')) {
+            updatePage(1, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (pageFromUrl !== currentPage) {
+            setCurrentPage(pageFromUrl);
+        }
+    }, [pageFromUrl, currentPage]);
 
     const fetchTrashCvs = async ({
         page = currentPage,
@@ -176,12 +251,8 @@ function TrashCvs() {
                 return;
             }
 
-            const rawItems = Array.isArray(res?.data) ? res.data : [];
-            const total =
-                res?.pagination?.total ||
-                res?.meta?.total ||
-                res?.total ||
-                rawItems.length;
+            const rawItems = getCvItems(res);
+            const total = getTotalItems(res, rawItems.length);
 
             setTrashList(rawItems.map(mapTrashItem));
             setTotalItems(total);
@@ -205,7 +276,13 @@ function TrashCvs() {
     };
 
     useEffect(() => {
-        setCurrentPage(1);
+        if (!didMountSearchRef.current) {
+            didMountSearchRef.current = true;
+            return;
+        }
+
+        updatePage(1, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedKeyword]);
 
     useEffect(() => {
@@ -215,10 +292,18 @@ function TrashCvs() {
             sort: sortValue,
             silent: debouncedKeyword.trim().length > 0,
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, sortValue, debouncedKeyword]);
 
     const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
     const currentList = trashList;
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            updatePage(totalPages, { replace: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, totalPages]);
 
     const isEmpty = !loading && !errorMessage && currentList.length === 0;
     const isSearchingEmpty = isEmpty && debouncedKeyword.trim().length > 0;
@@ -236,18 +321,18 @@ function TrashCvs() {
         normalizeText(confirmName) === normalizeText(deleteForeverItem.name);
 
     const closeRestoreModal = () => {
-    if (isRestoring) return;
+        if (isRestoring) return;
 
-    setRestoreItem(null);
-    setConfirmName('');
+        setRestoreItem(null);
+        setConfirmName('');
     };
 
     const closeDeleteForeverModal = () => {
-    if (isDeletingForever) return;
+        if (isDeletingForever) return;
 
-    setDeleteForeverItem(null);
-    setConfirmName('');
-};
+        setDeleteForeverItem(null);
+        setConfirmName('');
+    };
 
     const handleSearch = (event) => {
         setKeyword(event.target.value);
@@ -259,50 +344,50 @@ function TrashCvs() {
     };
 
     const handleConfirmRestore = async () => {
-    if (!restoreItem || isRestoring) return;
+        if (!restoreItem || isRestoring) return;
 
-    if (!isRestoreConfirmValid) {
-        toast.error('Vui lòng nhập đúng tên CV để khôi phục');
-        return;
-    }
-
-    setIsRestoring(true);
-
-    try {
-        const res = await restoreMyCv(restoreItem.id);
-
-        if (!res?.success) {
-            toast.error(
-                res?.message || res?.messsage || 'Khôi phục CV thất bại',
-            );
+        if (!isRestoreConfirmValid) {
+            toast.error('Vui lòng nhập đúng tên CV để khôi phục');
             return;
         }
 
-        toast.success(`Đã khôi phục "${restoreItem.name}"`);
-        setRestoreItem(null);
-        setConfirmName('');
+        setIsRestoring(true);
 
-        const nextPage =
-            currentList.length === 1 && currentPage > 1
-                ? currentPage - 1
-                : currentPage;
+        try {
+            const res = await restoreMyCv(restoreItem.id);
 
-        if (nextPage !== currentPage) {
-            setCurrentPage(nextPage);
-        } else {
-            await fetchTrashCvs({
-                page: nextPage,
-                keywordValue: debouncedKeyword,
-                sort: sortValue,
-                silent: true,
-            });
+            if (!res?.success) {
+                toast.error(
+                    res?.message || res?.messsage || 'Khôi phục CV thất bại',
+                );
+                return;
+            }
+
+            toast.success(`Đã khôi phục "${restoreItem.name}"`);
+            setRestoreItem(null);
+            setConfirmName('');
+
+            const nextPage =
+                currentList.length === 1 && currentPage > 1
+                    ? currentPage - 1
+                    : currentPage;
+
+            if (nextPage !== currentPage) {
+                updatePage(nextPage, { replace: true });
+            } else {
+                await fetchTrashCvs({
+                    page: nextPage,
+                    keywordValue: debouncedKeyword,
+                    sort: sortValue,
+                    silent: true,
+                });
+            }
+        } catch {
+            toast.error('Có lỗi xảy ra khi khôi phục CV');
+        } finally {
+            setIsRestoring(false);
         }
-    } catch {
-        toast.error('Có lỗi xảy ra khi khôi phục CV');
-    } finally {
-        setIsRestoring(false);
-    }
-};
+    };
 
     const handleAskDeleteForever = (cv) => {
         setConfirmName('');
@@ -310,59 +395,59 @@ function TrashCvs() {
     };
 
     const handleConfirmDeleteForever = async () => {
-    if (!deleteForeverItem || isDeletingForever) return;
+        if (!deleteForeverItem || isDeletingForever) return;
 
-    if (!isDeleteForeverConfirmValid) {
-        toast.error('Vui lòng nhập đúng tên CV để xóa vĩnh viễn');
-        return;
-    }
-
-    setIsDeletingForever(true);
-
-    try {
-        const res = await forceDeleteMyCv(deleteForeverItem.id);
-
-        if (!res?.success) {
-            toast.error(
-                res?.message || res?.messsage || 'Xóa vĩnh viễn thất bại',
-            );
+        if (!isDeleteForeverConfirmValid) {
+            toast.error('Vui lòng nhập đúng tên CV để xóa vĩnh viễn');
             return;
         }
 
-        toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
-        setDeleteForeverItem(null);
-        setConfirmName('');
+        setIsDeletingForever(true);
 
-        const nextPage =
-            currentList.length === 1 && currentPage > 1
-                ? currentPage - 1
-                : currentPage;
+        try {
+            const res = await forceDeleteMyCv(deleteForeverItem.id);
 
-        if (nextPage !== currentPage) {
-            setCurrentPage(nextPage);
-        } else {
-            await fetchTrashCvs({
-                page: nextPage,
-                keywordValue: debouncedKeyword,
-                sort: sortValue,
-                silent: true,
-            });
+            if (!res?.success) {
+                toast.error(
+                    res?.message || res?.messsage || 'Xóa vĩnh viễn thất bại',
+                );
+                return;
+            }
+
+            toast.success(`Đã xóa vĩnh viễn "${deleteForeverItem.name}"`);
+            setDeleteForeverItem(null);
+            setConfirmName('');
+
+            const nextPage =
+                currentList.length === 1 && currentPage > 1
+                    ? currentPage - 1
+                    : currentPage;
+
+            if (nextPage !== currentPage) {
+                updatePage(nextPage, { replace: true });
+            } else {
+                await fetchTrashCvs({
+                    page: nextPage,
+                    keywordValue: debouncedKeyword,
+                    sort: sortValue,
+                    silent: true,
+                });
+            }
+        } catch {
+            toast.error('Có lỗi xảy ra khi xóa vĩnh viễn CV');
+        } finally {
+            setIsDeletingForever(false);
         }
-    } catch {
-        toast.error('Có lỗi xảy ra khi xóa vĩnh viễn CV');
-    } finally {
-        setIsDeletingForever(false);
-    }
-};
+    };
 
     const handlePrevPage = () => {
         if (currentPage === 1) return;
-        setCurrentPage((prev) => prev - 1);
+        updatePage(currentPage - 1);
     };
 
     const handleNextPage = () => {
         if (currentPage === totalPages) return;
-        setCurrentPage((prev) => prev + 1);
+        updatePage(currentPage + 1);
     };
 
     const renderPageNumbers = () => {
@@ -396,7 +481,7 @@ function TrashCvs() {
                     className={cx('pageBtn', {
                         active: currentPage === page,
                     })}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => updatePage(page)}
                     disabled={loading}
                 >
                     {page}
@@ -411,19 +496,20 @@ function TrashCvs() {
                 type="button"
                 className={cx('modalCancelBtn')}
                 onClick={closeRestoreModal}
+                disabled={isRestoring}
             >
                 Hủy
             </Button>
 
             <Button
-    primary
-    type="button"
-    className={cx('modalRestoreBtn')}
-    onClick={handleConfirmRestore}
-    disabled={!isRestoreConfirmValid || isRestoring}
->
-    {isRestoring ? 'Đang khôi phục...' : 'Khôi phục'}
-</Button>   
+                primary
+                type="button"
+                className={cx('modalRestoreBtn')}
+                onClick={handleConfirmRestore}
+                disabled={!isRestoreConfirmValid || isRestoring}
+            >
+                {isRestoring ? 'Đang khôi phục...' : 'Khôi phục'}
+            </Button>
         </div>
     );
 
@@ -433,19 +519,20 @@ function TrashCvs() {
                 type="button"
                 className={cx('modalCancelBtn')}
                 onClick={closeDeleteForeverModal}
+                disabled={isDeletingForever}
             >
                 Hủy
             </Button>
 
             <Button
-    primary
-    type="button"
-    className={cx('modalDeleteBtn')}
-    onClick={handleConfirmDeleteForever}
-    disabled={!isDeleteForeverConfirmValid || isDeletingForever}
->
-    {isDeletingForever ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
-</Button>
+                primary
+                type="button"
+                className={cx('modalDeleteBtn')}
+                onClick={handleConfirmDeleteForever}
+                disabled={!isDeleteForeverConfirmValid || isDeletingForever}
+            >
+                {isDeletingForever ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+            </Button>
         </div>
     );
 
@@ -532,7 +619,7 @@ function TrashCvs() {
                                         })}
                                         onClick={() => {
                                             setSortValue(item);
-                                            setCurrentPage(1);
+                                            updatePage(1, { replace: true });
                                             setIsOpenSort(false);
                                         }}
                                     >
@@ -549,10 +636,13 @@ function TrashCvs() {
                         <div className={cx('stateIcon', 'errorStateIcon')}>
                             <FiAlertCircle />
                         </div>
+
                         <h3 className={cx('stateTitle')}>
                             Không thể tải thùng rác
                         </h3>
+
                         <p className={cx('stateText')}>{errorMessage}</p>
+
                         <Button
                             type="button"
                             className={cx('stateBtn')}
@@ -572,13 +662,16 @@ function TrashCvs() {
                         <div className={cx('stateIcon')}>
                             <FiSearch />
                         </div>
+
                         <h3 className={cx('stateTitle')}>
                             Không tìm thấy CV trong thùng rác
                         </h3>
+
                         <p className={cx('stateText')}>
                             Không có kết quả nào khớp với từ khóa "
                             {debouncedKeyword}".
                         </p>
+
                         <Button
                             type="button"
                             className={cx('stateBtn')}
@@ -592,13 +685,16 @@ function TrashCvs() {
                         <div className={cx('emptyIcon')}>
                             <FiTrash2 />
                         </div>
+
                         <h3 className={cx('emptyTitle')}>
                             Thùng rác đang trống
                         </h3>
+
                         <p className={cx('emptyText')}>
                             Các CV bạn xóa sẽ xuất hiện tại đây để có thể khôi
                             phục khi cần.
                         </p>
+
                         <Button
                             type="button"
                             className={cx('emptyBackBtn')}
@@ -678,6 +774,7 @@ function TrashCvs() {
                             Để xác nhận, hãy nhập đúng tên{' '}
                             <strong>"{restoreItem?.name}"</strong>
                         </p>
+
                         <input
                             type="text"
                             className={cx('confirmInput')}
@@ -685,9 +782,7 @@ function TrashCvs() {
                             onChange={(event) =>
                                 setConfirmName(event.target.value)
                             }
-                            placeholder={getConfirmPlaceholder(
-                                restoreItem?.name,
-                            )}
+                            placeholder={getConfirmPlaceholder()}
                             disabled={isRestoring}
                             autoFocus
                         />
@@ -726,9 +821,7 @@ function TrashCvs() {
                             onChange={(event) =>
                                 setConfirmName(event.target.value)
                             }
-                            placeholder={getConfirmPlaceholder(
-                                deleteForeverItem?.name,
-                            )}
+                            placeholder={getConfirmPlaceholder()}
                             disabled={isDeletingForever}
                             autoFocus
                         />
