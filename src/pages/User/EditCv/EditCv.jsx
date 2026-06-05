@@ -504,7 +504,6 @@ function EditCv() {
                     pageRef?.current,
                     trimmedName,
                 );
-
                 const formData = buildUpdateCvFormData({
                     payload: preview.payload,
                     avatarFile,
