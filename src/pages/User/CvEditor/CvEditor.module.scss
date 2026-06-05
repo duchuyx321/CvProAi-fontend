@@ -1,0 +1,131 @@
+.wrapper {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: #f8fafc;
+    isolation: isolate;
+}
+
+.inner {
+    --editor-column: clamp(500px, 38vw, 540px);
+    --ai-panel-width: clamp(340px, 41vw, 390px);
+
+    display: grid;
+    grid-template-columns: minmax(0, var(--editor-column)) minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+
+    > * {
+        min-width: 0;
+        min-height: 0;
+    }
+
+    &.aiRewriteMode.aiPanelOpen {
+        grid-template-columns:
+            minmax(0, var(--editor-column))
+            minmax(0, 1fr)
+            minmax(320px, var(--ai-panel-width));
+    }
+}
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.aiPanelBackdrop {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 18;
+    background: rgba(15, 23, 42, 0.22);
+    cursor: pointer;
+}
+
+.applyAllSummary {
+    display: grid;
+    gap: 10px;
+}
+
+.applyAllRow {
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 0 12px;
+    color: #334155;
+    font-size: 1.4rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    strong {
+        color: #4f46e5;
+        font-size: 1.5rem;
+    }
+}
+
+.applyAllFooter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+}
+
+.modalPrimaryBtn,
+.modalSecondaryBtn {
+    min-width: 120px;
+}
+
+@media (max-width: 1439.98px) {
+    .inner {
+        --editor-column: clamp(480px, 38vw, 520px);
+
+        &.aiRewriteMode.aiPanelOpen {
+            grid-template-columns: minmax(0, var(--editor-column)) minmax(
+                    0,
+                    1fr
+                );
+        }
+    }
+
+    .aiPanelBackdrop {
+        display: block;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .inner {
+        --editor-column: clamp(390px, 42vw, 460px);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .wrapper {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .inner,
+    .inner.aiRewriteMode.aiPanelOpen {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(360px, 52dvh) minmax(520px, 1fr);
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+}

@@ -1,0 +1,22 @@
+.wrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+.item {
+    min-height: 56px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: #fff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.item.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}

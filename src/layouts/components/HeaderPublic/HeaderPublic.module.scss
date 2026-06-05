@@ -1,0 +1,120 @@
+.wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.inner {
+    display: flex;
+    align-items: center;
+    max-width: 1280px;
+    height: 75px;
+    margin: 0 auto;
+    padding: 0 32px;
+    gap: 40px;
+}
+
+.logo {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.logo-texts {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.logo-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.logo-sub {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex: 1;
+    justify-content: center;
+}
+
+.nav-link {
+    position: relative;
+    font-size: 15px;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    padding: 4px 0;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #4f46e5;
+        &::after {
+            width: 100%;
+        }
+    }
+
+    &.active {
+        color: #4f46e5;
+        font-weight: 600;
+
+        &::after {
+            width: 100%;
+        }
+    }
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.btnLogin {
+    & > a,
+    & > button {
+        height: 40px;
+        color: #334155;
+    }
+}
+
+.btnRegister {
+    & > a,
+    & > button {
+        height: 40px;
+        color: #ffffff;
+    }
+}
+
+.user-area {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}

@@ -1,0 +1,57 @@
+.wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+}
+
+.image {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+// fit
+.fit-cover {
+    .image {
+        object-fit: contain;
+    }
+}
+
+.fit-contain {
+    .image {
+        object-fit: contain;
+    }
+}
+
+.fit-fill {
+    .image {
+        object-fit: fill;
+    }
+}
+
+// rounded
+.rounded-none {
+    border-radius: 0;
+}
+
+.rounded-sm {
+    border-radius: 8px;
+}
+
+.rounded-md {
+    border-radius: 12px;
+}
+
+.rounded-lg {
+    border-radius: 16px;
+}
+
+.rounded-full {
+    border-radius: 999px;
+}

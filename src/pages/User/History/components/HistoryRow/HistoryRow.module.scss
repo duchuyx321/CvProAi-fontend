@@ -1,0 +1,151 @@
+.codeCell {
+    color: #020617;
+    font-weight: 800;
+    white-space: nowrap;
+
+    span {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+}
+
+.userInfo,
+.packageInfo,
+.dateInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    small {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        color: #64748b;
+        font-size: 1.18rem;
+        line-height: 1.4;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}
+
+.userName,
+.packageName {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: #020617;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.userName {
+    color: #0f172a;
+}
+
+.packageName {
+    color: #1e293b;
+}
+
+.amountCell {
+    color: #020617;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-width: 118px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #475569;
+    background: #f1f5f9;
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.paid {
+    color: #047857;
+    background: #d1fae5;
+}
+
+.pending {
+    color: #b45309;
+    background: #fef3c7;
+}
+
+.failed {
+    color: #b91c1c;
+    background: #fee2e2;
+}
+
+.cancelled {
+    color: #64748b;
+    background: #e2e8f0;
+}
+
+.dateInfo {
+    span {
+        color: #020617;
+        font-size: 1.32rem;
+        font-weight: 800;
+        line-height: 1.35;
+        white-space: nowrap;
+    }
+
+    small {
+        color: #64748b;
+        font-size: 1.16rem;
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 992px) {
+    .userName,
+    .packageName {
+        font-size: 1.2rem;
+    }
+
+    .userInfo,
+    .packageInfo,
+    .dateInfo {
+        small {
+            font-size: 1.05rem;
+        }
+    }
+
+    .statusBadge {
+        min-width: 0;
+        padding: 6px 8px;
+        font-size: 1.05rem;
+    }
+
+    .dateInfo {
+        span {
+            font-size: 1.08rem;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .codeCell,
+    .amountCell {
+        font-size: 1.02rem;
+    }
+
+    .statusBadge {
+        padding: 6px 7px;
+        font-size: 1rem;
+    }
+}

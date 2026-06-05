@@ -1,0 +1,51 @@
+export const router = {
+    // Public
+    home: '/',
+    login: '/login',
+    register: '/register',
+    forgotPassword: '/forgot-password',
+    otp_verify: '/otp/verify',
+    reset_pass: '/otp/reset',
+    verify_success: '/verify/success',
+    forgot_password: '/forgot-password',
+    cvSample: '/cv-templates',
+    CvDetail: '/cv-templates/:code',
+    pricing: '/pricing',
+
+    // User
+    dashboard: '/dashboard',
+    cvTemplates: '/user/cv-templates',
+    CvTemplateDetail: '/cv-templates/:code',
+    export: '/export',
+
+    // CV editor
+    createCv: '/create-cv/:code',
+    editCv: '/edit-cv/:slug',
+
+    myCvs: '/my-cvs',
+    trashCvs: '/trash-cvs',
+    aiAnalysis: '/ai-analysis',
+    aiAnalysisResult_route: '/ai-analysis/result/',
+    aiAnalysisResult: '/ai-analysis/result/:aiRunId',
+    upgradeAccount: '/upgrade-account',
+    upgradePremium: '/upgrade-account',
+    profile: '/profile',
+    security: '/security',
+    package: '/package',
+    history: '/history',
+    payment: '/checkout/:payment_id',
+    paymentSuccess: '/payment/success/:orderId',
+    upgradeOptions: '/upgrade-options/:slug',
+    cvAnalysisHistory: '/cv-analysis-history',
+    // Admin
+    adminDashboard: '/admin/dashboard',
+    manageUsers: '/admin/manage-users',
+    manageUsersDetail: '/admin/manage-users/:userId',
+    manageTemplates: '/admin/templates',
+    createTemplate: '/admin/templates/create',
+    previewTemplate: '/admin/templates/preview/:code',
+    editTemplate: '/admin/templates/edit/:code',
+    adminSettings: '/admin/settings',
+    managePackages: '/admin/packages',
+    adminOrders: '/admin/orders',
+};

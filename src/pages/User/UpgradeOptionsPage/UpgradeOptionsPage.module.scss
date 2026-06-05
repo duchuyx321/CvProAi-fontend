@@ -1,0 +1,323 @@
+$indigo-900: #142e8d;
+$indigo-700: #2148d7;
+$indigo-500: #4f74f1;
+$blue-100: #eef4ff;
+$blue-50: #f6f9ff;
+$text-main: #0f1f4c;
+$text-muted: #5c6e8f;
+$border: #dbe5ff;
+
+.wrapper {
+    width: min(116rem, 100%);
+    margin: 0 auto;
+    padding: 1.6rem 2rem 3.2rem;
+}
+
+.loading {
+    width: 100%;
+    border-radius: 1.6rem;
+    border: 1px solid $border;
+    background: #fff;
+    color: $text-muted;
+    text-align: center;
+    padding: 2.4rem 1.6rem;
+    font-size: 1.6rem;
+    font-weight: 600;
+}
+
+
+
+.content-grid {
+    display: grid;
+    grid-template-columns: minmax(30rem, 44rem) minmax(34rem, 1fr);
+    gap: 2rem;
+
+    @media (max-width: 980px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.premium-section,
+.addons-section {
+    border: 1px solid $border;
+    border-radius: 2rem;
+    background: #fff;
+    box-shadow: 0 1.3rem 3.6rem rgba(31, 67, 167, 0.08);
+    padding: 2.2rem;
+}
+
+.section-head {
+    margin-bottom: 1.4rem;
+
+    h1,
+    h2 {
+        color: $text-main;
+        font-size: 2.8rem;
+        line-height: 1.2;
+    }
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.25rem;
+    color: #2c4f9c;
+    border-radius: 0.8rem;
+    background: #eef4ff;
+    border: 1px solid #d0deff;
+    font-weight: 700;
+    padding: 0.55rem 0.9rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #8ca9ff;
+        background: #e7f0ff;
+    }
+}
+
+.eyebrow {
+    color: $indigo-700;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.premium-card {
+    border-radius: 1.6rem;
+    padding: 1.8rem;
+    background: radial-gradient(circle at top right, #b8c8ff 0%, #f8fbff 30%, #f7faff 100%);
+    border: 1px solid #d8e4ff;
+}
+
+.premium-price {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+
+    strong {
+        color: $indigo-900;
+        font-size: clamp(3rem, 4vw, 3.8rem);
+        line-height: 1;
+    }
+
+    span {
+        color: #39548d;
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+    }
+}
+
+.premium-desc {
+    color: $text-muted;
+    font-size: 1.45rem;
+    line-height: 1.6;
+}
+
+
+
+.feature-list {
+    margin-top: 1.6rem;
+    display: grid;
+    gap: 1rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: #1d3568;
+        font-size: 1.4rem;
+        line-height: 1.5;
+    }
+
+    svg {
+        color: $indigo-700;
+        font-size: 1.7rem;
+        flex-shrink: 0;
+    }
+}
+
+.none-option {
+    width: 100%;
+    border-radius: 1.1rem;
+    border: 1px dashed #b5c8ff;
+    background: $blue-50;
+    color: #264483;
+    font-size: 1.35rem;
+    font-weight: 700;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #edf3ff;
+        border-color: #8ba8ff;
+    }
+
+    &.active {
+        background: #dbe8ff;
+        border-color: $indigo-700;
+        color: $indigo-900;
+    }
+}
+
+.addon-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.addon-card {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #d4e1ff;
+    border-radius: 1.25rem;
+    background: #fff;
+    padding: 1.2rem 1.2rem 1.3rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: #8ca9ff;
+        box-shadow: 0 1.2rem 2.6rem rgba(42, 84, 201, 0.16);
+    }
+
+    &.active {
+        border-color: $indigo-700;
+        box-shadow:
+            inset 0 0 0 1px rgba(33, 72, 215, 0.35),
+            0 1.4rem 2.8rem rgba(28, 64, 180, 0.2);
+        background: linear-gradient(140deg, #ffffff 0%, #f3f7ff 100%);
+    }
+
+    &.best {
+        border-color: #6086ff;
+    }
+}
+
+.addon-badges {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.75rem;
+    min-height: 2.6rem;
+}
+
+.discount-badge {
+    border-radius: 999px;
+    background: #1d4ed8;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 800;
+    padding: 0.3rem 0.75rem;
+
+    &.invisible {
+        visibility: hidden;
+    }
+}
+
+.best-badge {
+    border-radius: 999px;
+    background: linear-gradient(120deg, #143ab3, #3d66f0);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0.7rem;
+}
+
+.addon-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    h3 {
+        color: $text-main;
+        font-size: 1.85rem;
+        line-height: 1.2;
+    }
+
+    strong {
+        color: $indigo-900;
+        font-size: 2rem;
+        line-height: 1;
+    }
+}
+
+.addon-label {
+    margin-top: 0.55rem;
+    color: #32508f;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.saving-text {
+    margin-top: 0.3rem;
+    color: $indigo-700;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.summary-card {
+    margin-top: 1.4rem;
+    border-radius: 1.2rem;
+    border: 1px solid #cfe0ff;
+    background: #f5f9ff;
+    padding: 1.2rem;
+}
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 1.35rem;
+    color: #2b467f;
+    margin-bottom: 0.7rem;
+
+    strong {
+        color: $text-main;
+        font-weight: 800;
+    }
+}
+
+.summary-total {
+    padding-top: 0.7rem;
+    margin-top: 0.1rem;
+    border-top: 1px solid #cfdeff;
+    color: $indigo-900;
+    margin-bottom: 1.2rem;
+
+    span {
+        font-size: 1.45rem;
+        font-weight: 800;
+    }
+
+    strong {
+        color: $indigo-900;
+        font-size: 2.45rem;
+    }
+}
+
+.btn-continue {
+    width: 100%;
+    border-radius: 1.1rem;
+    background: linear-gradient(120deg, #1438b8, #2c56dd);
+    color: #fff;
+    font-size: 1.55rem;
+    font-weight: 800;
+    padding: 1.05rem 1.2rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 1.2rem 2.4rem rgba(22, 58, 180, 0.28);
+    }
+}

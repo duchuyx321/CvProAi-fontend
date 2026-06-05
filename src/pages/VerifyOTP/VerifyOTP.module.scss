@@ -1,0 +1,79 @@
+.wrapper {
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+.title {
+    & > h3 {
+        font-size: 3.2rem;
+    }
+}
+.desc {
+    & > p {
+        color: #64748b;
+        font-size: 1.5rem;
+    }
+    & > h4 {
+        font-size: 1.5rem;
+        margin: 2px;
+    }
+}
+.inputOTP {
+    margin: 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    & > input {
+        width: 54px;
+        height: 64px;
+        border: 1px solid #64748b;
+        background-color: var(--white-color);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    & > input:focus {
+        border-color: #2f5bff;
+        box-shadow: 0 0 0 3px rgba(47, 91, 255, 0.12);
+    }
+}
+.action {
+    margin-top: 12px;
+    & > p {
+        margin-top: 12px;
+        color: #64748b;
+        font-size: 1.5rem;
+    }
+    & > .resend {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        & > p {
+            color: #64748b;
+            font-size: 1.5rem;
+            margin-right: 4px;
+        }
+        & > .btn_resend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2f5bff;
+        }
+        & > .btn_resend:hover {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+}
+.countdown {
+    color: #2f5bff;
+    margin-right: 4px;
+}
+.btn_setEmail {
+    font-size: 14px;
+    color: #64748b;
+    text-decoration: underline;
+}
